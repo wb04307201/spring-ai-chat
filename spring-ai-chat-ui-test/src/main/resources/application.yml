@@ -17,9 +17,9 @@ spring:
         prefix: custom-prefix
     mcp:
       client:
+        type: ASYNC
         stdio:
           servers-configuration: classpath:mcp-servers.json
-        enabled: false
   servlet:
     multipart:
       max-file-size: 10MB
