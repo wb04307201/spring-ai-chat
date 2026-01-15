@@ -1,6 +1,6 @@
 ## chroma
 ```shell
-docker run -d --name chroma -p 8000:8000 ghcr.io/chroma-core/chroma:1.0.0
+docker run -d --name redis-stack -p 9379:6379 -e REDIS_ARGS="--requirepass 123456" redis/redis-stack:latest
 ```
 
 ```shell
