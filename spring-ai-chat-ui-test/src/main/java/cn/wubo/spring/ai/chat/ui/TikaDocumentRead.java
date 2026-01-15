@@ -1,15 +1,14 @@
 package cn.wubo.spring.ai.chat.ui;
 
-import jakarta.servlet.http.Part;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.document.id.RandomIdGenerator;
 import org.springframework.ai.model.transformer.KeywordMetadataEnricher;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,9 +17,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
+@Component
 public class TikaDocumentRead implements IDocumentRead {
 
     private final TokenTextSplitter tokenTextSplitter;
