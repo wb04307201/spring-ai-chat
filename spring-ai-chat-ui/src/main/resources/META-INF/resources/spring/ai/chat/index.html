@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG 增强流式对话</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .chat-header {
+            background-color: #4a90e2;
+            color: white;
+            padding: 16px;
+            font-size: 1.2em;
+            text-align: center;
+            font-weight: bold;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 75%;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .bot-message {
+            background-color: #e9e9eb;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            background-color: #f9f9f9;
+            align-items: center;
+        }
+        #message-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            resize: none;
+            font-size: 1em;
+            margin-right: 10px;
+        }
+        #send-button {
+            padding: 12px 25px;
+            border: none;
+            background-color: #4a90e2;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+            flex-shrink: 0;
+        }
+        #send-button:disabled {
+            background-color: #a0c7ff;
+            cursor: not-allowed;
+        }
+        #upload-button {
+            width: 44px;
+            height: 44px;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-right: 10px;
+            background-color: #fff;
+            transition: background-color 0.3s;
+            flex-shrink: 0;
+        }
+        #upload-button:hover {
+            background-color: #f0f0f0;
+        }
+        #upload-button svg {
+            width: 20px;
+            height: 20px;
+            fill: #555;
+        }
+        #upload-button.loading {
+            cursor: not-allowed;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #file-input {
+            display: none;
+        }
+        #toast-notification {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+            z-index: 1000;
+        }
+        #toast-notification.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #toast-notification.success {
+            background-color: #28a745;
+        }
+        #toast-notification.error {
+            background-color: #dc3545;
+        }
+
+        /* --- 新增：知识库开关样式 --- */
+        .knowledge-switch-container {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .knowledge-switch-container .switch-label {
+            margin-right: 8px;
+            font-size: 0.9em;
+            color: #555;
+            user-select: none; /* 防止文本被选中 */
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 22px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #4a90e2;
+        }
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">RAG 增强流式对话</div>
+    <div class="chat-messages" id="chat-messages">
+        <!-- 聊天消息会在这里动态添加 -->
+    </div>
+
+    <div id="toast-notification"></div>
+
+    <div class="chat-input-area">
+        <label for="file-input" id="upload-button" title="上传知识文档">
+            <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M761.6 364.8c-12.8-12.8-32-12.8-44.8 0l-160 160c-12.8 12.8-12.8 32 0 44.8 12.8 12.8 32 12.8 44.8 0l102.4-102.4v300.8c0 19.2 12.8 32 32 32s32-12.8 32-32V467.2l102.4 102.4c12.8 12.8 32 12.8 44.8 0 12.8-12.8 12.8-32 0-44.8L761.6 364.8zM896 896H128V128h448c19.2 0 32-12.8 32-32s-12.8-32-32-32H128C64 64 0 128 0 192v704c0 64 64 128 128 128h768c64 0 128-64 128-128V448c0-19.2-12.8-32-32-32s-32 12.8-32 32v448z"></path></svg>
+        </label>
+        <input type="file" id="file-input">
+
+        <!-- 新增：知识库开关 -->
+        <div class="knowledge-switch-container" title="开启后将基于上传的文档进行回答">
+            <span class="switch-label">知识库</span>
+            <label class="switch">
+                <input type="checkbox" id="knowledge-toggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <textarea id="message-input" placeholder="输入您的问题..." rows="1"></textarea>
+        <button id="send-button">发送</button>
+    </div>
+</div>
+
+<script>
+    // --- DOM 元素获取 ---
+    const chatMessages = document.getElementById('chat-messages');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const fileInput = document.getElementById('file-input');
+    const uploadButton = document.getElementById('upload-button');
+    const toast = document.getElementById('toast-notification');
+    // 新增：知识库开关元素
+    const knowledgeToggle = document.getElementById('knowledge-toggle');
+
+    // --- 核心变量 ---
+    const userId = 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    let eventSource = null;
+    let currentBotMessageElement = null;
+
+    // --- 文件上传逻辑 (无变化) ---
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        uploadButton.classList.add('loading');
+        uploadButton.style.pointerEvents = 'none';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            // 假设您的上传接口在 RagController 中，路径为 /rag/upload
+            const response = await fetch('/spring/ai/chat/upload', { // 请确保此路径与您的后端匹配
+                method: 'POST',
+                body: formData,
+            });
+
+            // 假设您的后端成功时返回 { status: 200, msg: "成功" } 格式
+            const result = await response.json();
+
+            if (response.ok && result.status === 200) {
+                showToast(`文档 "${file.name}" 上传成功！`, 'success');
+            } else {
+                showToast(`上传失败: ${result.msg || '未知错误'}`, 'error');
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            showToast('上传失败，请检查网络或联系管理员。', 'error');
+        } finally {
+            uploadButton.classList.remove('loading');
+            uploadButton.style.pointerEvents = 'auto';
+            fileInput.value = '';
+        }
+    }
+
+    // --- Toast 通知 (无变化) ---
+    function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = 'show';
+        toast.classList.add(type);
+        setTimeout(() => {
+            toast.className = toast.className.replace('show', '');
+        }, 3000);
+    }
+
+    // --- SSE 连接 (无变化) ---
+    function connectSSE() {
+        if (eventSource) {
+            eventSource.close();
+        }
+        eventSource = new EventSource(`/sse/connect?userId=${userId}`);
+
+        eventSource.addEventListener('add', (event) => {
+            if (!currentBotMessageElement) {
+                currentBotMessageElement = createMessageElement('bot-message');
+                chatMessages.appendChild(currentBotMessageElement);
+            }
+            if (event.data && event.data.toLowerCase() !== 'null') {
+                // 使用 innerHTML 以便未来支持 Markdown -> HTML 的渲染
+                currentBotMessageElement.innerHTML += event.data.replace(/\n/g, '<br>');
+            }
+            scrollToBottom();
+        });
+
+        eventSource.addEventListener('finish', (event) => {
+            console.log('Stream finished:', event.data);
+            currentBotMessageElement = null;
+            sendButton.disabled = false;
+            messageInput.disabled = false;
+            eventSource.close();
+        });
+
+        eventSource.onerror = (error) => {
+            console.error('SSE Error:', error);
+            if (currentBotMessageElement) {
+                currentBotMessageElement.innerHTML += '<br><strong style="color: red;">连接中断，请重试。</strong>';
+            }
+            sendButton.disabled = false;
+            messageInput.disabled = false;
+            eventSource.close();
+        };
+    }
+
+    // --- 发送消息 (核心修改) ---
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        displayUserMessage(message);
+        messageInput.value = '';
+        messageInput.focus();
+
+        sendButton.disabled = true;
+        messageInput.disabled = true;
+
+        // 确保SSE连接已准备好接收消息
+        // connectSSE();
+
+        // 判断知识库开关的状态
+        const useKnowledgeBase = knowledgeToggle.checked;
+
+        // 更新输入框的 placeholder 提示
+        updatePlaceholder();
+
+        // 通过HTTP POST请求触发后端的AI聊天
+        fetch('/spring/ai/chat/stream', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                conversationId: userId,
+                message: message,
+            }),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.body;
+            })
+            .then(body => {
+                const reader = body.getReader();
+
+                currentBotMessageElement = createMessageElement('bot-message');
+                chatMessages.appendChild(currentBotMessageElement);
+
+                // 读取数据流
+                function read() {
+                    return reader.read().then(({done, value}) => {
+                        // 检查是否读取完毕
+                        if (done) {
+                            currentBotMessageElement = null;
+                            sendButton.disabled = false;
+                            messageInput.disabled = false;
+                            return;
+                        }
+                        // 处理每个数据块
+                        let context = new TextDecoder('utf-8').decode(value);
+                        // console.log('收到的数据:', context);
+
+                        currentBotMessageElement.textContent += context;
+
+                        // 继续读取下一个数据块
+                        read();
+                    });
+                }
+
+                // 开始读取数据流
+                read();
+            })
+            .catch(error => {
+                console.error('Failed to send message:', error);
+                const errorMessage = createMessageElement('bot-message', '抱歉，发送消息失败。');
+                chatMessages.appendChild(errorMessage);
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+            });
+    }
+
+    // --- UI 辅助函数 ---
+    function createMessageElement(className, htmlContent = '') {
+        const div = document.createElement('div');
+        div.className = `message ${className}`;
+        div.innerHTML = htmlContent;
+        return div;
+    }
+
+    function displayUserMessage(message) {
+        const userMessageElement = createMessageElement('user-message', message);
+        chatMessages.appendChild(userMessageElement);
+        scrollToBottom();
+    }
+
+    function displayBotMessage(message) {
+        const botMessageElement = createMessageElement('bot-message', message);
+        chatMessages.appendChild(botMessageElement);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // 新增：根据开关状态更新输入框提示
+    function updatePlaceholder() {
+        if (knowledgeToggle.checked) {
+            messageInput.placeholder = '基于已上传的知识库进行提问...';
+        } else {
+            messageInput.placeholder = '直接与我对话...';
+        }
+    }
+
+    // --- 事件绑定 ---
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+    fileInput.addEventListener('change', handleFileUpload);
+    // 新增：为开关绑定change事件，以更新placeholder
+    knowledgeToggle.addEventListener('change', updatePlaceholder);
+
+    // 初始化placeholder
+    updatePlaceholder();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+spring:
+  ai:
+    zhipuai:
+      api-key: ${ZHIPUAI_API_KEY}
+#    ollama:
+#      chat:
+#        options:
+#          model: qwen3
+#      embedding:
+#        options:
+#          model: qwen3-embedding
+#      base-url: http://localhost:11434
+    vectorstore:
+      chroma:
+        client:
+          host: http://localhost
+          port: 8000
+        collection-name: SpringAiCollection
+        initialize-schema: true
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
+        enabled: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  tomcat:
+    max-swallow-size: 2MB
+    disable-upload-timeout: false
+
+logging:
+  level:
+    org:
+      springframework:
+        ai:
+          chat:
+            client:
+              advisor: DEBUG

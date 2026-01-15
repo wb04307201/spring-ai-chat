@@ -1,0 +1,54 @@
+        // 通过HTTP POST请求触发后端的AI聊天
+        fetch('/spring/ai/chat/stream', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                conversationId: userId,
+                message: message,
+            }),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.body;
+            })
+            .then(body => {
+                const reader = body.getReader();
+
+                currentBotMessageElement = createMessageElement('bot-message');
+                chatMessages.appendChild(currentBotMessageElement);
+
+                // 读取数据流
+                function read() {
+                    return reader.read().then(({done, value}) => {
+                        // 检查是否读取完毕
+                        if (done) {
+                            currentBotMessageElement = null;
+                            sendButton.disabled = false;
+                            messageInput.disabled = false;
+                            return;
+                        }
+                        // 处理每个数据块
+                        let context = new TextDecoder('utf-8').decode(value);
+                        // console.log('收到的数据:', context);
+
+                        currentBotMessageElement.textContent += context;
+
+                        // 继续读取下一个数据块
+                        read();
+                    });
+                }
+
+                // 开始读取数据流
+                read();
+            })
+            .catch(error => {
+                console.error('Failed to send message:', error);
+                const errorMessage = createMessageElement('bot-message', '抱歉，发送消息失败。');
+                chatMessages.appendChild(errorMessage);
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+            });
