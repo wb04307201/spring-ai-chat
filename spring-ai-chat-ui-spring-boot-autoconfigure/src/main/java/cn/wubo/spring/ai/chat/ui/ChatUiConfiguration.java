@@ -12,6 +12,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.template.st.StTemplateRenderer;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -83,8 +84,8 @@ public class ChatUiConfiguration {
     @ConditionalOnMissingBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, ChatUiProperties properties) {
-        ChatClient.Builder builder = ChatClient.builder(chatModel);
+    public ChatClient chatClient(ChatModel chatModel, ToolCallbackProvider tools, ChatUiProperties properties) {
+        ChatClient.Builder builder = ChatClient.builder(chatModel).defaultTools(tools);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
@@ -97,8 +98,8 @@ public class ChatUiConfiguration {
     @ConditionalOnBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClientWithVectorStore(ChatModel chatModel, VectorStore vectorStore, ChatUiProperties properties) {
-        ChatClient.Builder builder = ChatClient.builder(chatModel);
+    public ChatClient chatClientWithVectorStore(ChatModel chatModel, VectorStore vectorStore, ToolCallbackProvider tools, ChatUiProperties properties) {
+        ChatClient.Builder builder = ChatClient.builder(chatModel).defaultTools(tools);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         PromptTemplate customPromptTemplate = PromptTemplate
