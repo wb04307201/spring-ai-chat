@@ -15,6 +15,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -45,8 +48,13 @@ public class TikaDocumentRead implements IDocumentRead {
     @Override
     public List<FileInfo> list() {
         return fileInfos.stream().map(fileInfo -> {
-            fileInfo.setDocumentIds(null);
-            return fileInfo;
+            FileInfo copiedFileInfo = new FileInfo();
+            copiedFileInfo.setId(fileInfo.getId());
+            copiedFileInfo.setFileName(fileInfo.getFileName());
+            copiedFileInfo.setPath(fileInfo.getPath());
+            copiedFileInfo.setSize(fileInfo.getSize());
+            copiedFileInfo.setUploadTime(fileInfo.getUploadTime());
+            return copiedFileInfo;
         }).toList();
     }
 
@@ -74,9 +82,11 @@ public class TikaDocumentRead implements IDocumentRead {
 
             FileInfo fileInfo = new FileInfo();
             fileInfo.setId(UUID.randomUUID().toString());
-            fileInfo.setFieName(fileName);
+            fileInfo.setFileName(fileName);
             fileInfo.setPath(filePath.toString());
+            fileInfo.setSize(fileResource.contentLength());
             fileInfo.setDocumentIds(keywordMetadataEnricherDocumentList.stream().map(Document::getId).toList());
+            fileInfo.setUploadTime(LocalDateTime.now());
             fileInfos.add(fileInfo);
 
             return keywordMetadataEnricherDocumentList;

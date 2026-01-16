@@ -1,17 +1,11 @@
 {
   "mcpServers": {
     "time": {
-      "command": "uvx",
+      "command": "C:\\Users\\wb043\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\uvx.exe",
       "args": [
         "mcp-server-time",
-        "--local-timezone=America/New_York"
+        "--local-timezone=Asia/Shanghai"
       ]
     }
-  },
-  "playwright": {
-    "command": "npx",
-    "args": [
-      "@playwright/mcp@latest"
-    ]
   }
 }

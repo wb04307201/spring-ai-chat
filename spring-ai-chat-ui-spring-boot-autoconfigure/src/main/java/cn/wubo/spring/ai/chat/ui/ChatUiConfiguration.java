@@ -81,11 +81,26 @@ import java.util.List;
 @Slf4j
 public class ChatUiConfiguration {
 
-    @ConditionalOnMissingBean(VectorStore.class)
+    @ConditionalOnMissingBean({VectorStore.class, ToolCallbackProvider.class})
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, ToolCallbackProvider tools, ChatUiProperties properties) {
-        ChatClient.Builder builder = ChatClient.builder(chatModel).defaultTools(tools);
+    public ChatClient chatClient(ChatModel chatModel, ChatUiProperties properties) {
+        ChatClient.Builder builder = ChatClient.builder(chatModel);
+        if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
+        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
+        builder.defaultAdvisors(
+                MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
+                new SimpleLoggerAdvisor() // logger advisor
+        );
+        return builder.build();
+    }
+
+    @ConditionalOnMissingBean(VectorStore.class)
+    @ConditionalOnBean(ToolCallbackProvider.class)
+    @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
+    @Bean
+    public ChatClient chatClientToolCallbackProvider(ChatModel chatModel, ToolCallbackProvider tools, ChatUiProperties properties) {
+        ChatClient.Builder builder = ChatClient.builder(chatModel).defaultToolCallbacks(tools);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
@@ -96,10 +111,11 @@ public class ChatUiConfiguration {
     }
 
     @ConditionalOnBean(VectorStore.class)
+    @ConditionalOnMissingBean(ToolCallbackProvider.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClientWithVectorStore(ChatModel chatModel, VectorStore vectorStore, ToolCallbackProvider tools, ChatUiProperties properties) {
-        ChatClient.Builder builder = ChatClient.builder(chatModel).defaultTools(tools);
+    public ChatClient chatClientVectorStore(ChatModel chatModel, VectorStore vectorStore, ChatUiProperties properties) {
+        ChatClient.Builder builder = ChatClient.builder(chatModel);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         PromptTemplate customPromptTemplate = PromptTemplate
@@ -118,12 +134,50 @@ public class ChatUiConfiguration {
                 QuestionAnswerAdvisor
                         .builder(vectorStore)
                         .searchRequest(
-                                SearchRequest.builder()
+                                SearchRequest
+                                        .builder()
                                         .similarityThreshold(properties.getRag().getSimilarityThreshold())
                                         .topK(properties.getRag().getTopK())
                                         .build()
-                        ).promptTemplate(customPromptTemplate
-                        ).build(),    // RAG advisor
+                        )
+                        .promptTemplate(customPromptTemplate)
+                        .build(),    // RAG advisor
+                SimpleLoggerAdvisor.builder().build() // logger advisor
+        );
+        return builder.build();
+    }
+
+    @ConditionalOnBean({VectorStore.class, ToolCallbackProvider.class})
+    @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
+    @Bean
+    public ChatClient chatClientVectorStoreToolCallbackProvider(ChatModel chatModel, VectorStore vectorStore, ToolCallbackProvider tools, ChatUiProperties properties) {
+        ChatClient.Builder builder = ChatClient.builder(chatModel).defaultToolCallbacks(tools);
+        if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
+        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
+        PromptTemplate customPromptTemplate = PromptTemplate
+                .builder()
+                .renderer(
+                        StTemplateRenderer
+                                .builder()
+                                .startDelimiterToken('<')
+                                .endDelimiterToken('>')
+                                .build()
+                )
+                .template(properties.getRag().getTemplate())
+                .build();
+        builder.defaultAdvisors(
+                MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
+                QuestionAnswerAdvisor
+                        .builder(vectorStore)
+                        .searchRequest(
+                                SearchRequest
+                                        .builder()
+                                        .similarityThreshold(properties.getRag().getSimilarityThreshold())
+                                        .topK(properties.getRag().getTopK())
+                                        .build()
+                        )
+                        .promptTemplate(customPromptTemplate)
+                        .build(),    // RAG advisor
                 SimpleLoggerAdvisor.builder().build() // logger advisor
         );
         return builder.build();
@@ -157,12 +211,18 @@ public class ChatUiConfiguration {
     @Bean("wb04307201ChatUiDocumentRouter")
     public RouterFunction<ServerResponse> chatUiDocumentRouter(VectorStore vectorStore, IDocumentRead documentRead) {
         RouterFunctions.Builder builder = RouterFunctions.route();
-
+        builder.GET("/spring/ai/chat/upload", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(true));
         builder.POST("/spring/ai/chat/upload", request -> {
             Part part = request.multipartData().getFirst("file");
             List<Document> list = documentRead.read(part.getInputStream(), part.getSubmittedFileName());
             vectorStore.add(list);
 
+            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(true);
+        });
+        builder.GET("/spring/ai/chat/knowledge", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(documentRead.list()));
+        builder.DELETE("/spring/ai/chat/knowledge/{id}", request -> {
+            String id = request.pathVariable("id");
+            vectorStore.delete(documentRead.get(id).getDocumentIds());
             return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(true);
         });
 
