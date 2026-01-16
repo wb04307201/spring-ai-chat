@@ -9,6 +9,12 @@
 [![fork](https://img.shields.io/github/forks/wb04307201/spring-ai-chat)](https://github.com/wb04307201/spring-ai-chat)  
 ![MIT](https://img.shields.io/badge/License-Apache2.0-blue.svg) ![JDK](https://img.shields.io/badge/JDK-17+-green.svg) ![SpringBoot](https://img.shields.io/badge/Spring%20Boot-3+-green.svg)
 
+## 功能特性
+- 🤖 AI聊天界面
+- 🧠 RAG支持
+- 🛠 MCP支持
+- ⚙️ 自动配置
+
 ## 添加聊天界面
 ### 添加Spring AI依赖
 下面以Zhipu AI为例，添加依赖：
