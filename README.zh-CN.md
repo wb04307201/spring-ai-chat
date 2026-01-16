@@ -1,10 +1,10 @@
-# Spring AI Chat —— Spring AI Chat
+# Spring AI Chat —— Spring AI聊天
 
 <div align="right">
-  <a href="README.zh-CN.md">中文</a> | English
+  <a href="README.md">English</a> | 中文
 </div>
 
-> Quickly add a chat interface to your Spring AI.
+> 为你的Spring Ai快速添加聊天界面。
 
 [![](https://jitpack.io/v/com.gitee.wb04307201/spring-ai-chat.svg)](https://jitpack.io/#com.gitee.wb04307201/spring-ai-chat)
 [![star](https://gitee.com/wb04307201/spring-ai-chat/badge/star.svg?theme=dark)](https://gitee.com/wb04307201/spring-ai-chat)
@@ -13,22 +13,22 @@
 [![fork](https://img.shields.io/github/forks/wb04307201/spring-ai-chat)](https://github.com/wb04307201/spring-ai-chat)  
 ![MIT](https://img.shields.io/badge/License-Apache2.0-blue.svg) ![JDK](https://img.shields.io/badge/JDK-17+-green.svg) ![SpringBoot](https://img.shields.io/badge/Spring%20Boot-3+-green.svg)
 
-## Features
-- 🤖 AI Chat Interface
-- 🧠 RAG Support
-- 🛠 MCP Support
-- ⚙️ Auto Configuration
+## 功能特性
+- 🤖 AI聊天界面
+- 🧠 RAG支持
+- 🛠 MCP支持
+- ⚙️ 自动配置
 
-## Adding Chat Interface
-### Adding Spring AI Dependencies
-Below is an example using Zhipu AI to add dependencies:
+## 添加聊天界面
+### 添加Spring AI依赖
+下面以Zhipu AI为例，添加依赖：
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
     <artifactId>spring-ai-starter-model-zhipuai</artifactId>
 </dependency>
 ```
-Add configuration:
+添加配置：
 ```yaml
 spring:
   ai:
@@ -36,8 +36,8 @@ spring:
       api-key: ${ZHIPUAI_API_KEY}
 ```
 
-### Introducing Chat Dependencies
-Add JitPack repository:
+### 引入聊天依赖
+增加 JitPack 仓库：
 ```xml
 <repositories>
     <repository>
@@ -46,7 +46,7 @@ Add JitPack repository:
     </repository>
 </repositories>
 ```
-Introduce dependency:
+引入依赖；
 ```xml
 <dependency>
     <groupId>com.github.wb04307201.spring-ai-chat</groupId>
@@ -55,11 +55,11 @@ Introduce dependency:
 </dependency>
 ```
 
-Start the project and visit `http://localhost:8080//easy/ai/chat`
+启动项目 访问`http://localhost:8080//easy/ai/chat`
 ![img.png](img.png)
 
-## Supporting RAG
-Below is an example using Redis and Tika to add dependencies:
+## 支持RAG
+下面以Redis和Tika为例，添加依赖：
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -71,7 +71,7 @@ Below is an example using Redis and Tika to add dependencies:
 </dependency>
 ```
 
-Add configuration:
+添加配置：
 ```yaml
 spring:
   ai:
@@ -87,15 +87,15 @@ spring:
       password: 123456
 ```
 
-Implement the [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java) interface  
-For example [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
+实现[IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java)接口  
+例如[TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
 
-Restart the project and visit `http://localhost:8080//easy/ai/chat`
+重启项目 访问`http://localhost:8080//easy/ai/chat`
 ![img_1.png](img_1.png)
-Upload file and knowledge base buttons appear
+出现上传文件和知识库按钮
 
-## Supporting MCP Services
-Taking the time MCP service as an example, add dependencies:
+## 支持MCP服务
+以时间MCP服务为例，添加依赖：
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -103,7 +103,7 @@ Taking the time MCP service as an example, add dependencies:
 </dependency>
 ```
 
-Add configuration:
+添加配置：
 ```yaml
 spring:
   ai:
@@ -116,5 +116,7 @@ spring:
 
 [mcp-servers.json](spring-ai-chat-test/src/main/resources/mcp-servers.json)
 
-Restart the project and visit `http://localhost:8080//easy/ai/chat`
+重启项目 访问`http://localhost:8080//easy/ai/chat`
 ![img_2.png](img_2.png)
+
+
