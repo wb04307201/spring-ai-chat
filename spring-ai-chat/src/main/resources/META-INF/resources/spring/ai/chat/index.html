@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>聊天</title>
+    <meta charset="UTF-8">
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            /*height: 760px;*/
+            /*width: 900px;*/
+            height: 100%;
+            width: 100%;
+            border-radius: 4px;
+            border: 0.5px solid #e0e0e0;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-flow: column;
+            overflow: hidden;
+        }
+
+        .content {
+            width: calc(100% - 40px);
+            padding: 20px;
+            overflow-y: scroll;
+            flex: 1;
+        }
+
+        .content:hover::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .bubble {
+            /*max-width: 400px;*/
+            max-width: 75%;
+            padding: 10px;
+            border-radius: 5px;
+            position: relative;
+            color: #000;
+            word-wrap: break-word;
+            word-break: normal;
+        }
+
+        .item-left .bubble {
+            margin-left: 15px;
+            background-color: #fff;
+        }
+
+        .item-left .bubble:before {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-top: 10px solid transparent;
+            border-right: 10px solid #fff;
+            border-bottom: 10px solid transparent;
+            left: -20px;
+        }
+
+        .item-right .bubble {
+            margin-right: 15px;
+            background-color: #9eea6a;
+        }
+
+        .item-right .bubble:before {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #9eea6a;
+            border-top: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            right: -20px;
+        }
+
+        .item {
+            margin-top: 15px;
+            display: flex;
+            width: 100%;
+        }
+
+        .item.item-right {
+            justify-content: flex-end;
+        }
+
+        .item.item-center {
+            justify-content: center;
+        }
+
+        .item.item-center span {
+            font-size: 12px;
+            padding: 2px 4px;
+            color: #fff;
+            background-color: #dadada;
+            border-radius: 3px;
+            -moz-user-select: none; /*火狐*/
+            -webkit-user-select: none; /*webkit浏览器*/
+            -ms-user-select: none; /*IE10*/
+            -khtml-user-select: none; /*早期浏览器*/
+            user-select: none;
+        }
+
+        .avatar img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+        }
+
+        .input-area {
+            border-top: 0.5px solid #e0e0e0;
+            height: 150px;
+            display: flex;
+            flex-flow: column;
+            background-color: #fff;
+        }
+
+        textarea {
+            flex: 1;
+            padding: 5px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            overflow-y: auto;
+            overflow-x: hidden;
+            outline: none;
+            resize: none;
+        }
+
+        .button-area {
+            display: flex;
+            height: 40px;
+            margin-right: 10px;
+            line-height: 40px;
+            padding: 5px;
+            justify-content: flex-end;
+        }
+
+        .button-area button {
+            width: 80px;
+            border: none;
+            outline: none;
+            border-radius: 4px;
+            float: right;
+            cursor: pointer;
+        }
+
+        /* 设置滚动条的样式 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        /* 滚动槽 */
+        ::-webkit-scrollbar-track {
+            border-radius: 8px;
+        }
+
+        /* 滚动条滑块 */
+        ::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0);
+        }
+
+        .toolbar {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            border-bottom: 0.5px solid #e0e0e0;
+            background-color: #fafafa;
+        }
+
+        .toolbar-btn {
+            /*width: 32px;*/
+            height: 32px;
+            margin: 0 5px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toolbar-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        #file-input-button {
+            display: none;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #repo-button {
+            display: none;
+        }
+
+        #toast-notification {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+            z-index: 1000;
+        }
+        #toast-notification.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #toast-notification.success {
+            background-color: #28a745;
+        }
+        #toast-notification.error {
+            background-color: #dc3545;
+        }
+
+        /* 在现有CSS中添加 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 900px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .close-button {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+
+        .close-button:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 16px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .knowledge-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        .knowledge-table th,
+        .knowledge-table td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .knowledge-table th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .knowledge-table tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .action-btn:hover {
+            background-color: #e9ecef;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="content" id="mainContent">
+        <div class="item item-center"><span>你现在可以开始聊天了</span></div>
+    </div>
+    <div class="input-area">
+        <div class="toolbar">
+            <button class="toolbar-btn" onclick="clearChat()">
+                🗅清空对话
+            </button>
+            <button class="toolbar-btn" id="file-input-button" onclick="toggleFileUpload()">
+                📄上传文件
+                <input type="file" id="file-input" accept="*/*">
+            </button>
+            <button class="toolbar-btn" id="repo-button" onclick="openModal()">
+                📚知识库
+            </button>
+        </div>
+        <textarea name="text" id="textarea"></textarea>
+        <div class="button-area">
+            <button id="send-btn" onclick="send()">发 送</button>
+        </div>
+    </div>
+    <div id="toast-notification"></div>
+    <div id="modal-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>知识库管理</h3>
+                <span class="close-button" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <table id="knowledge-table" class="knowledge-table">
+                    <thead>
+                    <tr>
+                        <th>文档名称</th>
+                        <th>大小</th>
+                        <th>上传时间</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="table-body">
+                    <!-- 表格内容将通过JS动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let conversationId = Math.random().toString(12);
+    let mainContent = document.getElementById('mainContent');
+    let textarea = document.getElementById('textarea');
+    let sendBtn = document.getElementById("send-btn")
+    let fileInputButton = document.getElementById('file-input-button');
+    let fileInput = document.getElementById('file-input');
+    let repoButton = document.getElementById('repo-button');
+    const toast = document.getElementById('toast-notification');
+    let answerTextContent = null;
+    let modalOverlay = null;
+    let tableBody = null;
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        fetch('/spring/ai/chat/upload')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json()
+            })
+            .then(data => {
+                if (data) {
+                    fileInputButton.style.display = 'block';
+                    repoButton.style.display = 'block';
+                }
+            })
+            .catch(_ => {
+                console.debug("不开启上传按钮")
+            })
+    })
+
+    textarea.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && event.ctrlKey) {
+            event.preventDefault();
+            // 获取当前光标位置
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            // 在光标位置插入换行符
+            textarea.value = textarea.value.substring(0, start) + '\n' + textarea.value.substring(end);
+            // 移动光标到新位置
+            textarea.setSelectionRange(start + 1, start + 1);
+        }
+        if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey) {
+            event.preventDefault();
+            send();
+        }
+    });
+
+    // 滚动条置底
+    function scrollToBottom() {
+        mainContent.scrollTop = mainContent.scrollHeight;
+    }
+
+    // 构建用户消息
+    function buildUserMessage(message) {
+        let userItem = document.createElement('div');
+        userItem.className = 'item item-right';
+        userItem.innerHTML = `<div class="bubble bubble-left">${message}</div><div class="avatar"><img src="/spring/ai/chat/user.png"/></div>`;
+        mainContent.appendChild(userItem);
+        scrollToBottom();
+    }
+
+    // 构建机器人消息
+    function buildBotMessage(id) {
+        let assistantItem = document.createElement('div');
+        assistantItem.className = 'item item-left';
+        assistantItem.innerHTML = `<div class="avatar"><img src="/spring/ai/chat/ai.png"/></div><div class="bubble bubble-left" id="${id}"></div>`;
+        mainContent.appendChild(assistantItem);
+        scrollToBottom();
+    }
+
+    function enableSendBtn() {
+        textarea.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = '发 送';
+    }
+
+    function disableSendBtn() {
+        textarea.value = '';
+        textarea.disabled = true;
+        sendBtn.disabled = true;
+        sendBtn.textContent = '正在发送...';
+    }
+
+    function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = 'show';
+        toast.classList.add(type);
+        setTimeout(() => {
+            toast.className = toast.className.replace('show', '');
+        }, 3000);
+    }
+
+    function send() {
+        const id = Date.now();
+        let text = textarea.value.trim();
+        if (!text) {
+            buildBotMessage(id)
+            answerTextContent = document.getElementById(id)
+            answerTextContent.textContent = answerTextContent.textContent + "抱歉，请输入内容。";
+            scrollToBottom();
+            answerTextContent = null;
+            return;
+        }
+
+        buildUserMessage(text);
+
+        disableSendBtn()
+
+        buildBotMessage(id)
+        answerTextContent = document.getElementById(id)
+
+        fetch('/spring/ai/chat/stream', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: text, conversationId: conversationId}),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.body;
+            })
+            .then(body => {
+                const reader = body.getReader();
+
+                // 读取数据流
+                function read() {
+                    return reader.read().then(({done, value}) => {
+                        // 检查是否读取完毕
+                        if (done) {
+                            console.log("接收完成")
+                            enableSendBtn();
+                            answerTextContent = null;
+                            return;
+                        }
+                        // 处理每个数据块
+                        let context = new TextDecoder('utf-8').decode(value);
+                        // console.log('收到的数据:', context);
+
+                        answerTextContent.textContent = answerTextContent.textContent + context;
+                        scrollToBottom();
+
+                        // 继续读取下一个数据块
+                        read();
+                    });
+                }
+
+                // 开始读取数据流
+                read();
+            })
+            .catch(error => {
+                answerTextContent.textContent = answerTextContent.textContent + "抱歉，发送消息失败。";
+                scrollToBottom();
+                answerTextContent = null;
+                console.error('There has been a problem with your fetch operation:', error);
+                enableSendBtn()
+            });
+    }
+
+    function clearChat() {
+        mainContent.innerHTML = `<div class="item item-center"><span>你现在可以开始聊天了</span></div>`
+        conversationId = Math.random().toString(12);
+    }
+
+    function toggleFileUpload() {
+        let fileInput = document.getElementById('file-input');
+        fileInput.click();
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+
+        fetch('/spring/ai/chat/upload', { // 请确保此路径与您的后端匹配
+            method: 'POST',
+            body: formData,
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        }).then(data => {
+            if (data){
+                showToast(`文档 "${file.name}" 上传成功！`, 'success');
+            }
+        }).catch( error =>{
+            console.error('There has been a problem with your fetch operation:', error);
+            showToast('上传失败，请检查网络或联系管理员。', 'error');
+        })
+    }
+
+    fileInput.addEventListener('change', handleFileUpload);
+
+    // 在DOMContentLoaded事件中初始化模态框相关元素
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // 初始化模态框元素
+        modalOverlay = document.getElementById('modal-overlay');
+        tableBody = document.getElementById('table-body');
+
+        // 检查上传功能是否可用
+        fetch('/spring/ai/chat/upload')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json()
+            })
+            .then(data => {
+                if (data) {
+                    fileInputButton.style.display = 'block';
+                    repoButton.style.display = 'block';
+                }
+            })
+            .catch(_ => {
+                console.debug("不开启上传按钮")
+            });
+
+        // 点击遮罩层关闭模态框
+        modalOverlay.addEventListener('click', function(event) {
+            if (event.target === modalOverlay) {
+                closeModal();
+            }
+        });
+    });
+
+    function openModal() {
+        modalOverlay.style.display = 'flex';
+        loadKnowledgeData();
+    }
+
+    function closeModal() {
+        modalOverlay.style.display = 'none';
+    }
+
+    function loadKnowledgeData() {
+        // 清空现有表格内容
+        tableBody.innerHTML = '';
+
+        // 显示加载状态
+        const loadingRow = document.createElement('tr');
+        loadingRow.innerHTML = '<td colspan="5" style="text-align: center;">加载中...</td>';
+        tableBody.appendChild(loadingRow);
+
+        // 获取知识库数据
+        fetch('/spring/ai/chat/knowledge')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.debug('data',data)
+
+                // 清除加载行
+                tableBody.innerHTML = '';
+
+                // 填充表格数据
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+
+                        // 格式化文件大小
+                        const fileSize = formatFileSize(item.size);
+                        // 格式化日期
+                        const formattedDate = formatDate(item.uploadTime);
+
+                        row.innerHTML = `
+                        <td>${truncateText(item.fileName, 30)}</td>
+                        <td>${fileSize}</td>
+                        <td>${formattedDate}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick="deleteDocument('${item.id}', this)">删除</button>
+                            </div>
+                        </td>
+                    `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML = '<td colspan="5" style="text-align: center;">暂无知识库文档</td>';
+                    tableBody.appendChild(emptyRow);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading knowledge data:', error);
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">加载失败，请稍后重试</td></tr>';
+            });
+    }
+
+    function deleteDocument(docId, element) {
+        if (confirm('确定要删除这个文档吗？')) {
+            fetch(`/spring/ai/chat/knowledge/${docId}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        // 删除表格行
+                        element.closest('tr').remove();
+                        showToast('知识库删除成功', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting document:', error);
+                    showToast('文档删除失败，请稍后重试', 'error');
+                });
+        }
+    }
+
+    function truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substr(0, maxLength) + '...';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '未知';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+</script>
+</body>
+</html>

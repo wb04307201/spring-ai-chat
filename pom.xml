@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.gitee.wb04307201</groupId>
-    <artifactId>spring-ai-chat-ui-parent</artifactId>
+    <artifactId>spring-ai-chat-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <packaging>pom</packaging>
@@ -25,10 +25,10 @@
     </developers>
 
     <modules>
-        <module>spring-ai-chat-ui</module>
-        <module>spring-ai-chat-ui-spring-boot-autoconfigure</module>
-        <module>spring-ai-chat-ui-spring-boot-starter</module>
-        <module>spring-ai-chat-ui-test</module>
+        <module>spring-ai-chat</module>
+        <module>spring-ai-chat-spring-boot-autoconfigure</module>
+        <module>spring-ai-chat-spring-boot-starter</module>
+        <module>spring-ai-chat-test</module>
     </modules>
 
     <properties>
