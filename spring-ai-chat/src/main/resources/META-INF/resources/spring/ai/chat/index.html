@@ -6,6 +6,7 @@
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/marked@17.0.1/lib/marked.umd.js"></script>
     <style>
         * {
             padding: 0;
@@ -395,6 +396,7 @@
     let repoButton = document.getElementById('repo-button');
     const toast = document.getElementById('toast-notification');
     let answerTextContent = null;
+    let answerText = "";
     let modalOverlay = null;
     let tableBody = null;
 
@@ -520,13 +522,15 @@
                             console.log("接收完成")
                             enableSendBtn();
                             answerTextContent = null;
+                            answerText = "";
                             return;
                         }
                         // 处理每个数据块
                         let context = new TextDecoder('utf-8').decode(value);
                         // console.log('收到的数据:', context);
 
-                        answerTextContent.textContent = answerTextContent.textContent + context;
+                        answerText += context;
+                        answerTextContent.innerHTML = marked.parse(answerText);
                         scrollToBottom();
 
                         // 继续读取下一个数据块
@@ -537,6 +541,7 @@
                 // 开始读取数据流
                 read();
             })
+
             .catch(error => {
                 answerTextContent.textContent = answerTextContent.textContent + "抱歉，发送消息失败。";
                 scrollToBottom();

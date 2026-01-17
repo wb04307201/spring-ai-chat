@@ -51,7 +51,7 @@ spring:
 <dependency>
     <groupId>com.github.wb04307201.spring-ai-chat</groupId>
     <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 
@@ -93,6 +93,30 @@ spring:
 重启项目 访问`http://localhost:8080//easy/ai/chat`
 ![img_1.png](img_1.png)
 出现上传文件和知识库按钮
+
+如需修改rag模板可以如下配置
+```yaml
+spring:
+  ai:
+    chat:
+      ui:
+        rag:
+          template: |
+            <query>
+
+            上下文信息如下。
+
+            ---------------------
+            <question_answer_context>
+            ---------------------
+
+            如果没有上下文信息，直接回答问题
+
+            如果有上下文信息，根据上下文信息回答问题。并遵循以下规则：
+            1. 如果答案不在上下文中，则直接说明您不知道。
+            2. 避免使用"根据上下文..."或"提供的信息..."之类的表述。
+            3. 每句话结尾使用"喵~"、”喵内~“等。
+```
 
 ## 支持MCP服务
 以时间MCP服务为例，添加依赖：

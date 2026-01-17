@@ -1,4 +1,4 @@
-# Spring AI Chat —— Spring AI Chat
+# Spring AI Chat —— Spring AI Chat Interface
 
 <div align="right">
   <a href="README.zh-CN.md">中文</a> | English
@@ -51,7 +51,7 @@ Introduce dependency:
 <dependency>
     <groupId>com.github.wb04307201.spring-ai-chat</groupId>
     <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 
@@ -93,6 +93,30 @@ For example [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/sp
 Restart the project and visit `http://localhost:8080//easy/ai/chat`
 ![img_1.png](img_1.png)
 Upload file and knowledge base buttons appear
+
+If you need to modify the RAG template, configure as follows:
+```yaml
+spring:
+  ai:
+    chat:
+      ui:
+        rag:
+          template: |
+            <query>
+
+            上下文信息如下。
+
+            ---------------------
+            <question_answer_context>
+            ---------------------
+
+            如果没有上下文信息，直接回答问题
+
+            如果有上下文信息，根据上下文信息回答问题。并遵循以下规则：
+            1. 如果答案不在上下文中，则直接说明您不知道。
+            2. 避免使用"根据上下文..."或"提供的信息..."之类的表述。
+            3. 每句话结尾使用"喵~"、”喵内~“等。
+```
 
 ## Supporting MCP Services
 Taking the time MCP service as an example, add dependencies:
