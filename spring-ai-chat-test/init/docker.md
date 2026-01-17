@@ -6,6 +6,8 @@ docker run -d --name redis-stack -p 9379:6379 -e REDIS_ARGS="--requirepass 12345
 ```shell
 pip install uv
 npm install -g npx
+where uv
+where npx
 ```
 
 ## 时间

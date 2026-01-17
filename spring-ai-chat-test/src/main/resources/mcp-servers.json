@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "time": {
-      "command": "C:\\Users\\wb043\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\uvx.exe",
+      "command": "uvx.exe",
       "args": [
         "mcp-server-time",
         "--local-timezone=Asia/Shanghai"
