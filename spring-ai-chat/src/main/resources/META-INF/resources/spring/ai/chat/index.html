@@ -528,6 +528,11 @@
                         }
                         // 处理每个数据块
                         let context = new TextDecoder('utf-8').decode(value);
+                        context = context.split('\n')
+                            .filter(line => line.trim())
+                            .map(line => line.replace(/^data:\s*/, ''))
+                            .join('\n')
+                            .trim();
                         // console.log('收到的数据:', context);
 
                         answerText += context;
