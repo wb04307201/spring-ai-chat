@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -17,7 +16,6 @@ import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -27,13 +25,19 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.RouterFunctions;
 import org.springframework.web.servlet.function.ServerResponse;
-import reactor.core.publisher.Flux;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @AutoConfiguration
 @AutoConfigureAfter(name = {
@@ -152,27 +156,62 @@ public class ChatUiConfiguration {
     }
 
     @Bean("wb04307201ChatUiRouter")
-    public RouterFunction<ServerResponse> chatUiRouter(ChatClient chatClient) {
+    public RouterFunction<ServerResponse> chatUiRouter() {
         RouterFunctions.Builder builder = RouterFunctions.route();
         builder.GET("spring/ai/chat", request -> ServerResponse.temporaryRedirect(URI.create("/spring/ai/chat/index.html")).build());
-
-        // @formatter:off
-        builder.POST("/spring/ai/chat/stream", request -> {
-            ChatRecord chatRecord = request.body(ChatRecord.class);
-            Flux<String> stream = chatClient
-                    .prompt()
-                    .user(chatRecord.message())
-                    .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRecord.conversationId()))
-                    .stream()
-                    .content();
-            return ServerResponse.ok().contentType(MediaType.TEXT_EVENT_STREAM)
-                    .header("Cache-Control", "no-cache")
-                    .header("Connection", "keep-alive")
-                    .body(stream.doOnError(Throwable::printStackTrace));
-        });
-        // @formatter:on
-
         return builder.build();
+    }
+
+    @Slf4j
+    @RestController
+    @RequestMapping
+    public static class SseController {
+
+        private final ChatClient chatClient;
+
+        public SseController(ChatClient chatClient) {
+            this.chatClient = chatClient;
+        }
+
+        @PostMapping(value = "/spring/ai/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+        public SseEmitter streamAi(@RequestBody ChatRecord chatRecord) {
+            // 1. 显式设置超时时间（单位毫秒），0 表示永不超时
+            SseEmitter emitter = new SseEmitter(0L);
+
+            // 2. 设置超时回调，防止连接泄露
+            emitter.onTimeout(() -> {
+                log.debug("SSE 链接超时");
+                emitter.complete();
+            });
+            emitter.onCompletion(() -> log.debug("SSE 链接完成"));
+            emitter.onError(e -> log.debug("SSE 链接错误：{}", e.getMessage()));
+
+            // 3. 在异步线程中处理 AI 请求，避免阻塞 Tomcat 线程
+            CompletableFuture.runAsync(() -> {
+                try {
+                    // 4. 订阅 Flux 流并将数据发送给 emitter
+                    chatClient.prompt()
+                            .user(chatRecord.message())
+                            .stream()
+                            .content()
+                            .subscribe(
+                                    content -> {
+                                        try {
+                                            emitter.send(content, MediaType.TEXT_PLAIN);
+                                        } catch (IOException e) {
+                                            emitter.completeWithError(e);
+                                        }
+                                    },
+                                    emitter::completeWithError,
+                                    emitter::complete
+                            );
+                } catch (Exception e) {
+                    emitter.completeWithError(e);
+                }
+            });
+
+            return emitter;
+        }
     }
 
     @ConditionalOnBean(VectorStore.class)
@@ -182,6 +221,9 @@ public class ChatUiConfiguration {
         builder.GET("/spring/ai/chat/upload", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(true));
         builder.POST("/spring/ai/chat/upload", request -> {
             Part part = request.multipartData().getFirst("file");
+            if (part == null) {
+                throw new IllegalArgumentException("上传的文件不能为空，请检查请求参数中是否包含名为'file'的文件");
+            }
             List<Document> list = documentRead.read(part.getInputStream(), part.getSubmittedFileName());
             vectorStore.add(list);
 
