@@ -7,11 +7,11 @@ import java.util.List;
 
 public interface IDocumentRead {
 
-    public List<FileInfo> list();
+    List<FileInfo> list();
 
-    public FileInfo get(String id);
+    FileInfo get(String id);
 
-    public List<Document> read(InputStream is, String fileName);
+    List<Document> read(InputStream is, String fileName);
 
-    public void delete(String id);
+    void delete(String id);
 }

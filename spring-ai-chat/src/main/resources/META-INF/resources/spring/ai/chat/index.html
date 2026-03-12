@@ -349,6 +349,9 @@
             <button class="toolbar-btn" onclick="clearChat()">
                 🗅清空对话
             </button>
+            <button class="toolbar-btn" id="tools-button" onclick="openToolsModal()">
+                🔧工具选择
+            </button>
             <button class="toolbar-btn" id="file-input-button" onclick="toggleFileUpload()">
                 📄上传文件
                 <input type="file" id="file-input" accept="*/*">
@@ -386,6 +389,19 @@
             </div>
         </div>
     </div>
+    <div id="tools-modal-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>工具选择</h3>
+                <span class="close-button" onclick="closeToolsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="tools-list">
+                    <!-- 工具列表将通过 JS 动态填充 -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script>
     let conversationId = Math.random().toString(12);
@@ -400,8 +416,11 @@
     let answerText = "";
     let modalOverlay = null;
     let tableBody = null;
+    let toolsModalOverlay = null;
+    let toolsList = null;
+    let selectedTools = [];
 
-    document.addEventListener('DOMContentLoaded', (event) => {
+    document.addEventListener('DOMContentLoaded', () => {
         fetch('/spring/ai/chat/upload')
             .then(response => {
                 if (!response.ok) {
@@ -418,6 +437,24 @@
             .catch(_ => {
                 console.debug("不开启上传按钮")
             })
+
+        fetch('/spring/ai/chat/tools')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json()
+            })
+            .then(data => {
+                console.log('工具列表:', data)
+                if (data && data.length > 0) {
+                    document.getElementById('tools-button').style.display = 'block';
+                }
+            })
+            .catch(_ => {
+                console.debug("不显示工具按钮")
+            })
+
     })
 
     textarea.addEventListener('keydown', (event) => {
@@ -501,10 +538,14 @@
         buildBotMessage(id)
         answerTextContent = document.getElementById(id)
 
+        // 获取已选择的工具名称数组
+        const selectedToolNames = selectedTools;
+        console.log('当前选择的工具:', selectedToolNames);
+
         fetch('/spring/ai/chat/stream', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({message: text, conversationId: conversationId}),
+            body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames}),
         })
             .then(response => {
                 if (!response.ok) {
@@ -627,6 +668,114 @@
         });
     });
 
+    // 初始化工具模态框
+    document.addEventListener('DOMContentLoaded', (event) => {
+        toolsModalOverlay = document.getElementById('tools-modal-overlay');
+        toolsList = document.getElementById('tools-list');
+
+        // 点击遮罩层关闭模态框
+        toolsModalOverlay.addEventListener('click', function (event) {
+            if (event.target === toolsModalOverlay) {
+                closeToolsModal();
+            }
+        });
+    });
+
+    function openToolsModal() {
+        toolsModalOverlay.style.display = 'flex';
+        loadTools();
+    }
+
+    function closeToolsModal() {
+        toolsModalOverlay.style.display = 'none';
+    }
+
+    function loadTools() {
+        toolsList.innerHTML = '';
+
+        const loadingDiv = document.createElement('div');
+        loadingDiv.textContent = '加载中...';
+        loadingDiv.style.padding = '20px';
+        loadingDiv.style.textAlign = 'center';
+        toolsList.appendChild(loadingDiv);
+
+        fetch('/spring/ai/chat/tools')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                toolsList.innerHTML = '';
+
+                if (data && data.length > 0) {
+                    data.forEach(tool => {
+                        const toolDiv = document.createElement('div');
+                        toolDiv.style.cssText = 'padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: space-between;';
+
+                        const checkboxLabel = document.createElement('label');
+                        checkboxLabel.style.cssText = 'display: flex; align-items: center; cursor: pointer; flex: 1;';
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = tool.name;
+                        checkbox.checked = selectedTools.includes(tool.name);
+                        checkbox.style.cssText = 'margin-right: 10px; width: 18px; height: 18px; cursor: pointer;';
+
+                        checkbox.addEventListener('change', (e) => {
+                            if (e.target.checked) {
+                                selectedTools.push(tool.name);
+                            } else {
+                                selectedTools = selectedTools.filter(t => t !== tool.name);
+                            }
+                        });
+
+                        const toolInfo = document.createElement('div');
+                        toolInfo.style.cssText = 'flex: 1;';
+
+                        const toolName = document.createElement('strong');
+                        toolName.textContent = tool.title || tool.name;
+                        toolName.style.cssText = 'display: block; margin-bottom: 4px; font-size: 14px;';
+
+                        const toolDesc = document.createElement('span');
+                        toolDesc.textContent = `${tool.name} (v${tool.version})`;
+                        toolDesc.style.cssText = 'color: #666; font-size: 12px;';
+
+                        toolInfo.appendChild(toolName);
+                        toolInfo.appendChild(toolDesc);
+
+                        checkboxLabel.appendChild(checkbox);
+                        checkboxLabel.appendChild(toolInfo);
+
+                        toolDiv.appendChild(checkboxLabel);
+                        toolsList.appendChild(toolDiv);
+                    });
+
+                    // 添加保存按钮
+                    const saveDiv = document.createElement('div');
+                    saveDiv.style.cssText = 'padding: 12px; margin-top: 16px; text-align: right; border-top: 1px solid #ddd;';
+
+                    const saveBtn = document.createElement('button');
+                    saveBtn.textContent = '保存';
+                    saveBtn.style.cssText = 'padding: 8px 24px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;';
+                    saveBtn.onclick = () => {
+                        showToast(`已选择 ${selectedTools.length} 个工具`, 'success');
+                        closeToolsModal();
+                    };
+
+                    saveDiv.appendChild(saveBtn);
+                    toolsList.appendChild(saveDiv);
+                } else {
+                    toolsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无可用工具</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading tools:', error);
+                toolsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">加载失败，请稍后重试</div>';
+            });
+    }
+
     function openModal() {
         modalOverlay.style.display = 'flex';
         loadKnowledgeData();
@@ -723,7 +872,7 @@
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
     function formatDate(dateString) {

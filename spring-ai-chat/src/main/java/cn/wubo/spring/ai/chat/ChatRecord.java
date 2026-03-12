@@ -1,4 +1,6 @@
 package cn.wubo.spring.ai.chat;
 
-public record ChatRecord(String message, String conversationId) {
+import java.util.List;
+
+public record ChatRecord(String message, String conversationId, List<String> tools) {
 }
