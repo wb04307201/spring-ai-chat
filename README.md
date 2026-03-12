@@ -1,10 +1,10 @@
-# Spring AI Chat —— Spring AI Chat Interface
+# Spring AI Chat
 
 <div align="right">
-  <a href="README.zh-CN.md">中文</a> | English
+  English | <a href="README.zh-CN.md">中文</a>
 </div>
 
-> Quickly add a chat interface to your Spring AI.
+> Quickly add a chat interface for your Spring AI application.
 
 [![](https://jitpack.io/v/com.gitee.wb04307201/spring-ai-chat.svg)](https://jitpack.io/#com.gitee.wb04307201/spring-ai-chat)
 [![star](https://gitee.com/wb04307201/spring-ai-chat/badge/star.svg?theme=dark)](https://gitee.com/wb04307201/spring-ai-chat)
@@ -19,9 +19,9 @@
 - 🛠 MCP Support
 - ⚙️ Auto Configuration
 
-## Adding Chat Interface
-### Adding Spring AI Dependencies
-Below is an example using Zhipu AI to add dependencies:
+## Add Chat Interface
+### Add Spring AI Dependencies
+Taking Zhipu AI as an example, add the dependency:
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -36,7 +36,7 @@ spring:
       api-key: ${ZHIPUAI_API_KEY}
 ```
 
-### Introducing Chat Dependencies
+### Add Chat UI Dependency
 Add JitPack repository:
 ```xml
 <repositories>
@@ -46,20 +46,20 @@ Add JitPack repository:
     </repository>
 </repositories>
 ```
-Introduce dependency:
+Add dependency:
 ```xml
 <dependency>
     <groupId>com.github.wb04307201.spring-ai-chat</groupId>
     <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-    <version>1.1.3</version>
+    <version>1.1.4</version>
 </dependency>
 ```
 
 Start the project and visit `http://localhost:8080/spring/ai/chat`
 ![img.png](img.png)
 
-## Supporting RAG
-Below is an example using Redis and Tika to add dependencies:
+## RAG Support
+Taking Redis and Tika as examples, add dependencies:
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -88,13 +88,13 @@ spring:
 ```
 
 Implement the [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java) interface  
-For example [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
+For example: [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
 
 Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ![img_1.png](img_1.png)
-Upload file and knowledge base buttons appear
+The upload file and knowledge base buttons will appear.
 
-RAG configuration is as follows:
+RAG configuration:
 ```yaml
 spring:
   ai:
@@ -102,7 +102,7 @@ spring:
       ui:
         rag:
           similarityThreshold: 0.50   # Similarity threshold, default 0.0
-          top-k: 4                    # top-k, default 4
+          top-k: 4                    # Top-k, default 4
           defaultPromptTemplate: |
             Context information is below.
 
@@ -125,7 +125,7 @@ spring:
             Politely inform the user that you can't answer it.
 ```
 
-## Supporting MCP Services
+## MCP Support
 Taking the time MCP service as an example, add dependencies:
 ```xml
 <dependency>
@@ -147,4 +147,9 @@ spring:
 [mcp-servers.json](spring-ai-chat-test/src/main/resources/mcp-servers.json)
 
 Restart the project and visit `http://localhost:8080/spring/ai/chat`
+```text
+1. What is the current time?
+2. Get content from https://www.163.com/
+3. Open browser and visit https://www.baidu.com/
+```
 ![img_2.png](img_2.png)

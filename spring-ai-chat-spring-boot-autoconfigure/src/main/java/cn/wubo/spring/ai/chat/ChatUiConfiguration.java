@@ -16,6 +16,7 @@ import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -36,6 +37,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -89,18 +91,8 @@ public class ChatUiConfiguration {
     @ConditionalOnMissingBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, ChatUiProperties properties) {
+    public ChatClient chatClient(ChatModel chatModel, ChatUiProperties properties) {
         ChatClient.Builder builder = ChatClient.builder(chatModel);
-        if (!mcpSyncClients.isEmpty()) {
-            builder.defaultToolCallbacks(
-                    SyncMcpToolCallbackProvider.builder().mcpClients(mcpSyncClients).build()
-            );
-        }
-        if (!mcpAsyncClients.isEmpty()) {
-            builder.defaultToolCallbacks(
-                    AsyncMcpToolCallbackProvider.builder().mcpClients(mcpAsyncClients).build()
-            );
-        }
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
@@ -113,18 +105,8 @@ public class ChatUiConfiguration {
     @ConditionalOnBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClientVectorStore(ChatModel chatModel, VectorStore vectorStore, List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, ChatUiProperties properties) {
+    public ChatClient chatClientVectorStore(ChatModel chatModel, VectorStore vectorStore, ChatUiProperties properties) {
         ChatClient.Builder builder = ChatClient.builder(chatModel);
-        if (!mcpSyncClients.isEmpty()) {
-            builder.defaultToolCallbacks(
-                    SyncMcpToolCallbackProvider.builder().mcpClients(mcpSyncClients).build()
-            );
-        }
-        if (!mcpAsyncClients.isEmpty()) {
-            builder.defaultToolCallbacks(
-                    AsyncMcpToolCallbackProvider.builder().mcpClients(mcpAsyncClients).build()
-            );
-        }
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
@@ -156,9 +138,19 @@ public class ChatUiConfiguration {
     }
 
     @Bean("wb04307201ChatUiRouter")
-    public RouterFunction<ServerResponse> chatUiRouter() {
+    public RouterFunction<ServerResponse> chatUiRouter(List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients) {
         RouterFunctions.Builder builder = RouterFunctions.route();
         builder.GET("spring/ai/chat", request -> ServerResponse.temporaryRedirect(URI.create("/spring/ai/chat/index.html")).build());
+        builder.GET("spring/ai/chat/tools", request -> {
+            if (!mcpSyncClients.isEmpty()) {
+                return ServerResponse.ok().body(mcpSyncClients.stream().map(McpSyncClient::getClientInfo));
+            }
+            if (!mcpAsyncClients.isEmpty()) {
+                return ServerResponse.ok().body(mcpAsyncClients.stream().map(McpAsyncClient::getClientInfo));
+            }
+            return ServerResponse.ok().body(new ArrayList<>());
+
+        });
         return builder.build();
     }
 
@@ -168,9 +160,13 @@ public class ChatUiConfiguration {
     public static class SseController {
 
         private final ChatClient chatClient;
+        private final List<McpSyncClient> mcpSyncClients;
+        private final List<McpAsyncClient> mcpAsyncClients;
 
-        public SseController(ChatClient chatClient) {
+        public SseController(ChatClient chatClient, List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients) {
             this.chatClient = chatClient;
+            this.mcpSyncClients = mcpSyncClients;
+            this.mcpAsyncClients = mcpAsyncClients;
         }
 
         @PostMapping(value = "/spring/ai/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -186,12 +182,30 @@ public class ChatUiConfiguration {
             emitter.onCompletion(() -> log.debug("SSE 链接完成"));
             emitter.onError(e -> log.debug("SSE 链接错误：{}", e.getMessage()));
 
+
             // 3. 在异步线程中处理 AI 请求，避免阻塞 Tomcat 线程
             CompletableFuture.runAsync(() -> {
                 try {
                     // 4. 订阅 Flux 流并将数据发送给 emitter
-                    chatClient.prompt()
-                            .user(chatRecord.message())
+                    ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt().user(chatRecord.message());
+
+                    ToolCallbackProvider toolCallbackProvider = null;
+                    if (!mcpSyncClients.isEmpty()) {
+                        toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(
+                                mcpSyncClients.stream().filter(mcpSyncClient -> chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())).toList()
+                        ).build();
+                    }
+                    if (!mcpAsyncClients.isEmpty()) {
+                        toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(
+                                mcpAsyncClients.stream().filter(mcpAsyncClient -> chatRecord.tools().contains(mcpAsyncClient.getClientInfo().name())).toList()
+                        ).build();
+                    }
+
+                    if (toolCallbackProvider != null) {
+                        requestSpec.toolCallbacks(toolCallbackProvider);
+                    }
+
+                    requestSpec
                             .stream()
                             .content()
                             .subscribe(

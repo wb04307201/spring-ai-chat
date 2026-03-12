@@ -51,7 +51,7 @@ spring:
 <dependency>
     <groupId>com.github.wb04307201.spring-ai-chat</groupId>
     <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-    <version>1.1.3</version>
+    <version>1.1.4</version>
 </dependency>
 ```
 
@@ -147,38 +147,9 @@ spring:
 [mcp-servers.json](spring-ai-chat-test/src/main/resources/mcp-servers.json)
 
 重启项目 访问`http://localhost:8080/spring/ai/chat`
+```text
+1. 现在的时间
+2. 获取https://www.163.com/内容
+3. 打开浏览器，访问https://www.baidu.com/
+```
 ![img_2.png](img_2.png)
-
-## 递归工具调用顾问
-
-该库提供了一个递归工具调用顾问，它禁用内部工具执行流程，将工具调用循环作为顾问链的一部分来实现：
-
-```java
-@Configuration
-public class ChatConfig {
-    
-    @Bean
-    public RecursiveToolCallAdvisor recursiveToolCallAdvisor(
-            ChatModel chatModel, 
-            FunctionCallbackContext functionCallbackContext) {
-        return new RecursiveToolCallAdvisor(chatModel, functionCallbackContext, 5);
-    }
-}
-```
-
-配置：
-```yaml
-spring:
-  ai:
-    chat:
-      ui:
-        recursive-advisor:
-          enabled: true
-          max-iterations: 5
-          tool-timeout-ms: 30000
-          enable-tool-cache: true
-```
-
-这样可以允许链中的其他顾问拦截工具调用循环。
-
-
