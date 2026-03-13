@@ -51,7 +51,7 @@ spring:
 <dependency>
     <groupId>com.github.wb04307201.spring-ai-chat</groupId>
     <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 
@@ -149,7 +149,10 @@ spring:
 重启项目 访问`http://localhost:8080/spring/ai/chat`
 ```text
 1. 现在的时间
-2. 获取https://www.163.com/内容
-3. 打开浏览器，访问https://www.baidu.com/
+2. 获取`https://www.163.com/`网页内容
+3. 从上一步的网页内容中随机选取获取一条新闻
+4. 打开浏览器，访问`https://www.baidu.com/`地址
+5. 在搜索框输入步骤3的新闻，并并点击搜索
 ```
 ![img_2.png](img_2.png)
+![img_3.png](img_3.png)

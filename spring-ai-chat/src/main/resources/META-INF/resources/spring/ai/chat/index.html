@@ -230,13 +230,16 @@
             transition: opacity 0.5s, visibility 0.5s;
             z-index: 1000;
         }
+
         #toast-notification.show {
             opacity: 1;
             visibility: visible;
         }
+
         #toast-notification.success {
             background-color: #28a745;
         }
+
         #toast-notification.error {
             background-color: #dc3545;
         }
@@ -403,7 +406,9 @@
         </div>
     </div>
 </div>
-<script>
+<script type="module">
+    import {createParser} from "/eventsource-parser@3.0.6/dist/index.js";
+
     let conversationId = Math.random().toString(12);
     let mainContent = document.getElementById('mainContent');
     let textarea = document.getElementById('textarea');
@@ -419,6 +424,18 @@
     let toolsModalOverlay = null;
     let toolsList = null;
     let selectedTools = [];
+
+    // 将函数挂载到 window 对象使其全局可访问
+    window.send = send;
+    window.clearChat = clearChat;
+    window.toggleFileUpload = toggleFileUpload;
+    window.handleFileUpload = handleFileUpload;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.openToolsModal = openToolsModal;
+    window.closeToolsModal = closeToolsModal;
+    window.loadKnowledgeData = loadKnowledgeData;
+    window.deleteDocument = deleteDocument;
 
     document.addEventListener('DOMContentLoaded', () => {
         fetch('/spring/ai/chat/upload')
@@ -523,7 +540,7 @@
         const id = Date.now();
         let text = textarea.value.trim();
         if (!text) {
-            buildBotMessage(id)
+            buildUserMessage(id)
             answerTextContent = document.getElementById(id)
             answerTextContent.textContent = answerTextContent.textContent + "抱歉，请输入内容。";
             scrollToBottom();
@@ -544,57 +561,54 @@
 
         fetch('/spring/ai/chat/stream', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream'
+            },
             body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames}),
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.body;
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.body;
-            })
             .then(body => {
                 const reader = body.getReader();
+                const decoder = new TextDecoder();
+                const parser = createParser({
+                    onEvent: (event) => {
+                        answerText += event.data;
+                        answerTextContent.innerHTML = marked.parse(answerText);
+                        scrollToBottom();
+                    }
+                });
 
-                // 读取数据流
                 function read() {
                     return reader.read().then(({done, value}) => {
-                        // 检查是否读取完毕
                         if (done) {
-                            console.log("接收完成")
+                            console.log("接收完成");
                             enableSendBtn();
                             answerTextContent = null;
                             answerText = "";
                             return;
                         }
-                        // 处理每个数据块
-                        let context = new TextDecoder('utf-8').decode(value);
-                        context = context.split('\n')
-                            .filter(line => line.trim())
-                            .map(line => line.replace(/^data:\s*/, ''))
-                            .join('\n')
-                            .trim();
-                        // console.log('收到的数据:', context);
 
-                        answerText += context;
-                        answerTextContent.innerHTML = marked.parse(answerText);
-                        scrollToBottom();
+                        const chunk = decoder.decode(value, { stream: true });
+                        // console.log("接收数据:", chunk);
+                        parser.feed(chunk)
 
-                        // 继续读取下一个数据块
                         read();
                     });
                 }
 
-                // 开始读取数据流
                 read();
             })
-
             .catch(error => {
-                answerTextContent.textContent = answerTextContent.textContent + "抱歉，发送消息失败。";
+                answerTextContent.textContent = answerTextContent.textContent + " 抱歉，发送消息失败。";
                 scrollToBottom();
                 answerTextContent = null;
                 console.error('There has been a problem with your fetch operation:', error);
-                enableSendBtn()
+                enableSendBtn();
             });
     }
 
@@ -625,18 +639,18 @@
             }
             return response.json();
         }).then(data => {
-            if (data){
+            if (data) {
                 showToast(`文档 "${file.name}" 上传成功！`, 'success');
             }
-        }).catch( error =>{
+        }).catch(error => {
             console.error('There has been a problem with your fetch operation:', error);
             showToast('上传失败，请检查网络或联系管理员。', 'error');
         })
     }
 
-    fileInput.addEventListener('change', handleFileUpload);
+    fileInput.addEventListener('change', window.handleFileUpload);
 
-    // 在DOMContentLoaded事件中初始化模态框相关元素
+    // 在 DOMContentLoaded 事件中初始化模态框相关元素
     document.addEventListener('DOMContentLoaded', (event) => {
         // 初始化模态框元素
         modalOverlay = document.getElementById('modal-overlay');
@@ -661,7 +675,7 @@
             });
 
         // 点击遮罩层关闭模态框
-        modalOverlay.addEventListener('click', function(event) {
+        modalOverlay.addEventListener('click', function (event) {
             if (event.target === modalOverlay) {
                 closeModal();
             }
@@ -803,7 +817,7 @@
                 return response.json();
             })
             .then(data => {
-                console.debug('data',data)
+                console.debug('data', data)
 
                 // 清除加载行
                 tableBody.innerHTML = '';

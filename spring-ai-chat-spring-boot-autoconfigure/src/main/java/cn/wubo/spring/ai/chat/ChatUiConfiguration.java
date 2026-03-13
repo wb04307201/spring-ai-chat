@@ -191,14 +191,30 @@ public class ChatUiConfiguration {
 
                     ToolCallbackProvider toolCallbackProvider = null;
                     if (!mcpSyncClients.isEmpty()) {
-                        toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(
-                                mcpSyncClients.stream().filter(mcpSyncClient -> chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())).toList()
-                        ).build();
+                        List<McpSyncClient> tempMcpSyncClients = new ArrayList<>();
+                        for (McpSyncClient mcpSyncClient : mcpSyncClients) {
+                            if (chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())) {
+                                if (mcpSyncClient.isInitialized())
+                                    tempMcpSyncClients.add(mcpSyncClient);
+                                else
+                                    log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().name());
+                            }
+                        }
+                        if (!tempMcpSyncClients.isEmpty())
+                            toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(tempMcpSyncClients).build();
                     }
                     if (!mcpAsyncClients.isEmpty()) {
-                        toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(
-                                mcpAsyncClients.stream().filter(mcpAsyncClient -> chatRecord.tools().contains(mcpAsyncClient.getClientInfo().name())).toList()
-                        ).build();
+                        List<McpAsyncClient> tempMcpAsyncClients = new ArrayList<>();
+                        for (McpAsyncClient mcpAsyncClient : mcpAsyncClients) {
+                            if (chatRecord.tools().contains(mcpAsyncClient.getClientInfo().name())) {
+                                if (mcpAsyncClient.isInitialized())
+                                    tempMcpAsyncClients.add(mcpAsyncClient);
+                                else
+                                    log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().name());
+                            }
+                        }
+                        if (!tempMcpAsyncClients.isEmpty())
+                            toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(tempMcpAsyncClients).build();
                     }
 
                     if (toolCallbackProvider != null) {

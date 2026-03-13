@@ -1,10 +1,10 @@
 # Spring AI Chat
 
 <div align="right">
-  English | <a href="README.zh-CN.md">中文</a>
+  <a href="README.zh-CN.md">中文</a> | English
 </div>
 
-> Quickly add a chat interface for your Spring AI application.
+> Quickly add a chat interface to your Spring AI application.
 
 [![](https://jitpack.io/v/com.gitee.wb04307201/spring-ai-chat.svg)](https://jitpack.io/#com.gitee.wb04307201/spring-ai-chat)
 [![star](https://gitee.com/wb04307201/spring-ai-chat/badge/star.svg?theme=dark)](https://gitee.com/wb04307201/spring-ai-chat)
@@ -36,7 +36,7 @@ spring:
       api-key: ${ZHIPUAI_API_KEY}
 ```
 
-### Add Chat UI Dependency
+### Add Chat Dependency
 Add JitPack repository:
 ```xml
 <repositories>
@@ -46,12 +46,12 @@ Add JitPack repository:
     </repository>
 </repositories>
 ```
-Add dependency:
+Add the dependency:
 ```xml
 <dependency>
     <groupId>com.github.wb04307201.spring-ai-chat</groupId>
     <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 
@@ -102,7 +102,7 @@ spring:
       ui:
         rag:
           similarityThreshold: 0.50   # Similarity threshold, default 0.0
-          top-k: 4                    # Top-k, default 4
+          top-k: 4                    # top-k, default 4
           defaultPromptTemplate: |
             Context information is below.
 
@@ -148,8 +148,11 @@ spring:
 
 Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ```text
-1. What is the current time?
-2. Get content from https://www.163.com/
-3. Open browser and visit https://www.baidu.com/
+1. Current time
+2. Get content from `https://www.163.com/` webpage
+3. Randomly select a news item from the webpage content obtained in the previous step
+4. Open browser and visit `https://www.baidu.com/`
+5. Enter the news from step 3 in the search box and click search
 ```
 ![img_2.png](img_2.png)
+![img_3.png](img_3.png)
