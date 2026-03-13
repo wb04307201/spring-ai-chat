@@ -191,8 +191,7 @@ public class ChatUiConfiguration {
 
                     ToolCallbackProvider toolCallbackProvider = null;
                     if (!mcpSyncClients.isEmpty()) {
-                        toolCallbackProvider = SyncMcpToolCallbackProvider.builder()
-                                .mcpClients(
+                        toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(
                                 mcpSyncClients.stream().filter(mcpSyncClient -> chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())).toList()
                         ).build();
                     }

@@ -230,13 +230,16 @@
             transition: opacity 0.5s, visibility 0.5s;
             z-index: 1000;
         }
+
         #toast-notification.show {
             opacity: 1;
             visibility: visible;
         }
+
         #toast-notification.success {
             background-color: #28a745;
         }
+
         #toast-notification.error {
             background-color: #dc3545;
         }
@@ -523,7 +526,7 @@
         const id = Date.now();
         let text = textarea.value.trim();
         if (!text) {
-            buildBotMessage(id)
+            buildUserMessage(id)
             answerTextContent = document.getElementById(id)
             answerTextContent.textContent = answerTextContent.textContent + "抱歉，请输入内容。";
             scrollToBottom();
@@ -542,58 +545,72 @@
         const selectedToolNames = selectedTools;
         console.log('当前选择的工具:', selectedToolNames);
 
+        let buffer = '';
+
         fetch('/spring/ai/chat/stream', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream'
+            },
             body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames}),
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.body;
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.body;
-            })
             .then(body => {
                 const reader = body.getReader();
+                const decoder = new TextDecoder();
 
-                // 读取数据流
                 function read() {
                     return reader.read().then(({done, value}) => {
-                        // 检查是否读取完毕
                         if (done) {
-                            console.log("接收完成")
+                            console.log("接收完成");
                             enableSendBtn();
                             answerTextContent = null;
                             answerText = "";
                             return;
                         }
-                        // 处理每个数据块
-                        let context = new TextDecoder('utf-8').decode(value);
-                        context = context.split('\n')
-                            .filter(line => line.length > 0)
-                            .map(line => line.replace(/^data:\s*/, ''))
-                            .join('\n');
-                        // console.log('收到的数据:', context);
 
-                        answerText += context;
-                        answerTextContent.innerHTML = marked.parse(answerText);
-                        scrollToBottom();
+                        const chunk = decoder.decode(value, { stream: true });
+                        console.log("接收数据:", chunk);
 
-                        // 继续读取下一个数据块
+                        buffer += chunk;
+
+                        const messages = buffer.split('\n\n');
+                        buffer = messages.pop() || '';
+
+                        for (const message of messages) {
+                            const lines = message.split('\n');
+                            for (const line of lines) {
+                                if (line.startsWith('data:')) {
+                                    const data = line.substring(5).trim();
+                                    if (data) {
+                                        answerText += data;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (answerText) {
+                            answerTextContent.innerHTML = marked.parse(answerText);
+                            scrollToBottom();
+                        }
+
                         read();
                     });
                 }
 
-                // 开始读取数据流
                 read();
             })
-
             .catch(error => {
-                answerTextContent.textContent = answerTextContent.textContent + "抱歉，发送消息失败。";
+                answerTextContent.textContent = answerTextContent.textContent + " 抱歉，发送消息失败。";
                 scrollToBottom();
                 answerTextContent = null;
                 console.error('There has been a problem with your fetch operation:', error);
-                enableSendBtn()
+                enableSendBtn();
             });
     }
 
@@ -624,10 +641,10 @@
             }
             return response.json();
         }).then(data => {
-            if (data){
+            if (data) {
                 showToast(`文档 "${file.name}" 上传成功！`, 'success');
             }
-        }).catch( error =>{
+        }).catch(error => {
             console.error('There has been a problem with your fetch operation:', error);
             showToast('上传失败，请检查网络或联系管理员。', 'error');
         })
@@ -660,7 +677,7 @@
             });
 
         // 点击遮罩层关闭模态框
-        modalOverlay.addEventListener('click', function(event) {
+        modalOverlay.addEventListener('click', function (event) {
             if (event.target === modalOverlay) {
                 closeModal();
             }
@@ -802,7 +819,7 @@
                 return response.json();
             })
             .then(data => {
-                console.debug('data',data)
+                console.debug('data', data)
 
                 // 清除加载行
                 tableBody.innerHTML = '';
