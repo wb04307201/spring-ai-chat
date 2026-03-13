@@ -7,6 +7,15 @@ spring:
           model: glm-4.6
           thinking:
             type: enabled
+    openai:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-plus
+      embedding:
+        options:
+          model: text-embedding-v2
 #    ollama:
 #      chat:
 #        options:
@@ -23,7 +32,8 @@ spring:
       qdrant:
         host: localhost
         port: 6334
-        collection-name: custom-collection-name
+#        collection-name: custom-collection-name
+        collection-name: qwen-collection-name
     mcp:
       client:
         stdio:

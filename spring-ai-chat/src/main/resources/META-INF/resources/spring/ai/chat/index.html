@@ -570,10 +570,9 @@
                         // 处理每个数据块
                         let context = new TextDecoder('utf-8').decode(value);
                         context = context.split('\n')
-                            .filter(line => line.trim())
+                            .filter(line => line.length > 0)
                             .map(line => line.replace(/^data:\s*/, ''))
-                            .join('\n')
-                            .trim();
+                            .join('\n');
                         // console.log('收到的数据:', context);
 
                         answerText += context;

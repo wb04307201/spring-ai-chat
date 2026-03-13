@@ -149,7 +149,7 @@ spring:
 重启项目 访问`http://localhost:8080/spring/ai/chat`
 ```text
 1. 现在的时间
-2. 获取https://www.163.com/内容
-3. 打开浏览器，访问https://www.baidu.com/
+2. 获取`https://www.163.com/`网页内容
+3. 打开浏览器，访问`https://www.baidu.com/`地址
 ```
 ![img_2.png](img_2.png)
