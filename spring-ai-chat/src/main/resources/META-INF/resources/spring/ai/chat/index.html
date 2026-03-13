@@ -406,7 +406,9 @@
         </div>
     </div>
 </div>
-<script>
+<script type="module">
+    import {createParser} from "/eventsource-parser@3.0.6/dist/index.js";
+
     let conversationId = Math.random().toString(12);
     let mainContent = document.getElementById('mainContent');
     let textarea = document.getElementById('textarea');
@@ -422,6 +424,18 @@
     let toolsModalOverlay = null;
     let toolsList = null;
     let selectedTools = [];
+
+    // 将函数挂载到 window 对象使其全局可访问
+    window.send = send;
+    window.clearChat = clearChat;
+    window.toggleFileUpload = toggleFileUpload;
+    window.handleFileUpload = handleFileUpload;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.openToolsModal = openToolsModal;
+    window.closeToolsModal = closeToolsModal;
+    window.loadKnowledgeData = loadKnowledgeData;
+    window.deleteDocument = deleteDocument;
 
     document.addEventListener('DOMContentLoaded', () => {
         fetch('/spring/ai/chat/upload')
@@ -545,8 +559,6 @@
         const selectedToolNames = selectedTools;
         console.log('当前选择的工具:', selectedToolNames);
 
-        let buffer = '';
-
         fetch('/spring/ai/chat/stream', {
             method: 'POST',
             headers: {
@@ -563,6 +575,13 @@
             .then(body => {
                 const reader = body.getReader();
                 const decoder = new TextDecoder();
+                const parser = createParser({
+                    onEvent: (event) => {
+                        answerText += event.data;
+                        answerTextContent.innerHTML = marked.parse(answerText);
+                        scrollToBottom();
+                    }
+                });
 
                 function read() {
                     return reader.read().then(({done, value}) => {
@@ -575,29 +594,8 @@
                         }
 
                         const chunk = decoder.decode(value, { stream: true });
-                        console.log("接收数据:", chunk);
-
-                        buffer += chunk;
-
-                        const messages = buffer.split('\n\n');
-                        buffer = messages.pop() || '';
-
-                        for (const message of messages) {
-                            const lines = message.split('\n');
-                            for (const line of lines) {
-                                if (line.startsWith('data:')) {
-                                    const data = line.substring(5).trim();
-                                    if (data) {
-                                        answerText += data;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (answerText) {
-                            answerTextContent.innerHTML = marked.parse(answerText);
-                            scrollToBottom();
-                        }
+                        // console.log("接收数据:", chunk);
+                        parser.feed(chunk)
 
                         read();
                     });
@@ -650,9 +648,9 @@
         })
     }
 
-    fileInput.addEventListener('change', handleFileUpload);
+    fileInput.addEventListener('change', window.handleFileUpload);
 
-    // 在DOMContentLoaded事件中初始化模态框相关元素
+    // 在 DOMContentLoaded 事件中初始化模态框相关元素
     document.addEventListener('DOMContentLoaded', (event) => {
         // 初始化模态框元素
         modalOverlay = document.getElementById('modal-overlay');

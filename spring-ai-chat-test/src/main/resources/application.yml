@@ -7,8 +7,7 @@ spring:
           model: glm-4.6
           thinking:
             type: enabled
-    openai:
-      base-url: https://dashscope.aliyuncs.com/compatible-mode
+    dashscope:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
         options:
