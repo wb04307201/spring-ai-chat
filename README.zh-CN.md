@@ -46,7 +46,7 @@
 </dependencyManagement>
 <dependencies>
     <dependency>
-        <groupId>com.github.wb04307201.spring-ai-chat</groupId>
+        <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
         <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
         <version>1.1.7</version>
     </dependency>
