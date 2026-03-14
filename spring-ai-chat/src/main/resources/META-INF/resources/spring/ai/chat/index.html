@@ -577,7 +577,8 @@
                 const decoder = new TextDecoder();
                 const parser = createParser({
                     onEvent: (event) => {
-                        answerText += event.data;
+                        console.log('接收事件:', event);
+                        answerText += JSON.parse(event.data).message;
                         answerTextContent.innerHTML = marked.parse(answerText);
                         scrollToBottom();
                     }
@@ -594,7 +595,7 @@
                         }
 
                         const chunk = decoder.decode(value, { stream: true });
-                        // console.log("接收数据:", chunk);
+                        console.log("接收数据:", chunk);
                         parser.feed(chunk)
 
                         read();

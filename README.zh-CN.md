@@ -19,24 +19,9 @@
 - 🛠 MCP支持
 - ⚙️ 自动配置
 
-## 添加聊天界面
-### 添加Spring AI依赖
-下面以Zhipu AI为例，添加依赖：
-```xml
-<dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-starter-model-zhipuai</artifactId>
-</dependency>
-```
-添加配置：
-```yaml
-spring:
-  ai:
-    zhipuai:
-      api-key: ${ZHIPUAI_API_KEY}
-```
-
-### 引入聊天依赖
+## 快速添加聊天界面
+下面以Zhipu AI为例进行说明，可以按需替换成其它大语言模型：
+### 1.引入聊天依赖
 增加 JitPack 仓库：
 ```xml
 <repositories>
@@ -48,14 +33,44 @@ spring:
 ```
 引入依赖；
 ```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-bom</artifactId>
+            <version>1.1.2</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+<dependencies>
+    <dependency>
+        <groupId>com.github.wb04307201.spring-ai-chat</groupId>
+        <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
+        <version>1.1.6</version>
+    </dependency>
+</dependencies>
+```
+
+### 2. 添加Spring AI依赖
+```xml
 <dependency>
-    <groupId>com.github.wb04307201.spring-ai-chat</groupId>
-    <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-    <version>1.1.5</version>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-model-zhipuai</artifactId>
 </dependency>
 ```
 
-启动项目 访问`http://localhost:8080/spring/ai/chat`
+### 3. 添加配置
+```yaml
+spring:
+  ai:
+    zhipuai:
+      api-key: ${ZHIPUAI_API_KEY}
+```
+
+### 4. 启动项目
+访问`http://localhost:8080/spring/ai/chat`
 ![img.png](img.png)
 
 ## 支持RAG
