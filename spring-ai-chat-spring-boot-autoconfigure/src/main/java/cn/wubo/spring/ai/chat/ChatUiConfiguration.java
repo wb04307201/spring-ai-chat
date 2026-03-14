@@ -227,7 +227,7 @@ public class ChatUiConfiguration {
                             .subscribe(
                                     content -> {
                                         try {
-                                            emitter.send(content, MediaType.TEXT_PLAIN);
+                                            emitter.send(new ChatResponse(content), MediaType.APPLICATION_JSON);
                                         } catch (IOException e) {
                                             emitter.completeWithError(e);
                                         }
