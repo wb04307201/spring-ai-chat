@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -187,7 +188,9 @@ public class ChatUiConfiguration {
             CompletableFuture.runAsync(() -> {
                 try {
                     // 4. 订阅 Flux 流并将数据发送给 emitter
-                    ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt().user(chatRecord.message());
+                    ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt()
+                            .user(chatRecord.message())
+                            .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatRecord.conversationId()));
 
                     ToolCallbackProvider toolCallbackProvider = null;
                     if (!mcpSyncClients.isEmpty()) {
