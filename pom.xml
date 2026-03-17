@@ -38,6 +38,7 @@
         <spring-boot.version>3.5.9</spring-boot.version>
         <spring-ai.version>1.1.2</spring-ai.version>
         <lombok.version>1.18.42</lombok.version>
+        <tst.version>1.0.1</tst.version>
     </properties>
 
     <dependencyManagement>
@@ -55,6 +56,16 @@
                 <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springaicommunity</groupId>
+                <artifactId>tool-search-tool</artifactId>
+                <version>${tst.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springaicommunity</groupId>
+                <artifactId>tool-searcher-lucene</artifactId>
+                <version>${tst.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>

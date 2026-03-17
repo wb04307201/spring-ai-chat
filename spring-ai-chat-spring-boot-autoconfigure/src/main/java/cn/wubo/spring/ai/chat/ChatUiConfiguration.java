@@ -4,6 +4,9 @@ import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import jakarta.servlet.http.Part;
 import lombok.extern.slf4j.Slf4j;
+import org.springaicommunity.tool.search.ToolSearchToolCallAdvisor;
+import org.springaicommunity.tool.search.ToolSearcher;
+import org.springaicommunity.tool.searcher.LuceneToolSearcher;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
@@ -89,15 +92,22 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ChatUiConfiguration {
 
+    @Bean
+    @ConditionalOnMissingBean(ToolSearcher.class)
+    ToolSearcher luceneToolSearcher() {
+        return new LuceneToolSearcher(0.4f);  // similarity threshold
+    }
+
     @ConditionalOnMissingBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, ChatUiProperties properties) {
+    public ChatClient chatClient(ChatModel chatModel, ToolSearcher toolSearcher, ChatUiProperties properties) {
         ChatClient.Builder builder = ChatClient.builder(chatModel);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
+                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 new SimpleLoggerAdvisor() // logger advisor
         );
         return builder.build();
@@ -106,12 +116,13 @@ public class ChatUiConfiguration {
     @ConditionalOnBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClientVectorStore(ChatModel chatModel, VectorStore vectorStore, ChatUiProperties properties) {
+    public ChatClient chatClientVectorStore(ChatModel chatModel, ToolSearcher toolSearcher, VectorStore vectorStore, ChatUiProperties properties) {
         ChatClient.Builder builder = ChatClient.builder(chatModel);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
+                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 RetrievalAugmentationAdvisor.builder()
                         .documentRetriever(VectorStoreDocumentRetriever.builder()
                                 .similarityThreshold(properties.getRag().getSimilarityThreshold())
