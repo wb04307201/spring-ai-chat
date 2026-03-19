@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package cn.wubo.weather;
+package cn.wubo.spring.ai.mcp.cn.weather;
 
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.transport.ServerParameters;
@@ -38,9 +38,19 @@ public class ClientStdio {
 
 	public static void main(String[] args) {
 
-		String projectRoot = System.getProperty("user.dir");
-		String jarPath = Paths.get(projectRoot, "target",
-				"weather-0.0.1-SNAPSHOT.jar").toString();
+		// 获取用户主目录或使用绝对路径
+		String userHome = System.getProperty("user.home");
+		String jarPath = Paths.get(userHome, "..", "developer", "IdeaProjects", "spring-ai-chat", "mcp", "weather", "target",
+				"weather-0.0.1-SNAPSHOT.jar").toAbsolutePath().toString();
+		
+		// 或者直接指定绝对路径 (根据你的实际路径调整)
+		// String jarPath = "D:\\developer\\IdeaProjects\\spring-ai-chat\\mcp\\weather\\target\\weather-0.0.1-SNAPSHOT.jar";
+		
+		System.out.println("Looking for JAR at: " + jarPath);
+		if (!java.nio.file.Files.exists(java.nio.file.Paths.get(jarPath))) {
+			System.err.println("ERROR: JAR file not found at: " + jarPath);
+			System.exit(1);
+		}
 
 		var stdioParams = ServerParameters.builder("java")
 				.args("-jar", jarPath)

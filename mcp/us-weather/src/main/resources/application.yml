@@ -5,10 +5,10 @@ spring:
   ai:
     mcp:
       server:
-        name: my-weather-server
+        name: us-weather-server
         version: 0.0.1
 logging:
   pattern:
     console:
   file:
-    name: ./target/mcp-weather.log
+    name: ./target/mcp-us-weather.log

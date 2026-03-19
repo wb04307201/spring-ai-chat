@@ -1,4 +1,4 @@
-package cn.wubo.weather;
+package cn.wubo.spring.ai.mcp.us.weather;
 
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;

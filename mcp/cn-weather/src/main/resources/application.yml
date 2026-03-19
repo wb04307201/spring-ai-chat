@@ -1,0 +1,14 @@
+spring:
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        name: cn-weather-server
+        version: 0.0.1
+logging:
+  pattern:
+    console:
+  file:
+    name: ./target/mcp-cn-weather.log
