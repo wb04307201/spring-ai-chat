@@ -18,6 +18,13 @@
         "mcp-server-fetch"
       ],
       "command": "uvx"
+    },
+    "weather": {
+      "args": [
+        "-jar",
+        "D:\\developer\\IdeaProjects\\spring-ai-chat\\mcp\\weather\\target\\weather-0.0.1-SNAPSHOT.jar"
+      ],
+      "command": "java"
     }
   }
 }
