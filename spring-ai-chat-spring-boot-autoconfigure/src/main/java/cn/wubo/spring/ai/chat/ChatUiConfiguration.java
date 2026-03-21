@@ -234,11 +234,12 @@ public class ChatUiConfiguration {
 
                     requestSpec
                             .stream()
-                            .content()
+                            .chatResponse()
                             .subscribe(
-                                    content -> {
+                                    chatResponse -> {
                                         try {
-                                            emitter.send(new ChatResponse(content), MediaType.APPLICATION_JSON);
+                                            String reasoningContent = (String) chatResponse.getResult().getOutput().getMetadata().get("reasoningContent");
+                                            emitter.send(new ChatResponse(chatResponse.getResult().getOutput().getText(), reasoningContent), MediaType.APPLICATION_JSON);
                                         } catch (IOException e) {
                                             emitter.completeWithError(e);
                                         }
