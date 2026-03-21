@@ -1,5 +1,12 @@
 {
   "mcpServers": {
+    "bing-search": {
+      "args": [
+        "-y",
+        "bing-cn-mcp"
+      ],
+      "command": "npx.cmd"
+    },
     "time": {
       "command": "uvx",
       "args": [
