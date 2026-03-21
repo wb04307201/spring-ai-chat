@@ -1,0 +1,14 @@
+spring:
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        name: us-weather-server
+        version: 0.0.1
+logging:
+  pattern:
+    console:
+  file:
+    name: ./target/mcp-us-weather.log

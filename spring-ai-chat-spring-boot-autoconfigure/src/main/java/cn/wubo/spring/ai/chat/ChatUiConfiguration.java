@@ -89,6 +89,12 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ChatUiConfiguration {
 
+//    @Bean
+//    @ConditionalOnMissingBean(ToolSearcher.class)
+//    ToolSearcher luceneToolSearcher() {
+//        return new LuceneToolSearcher(0.4f);  // similarity threshold
+//    }
+
     @ConditionalOnMissingBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
@@ -98,6 +104,7 @@ public class ChatUiConfiguration {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
+//                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 new SimpleLoggerAdvisor() // logger advisor
         );
         return builder.build();
@@ -112,6 +119,7 @@ public class ChatUiConfiguration {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
+//                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 RetrievalAugmentationAdvisor.builder()
                         .documentRetriever(VectorStoreDocumentRetriever.builder()
                                 .similarityThreshold(properties.getRag().getSimilarityThreshold())
@@ -226,11 +234,12 @@ public class ChatUiConfiguration {
 
                     requestSpec
                             .stream()
-                            .content()
+                            .chatResponse()
                             .subscribe(
-                                    content -> {
+                                    chatResponse -> {
                                         try {
-                                            emitter.send(new ChatResponse(content), MediaType.APPLICATION_JSON);
+                                            String reasoningContent = (String) chatResponse.getResult().getOutput().getMetadata().get("reasoningContent");
+                                            emitter.send(new ChatResponse(chatResponse.getResult().getOutput().getText(), reasoningContent), MediaType.APPLICATION_JSON);
                                         } catch (IOException e) {
                                             emitter.completeWithError(e);
                                         }

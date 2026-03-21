@@ -340,6 +340,81 @@
             background-color: #e9ecef;
         }
 
+        .thinking-container {
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            overflow: hidden;
+        }
+
+        .thinking-header {
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .thinking-header:hover {
+            background-color: #e8e8e8;
+        }
+
+        .thinking-title {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .thinking-arrow {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .thinking-arrow.expanded {
+            transform: rotate(90deg);
+        }
+
+        .thinking-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .thinking-content.expanded {
+            max-height: 500px;
+            overflow-y: auto;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .thinking-body {
+            padding: 16px;
+            font-size: 13px;
+            border-radius: 4px;
+            margin: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .thinking-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .thinking-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .thinking-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .thinking-body::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
     </style>
 </head>
 <body>
@@ -419,6 +494,8 @@
     const toast = document.getElementById('toast-notification');
     let answerTextContent = null;
     let answerText = "";
+    let reasonAnswerTextContent = null;
+    let reasonAnswerText = "";
     let modalOverlay = null;
     let tableBody = null;
     let toolsModalOverlay = null;
@@ -493,7 +570,8 @@
 
     // 滚动条置底
     function scrollToBottom() {
-        mainContent.scrollTop = mainContent.scrollHeight;
+
+
     }
 
     // 构建用户消息
@@ -509,10 +587,38 @@
     function buildBotMessage(id) {
         let assistantItem = document.createElement('div');
         assistantItem.className = 'item item-left';
-        assistantItem.innerHTML = `<div class="avatar"><img src="/spring/ai/chat/ai.png"/></div><div class="bubble bubble-left" id="${id}"></div>`;
+        assistantItem.innerHTML = `
+            <div class="avatar"><img src="/spring/ai/chat/ai.png"/></div>
+            <div class="bubble bubble-left">
+                <div class="thinking-container" id="thinking-${id}">
+                    <div class="thinking-header" onclick="toggleThinking('${id}')">
+                        <span class="thinking-title">💭 思考过程</span>
+                        <span class="thinking-arrow" id="arrow-${id}">▶</span>
+                    </div>
+                    <div class="thinking-content" id="thinking-content-${id}">
+                        <div class="thinking-body" id="thinking-body-${id}"></div>
+                    </div>
+                </div>
+                <div id="${id}"></div>
+            </div>
+        `;
         mainContent.appendChild(assistantItem);
         scrollToBottom();
     }
+
+    // 切换思考过程的展开/折叠状态
+    window.toggleThinking = function (id) {
+        const thinkingContent = document.getElementById(`thinking-content-${id}`);
+        const arrow = document.getElementById(`arrow-${id}`);
+
+        if (thinkingContent.classList.contains('expanded')) {
+            thinkingContent.classList.remove('expanded');
+            arrow.textContent = '▶';
+        } else {
+            thinkingContent.classList.add('expanded');
+            arrow.textContent = '▼';
+        }
+    };
 
     function enableSendBtn() {
         textarea.disabled = false;
@@ -554,6 +660,7 @@
 
         buildBotMessage(id)
         answerTextContent = document.getElementById(id)
+        reasonAnswerTextContent = document.getElementById(`thinking-body-${id}`)
 
         // 获取已选择的工具名称数组
         const selectedToolNames = selectedTools;
@@ -578,7 +685,12 @@
                 const parser = createParser({
                     onEvent: (event) => {
                         console.log('接收事件:', event);
-                        answerText += JSON.parse(event.data).message;
+                        let data = JSON.parse(event.data)
+                        //思考
+                        reasonAnswerText += data.reasoningContent
+                        reasonAnswerTextContent.innerHTML = marked.parse(reasonAnswerText);
+                        //对话
+                        answerText += data.content;
                         answerTextContent.innerHTML = marked.parse(answerText);
                         scrollToBottom();
                     }
@@ -591,6 +703,8 @@
                             enableSendBtn();
                             answerTextContent = null;
                             answerText = "";
+                            reasonAnswerTextContent = null;
+                            reasonAnswerText = "";
                             return;
                         }
 
@@ -608,6 +722,7 @@
                 answerTextContent.textContent = answerTextContent.textContent + " 抱歉，发送消息失败。";
                 scrollToBottom();
                 answerTextContent = null;
+                reasonAnswerTextContent = null;
                 console.error('There has been a problem with your fetch operation:', error);
                 enableSendBtn();
             });

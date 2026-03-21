@@ -1,4 +1,4 @@
 package cn.wubo.spring.ai.chat;
 
-public record ChatResponse(String message) {
+public record ChatResponse(String content ,String reasoningContent) {
 }

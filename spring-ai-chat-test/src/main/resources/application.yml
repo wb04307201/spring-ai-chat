@@ -12,6 +12,7 @@ spring:
       chat:
         options:
           model: qwen-plus
+          enable_thinking: true
       embedding:
         options:
           model: text-embedding-v2
