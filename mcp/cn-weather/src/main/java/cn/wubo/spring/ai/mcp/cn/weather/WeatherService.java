@@ -606,7 +606,7 @@ public class WeatherService {
 	 * @param cityName The city name to search (e.g., "北京", "上海")
 	 * @return List of matching city codes with details
 	 */
-	@Tool(description = "Search city codes by city name. Returns list of cities with their codes for weather queries")
+	@Tool(description = "Search Chinese city codes by city name. Returns list of cities with their codes for weather queries")
 	public String searchCityCode(@ToolParam(description = "City name to search (e.g., '北京', '上海', '广州')") String cityName) {
 		if (cityName == null || cityName.trim().isEmpty()) {
 			return "请输入要查询的城市名称";

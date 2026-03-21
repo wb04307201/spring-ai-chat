@@ -90,7 +90,7 @@ public class WeatherService {
 	 * @return The forecast for the given location
 	 * @throws RestClientException if the request fails
 	 */
-	@Tool(description = "Get weather forecast for a specific latitude/longitude")
+	@Tool(description = "Get American weather forecast for a specific latitude/longitude")
 	public String getWeatherForecastByLocation(double latitude, double longitude) {
 
 		var points = restClient.get()
