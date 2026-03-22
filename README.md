@@ -39,7 +39,7 @@ Add the dependency:
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-bom</artifactId>
-            <version>1.1.2</version>
+            <version>1.1.3</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
