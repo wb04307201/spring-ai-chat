@@ -35,10 +35,10 @@ spring:
         port: 6334
 #        collection-name: custom-collection-name
         collection-name: qwen-collection-name
-#    mcp:
-#      client:
-#        stdio:
-#          servers-configuration: classpath:mcp-servers.json
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
     chat:
       ui:
         rag:
