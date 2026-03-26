@@ -72,8 +72,8 @@ where npx
 
 ```text
 用sequential-thinking来深入思考一下，SequentialThinking这个mcp可以用于什么实际场景当中，要求：
-- 使用sequential-thinking来规划所有的步骤，思考和分支
-- 可以使用bing-search进行搜索，每一轮Thinking之前都先搜索验证
+- 使用sequentialthinking工具来规划所有的步骤，思考和分支
+- 可以使用bing_search工具进行搜索，每一轮Thinking之前都先搜索验证
 - 可以用fetch工具来查看搜索到的网页详情
 - 思考轮数不低于5轮，且需要有发散脑暴意识，需要有思考分支
 - 每一轮需要根据查询的信息结果，反思自己的决策是否正确
