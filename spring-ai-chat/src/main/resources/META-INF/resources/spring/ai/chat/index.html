@@ -485,12 +485,14 @@
     import {createParser} from "/eventsource-parser@3.0.6/dist/index.js";
 
     let conversationId = Math.random().toString(12);
-    let mainContent = document.getElementById('mainContent');
-    let textarea = document.getElementById('textarea');
-    let sendBtn = document.getElementById("send-btn")
-    let fileInputButton = document.getElementById('file-input-button');
-    let fileInput = document.getElementById('file-input');
-    let repoButton = document.getElementById('repo-button');
+    const aiImage = "/spring/ai/chat/ai1.png";
+    const userImage = "/spring/ai/chat/user.jpg";
+    const mainContent = document.getElementById('mainContent');
+    const textarea = document.getElementById('textarea');
+    const sendBtn = document.getElementById("send-btn")
+    const fileInputButton = document.getElementById('file-input-button');
+    const fileInput = document.getElementById('file-input');
+    const repoButton = document.getElementById('repo-button');
     const toast = document.getElementById('toast-notification');
     // 初始化模态框元素
     const modalOverlay = document.getElementById('modal-overlay');
@@ -593,7 +595,7 @@
     function buildUserMessage(message) {
         let userItem = document.createElement('div');
         userItem.className = 'item item-right';
-        userItem.innerHTML = `<div class="bubble bubble-left">${marked.parse(message)}</div><div class="avatar"><img src="/spring/ai/chat/user.png"/></div>`;
+        userItem.innerHTML = `<div class="bubble bubble-left">${marked.parse(message)}</div><div class="avatar"><img src="${userImage}"/></div>`;
         mainContent.appendChild(userItem);
         scrollToBottom();
     }
@@ -603,7 +605,7 @@
         let assistantItem = document.createElement('div');
         assistantItem.className = 'item item-left';
         assistantItem.innerHTML = `
-            <div class="avatar"><img src="/spring/ai/chat/ai.png"/></div>
+            <div class="avatar"><img src="${aiImage}"/></div>
             <div class="bubble bubble-left">
                 <div class="thinking-container" id="thinking-${id}">
                     <div class="thinking-header" onclick="toggleThinking('${id}')">
