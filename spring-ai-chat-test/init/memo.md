@@ -16,6 +16,60 @@ where uv
 where npx
 ```
 
+```json
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "bing-search": {
+      "args": [
+        "-y",
+        "bing-cn-mcp"
+      ],
+      "command": "npx.cmd"
+    },
+    "time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time",
+        "--local-timezone=Asia/Shanghai"
+      ]
+    },
+    "playwright": {
+      "command": "npx.cmd",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
+    "fetch": {
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "command": "uvx"
+    },
+    "us-weather": {
+      "args": [
+        "-jar",
+        "mcp/us-weather/target/us-weather-0.0.1-SNAPSHOT.jar"
+      ],
+      "command": "java"
+    },
+    "cn-weather": {
+      "args": [
+        "-jar",
+        "mcp/cn-weather/target/cn-weather-0.0.1-SNAPSHOT.jar"
+      ],
+      "command": "java"
+    }
+  }
+}
+```
+
 ```text
 用sequential-thinking来深入思考一下，SequentialThinking这个mcp可以用于什么实际场景当中，要求：
 - 使用sequential-thinking来规划所有的步骤，思考和分支
