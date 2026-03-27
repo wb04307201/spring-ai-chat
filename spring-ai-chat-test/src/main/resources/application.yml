@@ -11,7 +11,8 @@ spring:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
         options:
-          model: qwen-plus
+          model: qwen3.5-plus
+          multi_model: true
           enable_thinking: true
       embedding:
         options:

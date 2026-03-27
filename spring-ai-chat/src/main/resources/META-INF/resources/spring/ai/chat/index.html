@@ -431,7 +431,7 @@
                 🔧工具选择
             </button>
             <button class="toolbar-btn" id="file-input-button" onclick="toggleFileUpload()">
-                📄上传文件
+                📄上传文件到知识库
                 <input type="file" id="file-input" accept="*/*">
             </button>
             <button class="toolbar-btn" id="repo-button" onclick="openModal()">
@@ -485,21 +485,25 @@
     import {createParser} from "/eventsource-parser@3.0.6/dist/index.js";
 
     let conversationId = Math.random().toString(12);
-    let mainContent = document.getElementById('mainContent');
-    let textarea = document.getElementById('textarea');
-    let sendBtn = document.getElementById("send-btn")
-    let fileInputButton = document.getElementById('file-input-button');
-    let fileInput = document.getElementById('file-input');
-    let repoButton = document.getElementById('repo-button');
+    const aiImage = "/spring/ai/chat/ai.jpg";
+    const userImage = "/spring/ai/chat/user.png";
+    const mainContent = document.getElementById('mainContent');
+    const textarea = document.getElementById('textarea');
+    const sendBtn = document.getElementById("send-btn")
+    const fileInputButton = document.getElementById('file-input-button');
+    const fileInput = document.getElementById('file-input');
+    const repoButton = document.getElementById('repo-button');
     const toast = document.getElementById('toast-notification');
+    // 初始化模态框元素
+    const modalOverlay = document.getElementById('modal-overlay');
+    const tableBody = document.getElementById('table-body');
+    // 初始化工具模态框元素
+    const toolsModalOverlay = document.getElementById('tools-modal-overlay');
+    const toolsList = document.getElementById('tools-list');
     let answerTextContent = null;
     let answerText = "";
     let reasonAnswerTextContent = null;
     let reasonAnswerText = "";
-    let modalOverlay = null;
-    let tableBody = null;
-    let toolsModalOverlay = null;
-    let toolsList = null;
     let selectedTools = [];
 
     // 将函数挂载到 window 对象使其全局可访问
@@ -515,6 +519,7 @@
     window.deleteDocument = deleteDocument;
 
     document.addEventListener('DOMContentLoaded', () => {
+
         fetch('/spring/ai/chat/upload')
             .then(response => {
                 if (!response.ok) {
@@ -548,7 +553,6 @@
             .catch(_ => {
                 console.debug("不显示工具按钮")
             })
-
     })
 
     textarea.addEventListener('keydown', (event) => {
@@ -568,17 +572,30 @@
         }
     });
 
+    // 点击遮罩层关闭模态框
+    modalOverlay.addEventListener('click', function (event) {
+        if (event.target === modalOverlay) {
+            closeModal();
+        }
+    });
+
+    // 点击遮罩层关闭工具模态框
+    toolsModalOverlay.addEventListener('click', function (event) {
+        if (event.target === toolsModalOverlay) {
+            closeToolsModal();
+        }
+    });
+
     // 滚动条置底
     function scrollToBottom() {
-
-
+        mainContent.scrollTop = mainContent.scrollHeight;
     }
 
     // 构建用户消息
     function buildUserMessage(message) {
         let userItem = document.createElement('div');
         userItem.className = 'item item-right';
-        userItem.innerHTML = `<div class="bubble bubble-left">${marked.parse(message)}</div><div class="avatar"><img src="/spring/ai/chat/user.png"/></div>`;
+        userItem.innerHTML = `<div class="bubble bubble-left">${marked.parse(message)}</div><div class="avatar"><img src="${userImage}"/></div>`;
         mainContent.appendChild(userItem);
         scrollToBottom();
     }
@@ -588,7 +605,7 @@
         let assistantItem = document.createElement('div');
         assistantItem.className = 'item item-left';
         assistantItem.innerHTML = `
-            <div class="avatar"><img src="/spring/ai/chat/ai.png"/></div>
+            <div class="avatar"><img src="${aiImage}"/></div>
             <div class="bubble bubble-left">
                 <div class="thinking-container" id="thinking-${id}">
                     <div class="thinking-header" onclick="toggleThinking('${id}')">
@@ -765,51 +782,6 @@
     }
 
     fileInput.addEventListener('change', window.handleFileUpload);
-
-    // 在 DOMContentLoaded 事件中初始化模态框相关元素
-    document.addEventListener('DOMContentLoaded', (event) => {
-        // 初始化模态框元素
-        modalOverlay = document.getElementById('modal-overlay');
-        tableBody = document.getElementById('table-body');
-
-        // 检查上传功能是否可用
-        fetch('/spring/ai/chat/upload')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json()
-            })
-            .then(data => {
-                if (data) {
-                    fileInputButton.style.display = 'block';
-                    repoButton.style.display = 'block';
-                }
-            })
-            .catch(_ => {
-                console.debug("不开启上传按钮")
-            });
-
-        // 点击遮罩层关闭模态框
-        modalOverlay.addEventListener('click', function (event) {
-            if (event.target === modalOverlay) {
-                closeModal();
-            }
-        });
-    });
-
-    // 初始化工具模态框
-    document.addEventListener('DOMContentLoaded', (event) => {
-        toolsModalOverlay = document.getElementById('tools-modal-overlay');
-        toolsList = document.getElementById('tools-list');
-
-        // 点击遮罩层关闭模态框
-        toolsModalOverlay.addEventListener('click', function (event) {
-            if (event.target === toolsModalOverlay) {
-                closeToolsModal();
-            }
-        });
-    });
 
     function openToolsModal() {
         toolsModalOverlay.style.display = 'flex';
