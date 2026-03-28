@@ -19,8 +19,8 @@
 - 🛠 MCP Support
 - ⚙️ Auto Configuration
 
-## Quickly Add Chat Interface
-Taking Zhipu AI as an example, you can replace it with other LLMs as needed:
+## Quick Start: Add Chat Interface
+The following uses Zhipu AI as an example. You can replace it with other LLM dependencies as needed:
 
 ### 1. Add Chat Dependency
 Add JitPack repository:
@@ -32,7 +32,8 @@ Add JitPack repository:
     </repository>
 </repositories>
 ```
-Add the dependency:
+
+Add dependency:
 ```xml
 <dependencyManagement>
     <dependencies>
@@ -49,12 +50,12 @@ Add the dependency:
     <dependency>
         <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
         <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-        <version>1.1.9</version>
+        <version>1.1.10</version>
     </dependency>
 </dependencies>
 ```
 
-### 2. Add Spring AI Dependencies
+### 2. Add Spring AI Dependency
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -74,8 +75,8 @@ spring:
 Visit `http://localhost:8080/spring/ai/chat`
 ![img.png](img.png)
 
-## RAG Support
-Taking Redis and Tika as examples, add dependencies:
+## RAG
+The following uses Redis as a vector database and Tika as a document parsing tool. Add dependencies:
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -104,9 +105,9 @@ spring:
 ```
 
 Implement the [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java) interface  
-For example: [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
+For example [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
 
-Restart the application and visit `http://localhost:8080/spring/ai/chat`
+Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ![img_1.png](img_1.png)
 The upload file and knowledge base buttons will appear.
 
@@ -141,8 +142,8 @@ spring:
             Politely inform the user that you can't answer it.
 ```
 
-## MCP Support
-Taking the time MCP service as an example, add dependencies:
+## MCP
+Taking the time MCP service as an example, add dependency:
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -160,15 +161,103 @@ spring:
           servers-configuration: classpath:mcp-servers.json
 ```
 
-[mcp-servers.json](spring-ai-chat-test/src/main/resources/mcp-servers.json)
+```json
+//mcp-servers.json
+{
+  "mcpServers": {
+    "time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time",
+        "--local-timezone=Asia/Shanghai"
+      ]
+    }
+  }
+}
+```
 
-Restart the application and visit `http://localhost:8080/spring/ai/chat`
+Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ```text
 1. Current time
-2. Get content from `https://www.163.com/` webpage
-3. Randomly select a news item from the webpage content obtained in the previous step
+2. Get content from `https://www.163.com/`
+3. Randomly select a news item from the previous webpage content
 4. Open browser and visit `https://www.baidu.com/`
 5. Enter the news from step 3 in the search box and click search
 ```
 ![img_2.png](img_2.png)
 ![img_3.png](img_3.png)
+
+## Skill Library
+You can build a skill library by writing prompts based on tools. Configuration instructions:
+```yaml
+spring:
+  ai:
+    chat:
+      ui:
+        skills:
+          - name: SkillName
+            tools:
+              - Tool1
+              - Tool2
+            skill: Prompt, supports classpath. You can use {param1} in the prompt as user input parameter
+```
+
+For example, deep thinking:
+
+Tools:
+```json
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "bing-search": {
+      "args": [
+        "-y",
+        "bing-cn-mcp"
+      ],
+      "command": "npx.cmd"
+    },
+    "fetch": {
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "command": "uvx"
+    }
+  }
+}
+```
+
+Configuration:
+```yaml
+spring:
+  ai:
+    chat:
+      ui:
+        skills:
+          - name: "Deep Thinking"
+            tools:
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
+            skill: classpath:skills/sequential-thinking.st
+```
+
+Prompt:
+```text
+Let's think deeply about what practical scenarios {param1} can be used in. Requirements:
+- Use sequentialthinking tool to plan all steps, thinking and branches
+- Can use bing_search tool for search, verify before each round of thinking
+- Can use fetch tool to view details of searched webpages
+- No less than 5 rounds of thinking, need divergent brainstorming, need thinking branches
+- Each round needs to reflect on whether own decision is correct based on queried information results
+- Return at least 10 high-value usage scenarios, explain in detail why they are valuable and how to use them
+```
+
+Restart the project and visit `http://localhost:8080/spring/ai/chat`
+![img_4.png](img_4.png)
+![img_5.png](img_5.png)

@@ -64,6 +64,19 @@ spring:
           defaultEmptyContextPromptTemplate: |
             The user query is outside your knowledge base.
             Politely inform the user that you can't answer it.
+        skills:
+          - name: "测试"
+            tools:
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
+            skill: classpath:skills/what-tools.st
+          - name: "深入思考"
+            tools:
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
+            skill: classpath:skills/sequential-thinking.st
   servlet:
     multipart:
       max-file-size: 10MB

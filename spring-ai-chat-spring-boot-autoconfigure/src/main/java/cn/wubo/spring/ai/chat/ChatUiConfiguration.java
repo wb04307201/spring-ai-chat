@@ -22,10 +22,12 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -83,11 +85,18 @@ import java.util.concurrent.CompletableFuture;
         "org.springframework.ai.vectorstore.qdrant.autoconfigure.QdrantVectorStoreAutoConfiguration",
         "org.springframework.ai.vectorstore.redis.autoconfigure.RedisVectorStoreAutoConfiguration",
         "org.springframework.ai.vectorstore.typesense.autoconfigure.TypesenseVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.weaviate.autoconfigure.WeaviateVectorStoreAutoConfiguration"
+        "org.springframework.ai.vectorstore.weaviate.autoconfigure.WeaviateVectorStoreAutoConfiguration",
+        // MCP
+        "org.springframework.ai.mcp.client.common.autoconfigure.McpClientAutoConfiguration"
 })
 @EnableConfigurationProperties({ChatUiProperties.class})
 @Slf4j
 public class ChatUiConfiguration {
+
+    @Bean
+    public ContentHolderConverter contentHolderConverter(ResourceLoader resourceLoader) {
+        return new ContentHolderConverter(resourceLoader);
+    }
 
 //    @Bean
 //    @ConditionalOnMissingBean(ToolSearcher.class)
@@ -147,7 +156,7 @@ public class ChatUiConfiguration {
     }
 
     @Bean("wb04307201ChatUiRouter")
-    public RouterFunction<ServerResponse> chatUiRouter(List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients) {
+    public RouterFunction<ServerResponse> chatUiRouter(List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, ChatUiProperties properties) {
         RouterFunctions.Builder builder = RouterFunctions.route();
         builder.GET("spring/ai/chat", request -> ServerResponse.temporaryRedirect(URI.create("/spring/ai/chat/index.html")).build());
         builder.GET("spring/ai/chat/tools", request -> {
@@ -158,7 +167,9 @@ public class ChatUiConfiguration {
                 return ServerResponse.ok().body(mcpAsyncClients.stream().map(McpAsyncClient::getClientInfo));
             }
             return ServerResponse.ok().body(new ArrayList<>());
-
+        });
+        builder.GET("spring/ai/chat/skills", request -> {
+            return ServerResponse.ok().body(properties.getSkills());
         });
         return builder.build();
     }

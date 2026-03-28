@@ -2,13 +2,23 @@ package cn.wubo.spring.ai.chat;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Data
 @ConfigurationProperties(prefix = "spring.ai.chat.ui")
 public class ChatUiProperties {
+
     private String defaultSystem;
     private boolean init = true;
     private Rag rag = new Rag();
+    private List<Skill> skills;
 
     @Data
     public static class Rag {
@@ -36,5 +46,12 @@ public class ChatUiProperties {
                 The user query is outside your knowledge base.
                 Politely inform the user that you can't answer it.
                 """;
+    }
+
+    @Data
+    public static class Skill{
+        private String name;
+        private List<String> tools;
+        private ContentHolder skill;
     }
 }

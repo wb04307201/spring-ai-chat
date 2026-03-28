@@ -1,304 +1,415 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>聊天</title>
+    <title>AI 聊天</title>
     <meta charset="UTF-8">
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="/marked@17.0.1/lib/marked.umd.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
         * {
             padding: 0;
             margin: 0;
+            box-sizing: border-box;
         }
 
         body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
         .container {
-            /*height: 760px;*/
-            /*width: 900px;*/
             height: 100%;
+            max-height: 900px;
             width: 100%;
-            border-radius: 4px;
-            border: 0.5px solid #e0e0e0;
-            background-color: #f5f5f5;
+            max-width: 1200px;
+            border-radius: 24px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-xl);
             display: flex;
-            flex-flow: column;
+            flex-direction: column;
             overflow: hidden;
         }
 
+        /* Header */
+        .header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            padding: 12px 32px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .toolbar-btn {
+            height: 36px;
+            padding: 0 16px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .toolbar-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Chat Content */
         .content {
-            width: calc(100% - 40px);
-            padding: 20px;
-            overflow-y: scroll;
             flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+            background: var(--bg-secondary);
         }
 
-        .content:hover::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.1);
+        .content::-webkit-scrollbar {
+            width: 8px;
         }
 
-        .bubble {
-            min-width: 50%;
-            width: auto;
-            max-width: 75%;
-            padding: 20px;
-            border-radius: 5px;
-            position: relative;
-            color: #000;
-            word-wrap: break-word;
-            word-break: normal;
+        .content::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .item-left .bubble {
-            margin-left: 15px;
-            background-color: #fff;
+        .content::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
         }
 
-        .item-left .bubble:before {
-            content: "";
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-top: 10px solid transparent;
-            border-right: 10px solid #fff;
-            border-bottom: 10px solid transparent;
-            left: -20px;
+        .content::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
 
-        .item-right .bubble {
-            margin-right: 15px;
-            background-color: #9eea6a;
+        .welcome-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
         }
 
-        .item-right .bubble:before {
-            content: "";
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 10px solid #9eea6a;
-            border-top: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-bottom: 10px solid transparent;
-            right: -20px;
+        .welcome-message h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
         }
 
         .item {
-            margin-top: 15px;
+            margin-bottom: 24px;
             display: flex;
             width: 100%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /*.item.item-right {*/
+        /*    justify-content: flex-end;*/
+        /*}*/
+
+        /*.item.item-center {*/
+        /*    justify-content: center;*/
+        /*}*/
+
+        /*.item.item-center span {*/
+        /*    font-size: 12px;*/
+        /*    padding: 6px 12px;*/
+        /*    color: var(--text-muted);*/
+        /*    background: var(--secondary-color);*/
+        /*    border-radius: 12px;*/
+        /*}*/
+
+        .bubble {
+            max-width: 70%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            position: relative;
+            color: var(--text-primary);
+            word-wrap: break-word;
+            word-break: normal;
+            line-height: 1.6;
+            box-shadow: var(--shadow-sm);
+            order: 2;
         }
 
         .item.item-right {
             justify-content: flex-end;
         }
 
-        .item.item-center {
-            justify-content: center;
+        .item-left .bubble {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-top-left-radius: 4px;
         }
 
-        .item.item-center span {
-            font-size: 12px;
-            padding: 2px 4px;
-            color: #fff;
-            background-color: #dadada;
-            border-radius: 3px;
-            -moz-user-select: none; /*火狐*/
-            -webkit-user-select: none; /*webkit浏览器*/
-            -ms-user-select: none; /*IE10*/
-            -khtml-user-select: none; /*早期浏览器*/
-            user-select: none;
+        .item-right .bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-top-right-radius: 4px;
+            justify-content: end;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 12px;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
         }
 
         .avatar img {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
+        .item-right .avatar {
+            order: 3;
+        }
+
+        .item-left .avatar {
+            order: 1;
+        }
+
+        /* Input Area */
         .input-area {
-            border-top: 0.5px solid #e0e0e0;
-            height: 150px;
-            display: flex;
-            flex-flow: column;
-            background-color: #fff;
+            border-top: 1px solid var(--border-color);
+            padding: 24px 32px;
+            background: var(--bg-primary);
+            flex-shrink: 0;
         }
 
         textarea {
-            flex: 1;
-            padding: 5px;
+            width: 100%;
+            min-height: 80px;
+            padding: 16px;
             font-size: 14px;
-            border: none;
-            cursor: pointer;
-            overflow-y: auto;
-            overflow-x: hidden;
-            outline: none;
+            font-family: inherit;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
             resize: none;
+            outline: none;
+            transition: all 0.2s;
+            background: var(--bg-secondary);
+        }
+
+        textarea:focus {
+            border-color: var(--primary-color);
+            background: var(--bg-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
         }
 
         .button-area {
             display: flex;
-            height: 40px;
-            margin-right: 10px;
-            line-height: 40px;
-            padding: 5px;
             justify-content: flex-end;
+            margin-top: 16px;
         }
 
         .button-area button {
-            width: 80px;
-            border: none;
-            outline: none;
-            border-radius: 4px;
-            float: right;
-            cursor: pointer;
-        }
-
-        /* 设置滚动条的样式 */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        /* 滚动槽 */
-        ::-webkit-scrollbar-track {
-            border-radius: 8px;
-        }
-
-        /* 滚动条滑块 */
-        ::-webkit-scrollbar-thumb {
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0);
-        }
-
-        .toolbar {
-            height: 40px;
-            display: flex;
-            align-items: center;
-            padding: 0 10px;
-            border-bottom: 0.5px solid #e0e0e0;
-            background-color: #fafafa;
-        }
-
-        .toolbar-btn {
-            /*width: 32px;*/
-            height: 32px;
-            margin: 0 5px;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .toolbar-btn:hover {
-            background-color: #e0e0e0;
-        }
-
-        #file-input-button {
-            display: none;
-        }
-
-        #file-input {
-            display: none;
-        }
-
-        #repo-button {
-            display: none;
-        }
-
-        #toast-notification {
-            position: absolute;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 25px;
-            border-radius: 8px;
+            height: 44px;
+            padding: 0 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            font-weight: bold;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.5s, visibility 0.5s;
-            z-index: 1000;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-md);
         }
 
-        #toast-notification.show {
-            opacity: 1;
-            visibility: visible;
+        .button-area button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
-        #toast-notification.success {
-            background-color: #28a745;
+        .button-area button:active:not(:disabled) {
+            transform: translateY(0);
         }
 
-        #toast-notification.error {
-            background-color: #dc3545;
+        .button-area button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
-        /* 在现有CSS中添加 */
+        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
             z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .modal-content {
-            background-color: white;
-            border-radius: 8px;
-            width: 80%;
+            background: var(--bg-primary);
+            border-radius: 16px;
+            width: 90%;
             max-width: 900px;
             max-height: 80vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 24px;
-            border-bottom: 1px solid #eee;
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .modal-header h3 {
-            margin: 0;
-            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .close-button {
-            font-size: 24px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            color: #999;
-            transition: color 0.2s;
+            font-size: 24px;
+            color: var(--text-muted);
+            transition: all 0.2s;
         }
 
         .close-button:hover {
-            color: #333;
+            background: var(--secondary-color);
+            color: var(--text-primary);
         }
 
         .modal-body {
-            padding: 16px 24px;
+            padding: 32px;
             overflow-y: auto;
             flex: 1;
         }
 
+        /* Table */
         .knowledge-table {
             width: 100%;
             border-collapse: collapse;
@@ -307,70 +418,110 @@
 
         .knowledge-table th,
         .knowledge-table td {
-            padding: 12px 8px;
+            padding: 16px 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .knowledge-table th {
-            background-color: #f5f5f5;
+            background: var(--secondary-color);
             font-weight: 600;
-            color: #555;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .knowledge-table tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
+            background: var(--bg-secondary);
         }
 
         .action-btn {
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            background-color: #f8f9fa;
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
             cursor: pointer;
-            border-radius: 3px;
+            border-radius: 6px;
             font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
         .action-btn:hover {
-            background-color: #e9ecef;
+            background: var(--error-color);
+            color: white;
+            border-color: var(--error-color);
         }
 
+        /* Toast */
+        #toast-notification {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 14px 28px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 2000;
+            box-shadow: var(--shadow-lg);
+        }
+
+        #toast-notification.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #toast-notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        #toast-notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        /* Thinking Container */
         .thinking-container {
-            margin-bottom: 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-secondary);
             overflow: hidden;
         }
 
         .thinking-header {
-            padding: 8px 12px;
-            background-color: #f0f0f0;
+            padding: 12px 16px;
+            background: var(--bg-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: space-between;
             user-select: none;
+            transition: background 0.2s;
         }
 
         .thinking-header:hover {
-            background-color: #e8e8e8;
+            background: var(--secondary-color);
         }
 
         .thinking-title {
             font-size: 13px;
-            color: #666;
-            font-weight: 500;
+            color: var(--text-secondary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .thinking-arrow {
             font-size: 12px;
             transition: transform 0.3s;
+            color: var(--text-muted);
         }
 
         .thinking-arrow.expanded {
@@ -386,69 +537,281 @@
         .thinking-content.expanded {
             max-height: 500px;
             overflow-y: auto;
-            border-top: 1px solid #e8e8e8;
+            border-top: 1px solid var(--border-color);
         }
 
         .thinking-body {
             padding: 16px;
             font-size: 13px;
-            border-radius: 4px;
-            margin: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            line-height: 1.6;
+            color: var(--text-secondary);
         }
 
-        .thinking-body::-webkit-scrollbar {
-            width: 6px;
+        /* Skills Modal Specific */
+        .skills-modal-layout {
+            display: flex;
+            max-width: 1200px;
+            gap: 0;
+            flex-direction: row;
         }
 
-        .thinking-body::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
+        .skills-sidebar {
+            width: 280px;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
         }
 
-        .thinking-body::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
+        .skills-sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .thinking-body::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+        .skills-sidebar-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
+        .skills-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .skill-item {
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-primary);
+        }
+
+        .skill-item:hover {
+            border-color: var(--primary-color);
+            background: var(--bg-secondary);
+            transform: translateX(4px);
+        }
+
+        .skill-item.selected {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        }
+
+        .skill-item-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .skills-detail-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .skills-detail-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .skills-detail-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .skills-detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+            padding: 20px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+        }
+
+        .detail-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tools-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tool-tag {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            color: var(--primary-color);
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .param-input-group {
+            margin-bottom: 16px;
+        }
+
+        .param-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .param-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .param-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .send-skill-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-md);
+        }
+
+        .send-skill-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                border-radius: 0;
+                max-height: 100vh;
+            }
+
+            .header, .toolbar, .input-area {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .bubble {
+                max-width: 85%;
+            }
+
+            .skills-modal-layout {
+                flex-direction: column;
+            }
+
+            .skills-sidebar {
+                width: 100%;
+                max-height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">🤖</div>
+            <div class="header-title">AI 智能助手</div>
+        </div>
+        <div class="header-actions">
+            <!-- 可以添加更多头部操作按钮 -->
+        </div>
+    </div>
+
+    <!-- Chat Content -->
     <div class="content" id="mainContent">
-        <div class="item item-center"><span>你现在可以开始聊天了</span></div>
+        <div class="welcome-message">
+            <h2>👋 你好！我是你的 AI 助手</h2>
+            <p>有什么我可以帮助你的吗？现在可以开始聊天了</p>
+        </div>
     </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button class="toolbar-btn" onclick="clearChat()">
+            <span>🗑️</span>
+            <span>清空对话</span>
+        </button>
+        <button class="toolbar-btn" id="file-input-button" onclick="toggleFileUpload()" style="display: none;">
+            <span>📄</span>
+            <span>上传文件</span>
+            <input type="file" id="file-input" accept="*/*" style="display: none;">
+        </button>
+        <button class="toolbar-btn" id="repo-button" onclick="openModal()" style="display: none;">
+            <span>📚</span>
+            <span>知识库</span>
+        </button>
+        <button class="toolbar-btn" id="tools-button" onclick="openToolsModal()" style="display: none;">
+            <span>🔧</span>
+            <span>工具选择</span>
+        </button>
+        <button class="toolbar-btn" id="skills-button" onclick="openSkillsModal()" style="display: none;">
+            <span>🧠</span>
+            <span>技能库</span>
+        </button>
+    </div>
+
+    <!-- Input Area -->
     <div class="input-area">
-        <div class="toolbar">
-            <button class="toolbar-btn" onclick="clearChat()">
-                🗅清空对话
-            </button>
-            <button class="toolbar-btn" id="tools-button" onclick="openToolsModal()">
-                🔧工具选择
-            </button>
-            <button class="toolbar-btn" id="file-input-button" onclick="toggleFileUpload()">
-                📄上传文件到知识库
-                <input type="file" id="file-input" accept="*/*">
-            </button>
-            <button class="toolbar-btn" id="repo-button" onclick="openModal()">
-                📚知识库
-            </button>
-        </div>
-        <textarea name="text" id="textarea"></textarea>
+        <textarea id="textarea" placeholder="输入消息... (Ctrl+Enter 换行，Enter 发送)"></textarea>
         <div class="button-area">
-            <button id="send-btn" onclick="send()">发 送</button>
+            <button id="send-btn" onclick="send()">发送消息</button>
         </div>
     </div>
+
+    <!-- Toast Notification -->
     <div id="toast-notification"></div>
+
+    <!-- Knowledge Modal -->
     <div id="modal-overlay" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>知识库管理</h3>
-                <span class="close-button" onclick="closeModal()">&times;</span>
+                <div class="close-button" onclick="closeModal()">&times;</div>
             </div>
             <div class="modal-body">
                 <table id="knowledge-table" class="knowledge-table">
@@ -460,27 +823,49 @@
                         <th>操作</th>
                     </tr>
                     </thead>
-                    <tbody id="table-body">
-                    <!-- 表格内容将通过JS动态填充 -->
-                    </tbody>
+                    <tbody id="table-body"></tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    <!-- Tools Modal -->
     <div id="tools-modal-overlay" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>工具选择</h3>
-                <span class="close-button" onclick="closeToolsModal()">&times;</span>
+                <div class="close-button" onclick="closeToolsModal()">&times;</div>
             </div>
             <div class="modal-body">
-                <div id="tools-list">
-                    <!-- 工具列表将通过 JS 动态填充 -->
+                <div id="tools-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Modal -->
+    <div id="skills-modal-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content skills-modal-layout">
+            <div class="skills-sidebar">
+                <div class="skills-sidebar-header">
+                    <h3>技能库</h3>
+                </div>
+                <div class="skills-list" id="skills-list"></div>
+            </div>
+            <div class="skills-detail-panel">
+                <div class="skills-detail-header">
+                    <h3 class="skills-detail-title" id="skill-detail-title">技能详情</h3>
+                    <div class="close-button" onclick="closeSkillsModal()">&times;</div>
+                </div>
+                <div class="skills-detail-body" id="skills-detail">
+                    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                        <p style="font-size: 16px; margin-bottom: 8px;">请选择一个技能查看详情</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script type="module">
     import {createParser} from "/eventsource-parser@3.0.6/dist/index.js";
 
@@ -489,24 +874,28 @@
     const userImage = "/spring/ai/chat/user.png";
     const mainContent = document.getElementById('mainContent');
     const textarea = document.getElementById('textarea');
-    const sendBtn = document.getElementById("send-btn")
+    const sendBtn = document.getElementById("send-btn");
     const fileInputButton = document.getElementById('file-input-button');
     const fileInput = document.getElementById('file-input');
     const repoButton = document.getElementById('repo-button');
     const toast = document.getElementById('toast-notification');
-    // 初始化模态框元素
     const modalOverlay = document.getElementById('modal-overlay');
     const tableBody = document.getElementById('table-body');
-    // 初始化工具模态框元素
     const toolsModalOverlay = document.getElementById('tools-modal-overlay');
     const toolsList = document.getElementById('tools-list');
+    const skillsModalOverlay = document.getElementById('skills-modal-overlay');
+    const skillsListContainer = document.getElementById('skills-list');
+    const skillsDetailContainer = document.getElementById('skills-detail');
+
     let answerTextContent = null;
     let answerText = "";
     let reasonAnswerTextContent = null;
     let reasonAnswerText = "";
     let selectedTools = [];
+    let currentSelectedSkill = null;
+    let skillParams = {};
 
-    // 将函数挂载到 window 对象使其全局可访问
+    // Global functions
     window.send = send;
     window.clearChat = clearChat;
     window.toggleFileUpload = toggleFileUpload;
@@ -517,53 +906,62 @@
     window.closeToolsModal = closeToolsModal;
     window.loadKnowledgeData = loadKnowledgeData;
     window.deleteDocument = deleteDocument;
+    window.openSkillsModal = openSkillsModal;
+    window.closeSkillsModal = closeSkillsModal;
+    window.loadSkillsData = loadSkillsData;
+    window.selectSkill = selectSkill;
+    window.sendSkillRequest = sendSkillRequest;
 
     document.addEventListener('DOMContentLoaded', () => {
-
+        // Check upload feature
         fetch('/spring/ai/chat/upload')
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json()
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
             })
             .then(data => {
                 if (data) {
-                    fileInputButton.style.display = 'block';
-                    repoButton.style.display = 'block';
+                    fileInputButton.style.display = 'flex';
+                    repoButton.style.display = 'flex';
                 }
             })
-            .catch(_ => {
-                console.debug("不开启上传按钮")
-            })
+            .catch(_ => console.debug("不开启上传按钮"));
 
+        // Check tools
         fetch('/spring/ai/chat/tools')
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json()
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
             })
             .then(data => {
-                console.log('工具列表:', data)
+                console.log('工具列表:', data);
                 if (data && data.length > 0) {
-                    document.getElementById('tools-button').style.display = 'block';
+                    document.getElementById('tools-button').style.display = 'flex';
                 }
             })
-            .catch(_ => {
-                console.debug("不显示工具按钮")
+            .catch(_ => console.debug("不显示工具按钮"));
+
+        // Check skills
+        fetch('/spring/ai/chat/skills')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
             })
-    })
+            .then(data => {
+                console.log('技能列表:', data);
+                if (data && data.length > 0) {
+                    document.getElementById('skills-button').style.display = 'flex';
+                }
+            })
+            .catch(_ => console.debug("不显示技能库按钮"));
+    });
 
     textarea.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && event.ctrlKey) {
             event.preventDefault();
-            // 获取当前光标位置
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
-            // 在光标位置插入换行符
             textarea.value = textarea.value.substring(0, start) + '\n' + textarea.value.substring(end);
-            // 移动光标到新位置
             textarea.setSelectionRange(start + 1, start + 1);
         }
         if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey) {
@@ -572,43 +970,41 @@
         }
     });
 
-    // 点击遮罩层关闭模态框
     modalOverlay.addEventListener('click', function (event) {
-        if (event.target === modalOverlay) {
-            closeModal();
-        }
+        if (event.target === modalOverlay) closeModal();
     });
 
-    // 点击遮罩层关闭工具模态框
     toolsModalOverlay.addEventListener('click', function (event) {
-        if (event.target === toolsModalOverlay) {
-            closeToolsModal();
-        }
+        if (event.target === toolsModalOverlay) closeToolsModal();
     });
 
-    // 滚动条置底
+    skillsModalOverlay.addEventListener('click', function (event) {
+        if (event.target === skillsModalOverlay) closeSkillsModal();
+    });
+
     function scrollToBottom() {
         mainContent.scrollTop = mainContent.scrollHeight;
     }
 
-    // 构建用户消息
     function buildUserMessage(message) {
         let userItem = document.createElement('div');
         userItem.className = 'item item-right';
-        userItem.innerHTML = `<div class="bubble bubble-left">${marked.parse(message)}</div><div class="avatar"><img src="${userImage}"/></div>`;
+        userItem.innerHTML = `
+            <div class="bubble bubble-right">${marked.parse(message)}</div>
+            <div class="avatar"><img src="${userImage}" alt="用户"/></div>
+        `;
         mainContent.appendChild(userItem);
         scrollToBottom();
     }
 
-    // 构建机器人消息
     function buildBotMessage(id) {
         let assistantItem = document.createElement('div');
         assistantItem.className = 'item item-left';
         assistantItem.innerHTML = `
-            <div class="avatar"><img src="${aiImage}"/></div>
+            <div class="avatar"><img src="${aiImage}" alt="AI"/></div>
             <div class="bubble bubble-left">
                 <div class="thinking-container" id="thinking-${id}">
-                    <div class="thinking-header" onclick="toggleThinking('${id}')">
+                    <div class="thinking-header" onclick="window.toggleThinking('${id}')">
                         <span class="thinking-title">💭 思考过程</span>
                         <span class="thinking-arrow" id="arrow-${id}">▶</span>
                     </div>
@@ -623,7 +1019,6 @@
         scrollToBottom();
     }
 
-    // 切换思考过程的展开/折叠状态
     window.toggleThinking = function (id) {
         const thinkingContent = document.getElementById(`thinking-content-${id}`);
         const arrow = document.getElementById(`arrow-${id}`);
@@ -640,14 +1035,14 @@
     function enableSendBtn() {
         textarea.disabled = false;
         sendBtn.disabled = false;
-        sendBtn.textContent = '发 送';
+        sendBtn.textContent = '发送消息';
     }
 
     function disableSendBtn() {
         textarea.value = '';
         textarea.disabled = true;
         sendBtn.disabled = true;
-        sendBtn.textContent = '正在发送...';
+        sendBtn.textContent = '发送中...';
     }
 
     function showToast(message, type = 'success') {
@@ -662,24 +1057,23 @@
     function send() {
         const id = Date.now();
         let text = textarea.value.trim();
+
         if (!text) {
-            buildUserMessage(id)
-            answerTextContent = document.getElementById(id)
-            answerTextContent.textContent = answerTextContent.textContent + "抱歉，请输入内容。";
+            buildUserMessage(id);
+            answerTextContent = document.getElementById(id);
+            answerTextContent.textContent = "抱歉，请输入内容。";
             scrollToBottom();
             answerTextContent = null;
             return;
         }
 
         buildUserMessage(text);
+        disableSendBtn();
+        buildBotMessage(id);
 
-        disableSendBtn()
+        answerTextContent = document.getElementById(id);
+        reasonAnswerTextContent = document.getElementById(`thinking-body-${id}`);
 
-        buildBotMessage(id)
-        answerTextContent = document.getElementById(id)
-        reasonAnswerTextContent = document.getElementById(`thinking-body-${id}`)
-
-        // 获取已选择的工具名称数组
         const selectedToolNames = selectedTools;
         console.log('当前选择的工具:', selectedToolNames);
 
@@ -690,68 +1084,71 @@
                 'Accept': 'text/event-stream'
             },
             body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames}),
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.body;
         })
-            .then(body => {
-                const reader = body.getReader();
-                const decoder = new TextDecoder();
-                const parser = createParser({
-                    onEvent: (event) => {
-                        console.log('接收事件:', event);
-                        let data = JSON.parse(event.data)
-                        //思考
-                        reasonAnswerText += data.reasoningContent
-                        reasonAnswerTextContent.innerHTML = marked.parse(reasonAnswerText);
-                        //对话
-                        answerText += data.content;
-                        answerTextContent.innerHTML = marked.parse(answerText);
-                        scrollToBottom();
-                    }
-                });
+        .then(body => {
+            const reader = body.getReader();
+            const decoder = new TextDecoder();
+            const parser = createParser({
+                onEvent: (event) => {
+                    // console.log('接收事件:', event);
+                    let data = JSON.parse(event.data);
 
-                function read() {
-                    return reader.read().then(({done, value}) => {
-                        if (done) {
-                            console.log("接收完成");
-                            enableSendBtn();
-                            answerTextContent = null;
-                            answerText = "";
-                            reasonAnswerTextContent = null;
-                            reasonAnswerText = "";
-                            return;
-                        }
+                    reasonAnswerText += data.reasoningContent;
+                    reasonAnswerTextContent.innerHTML = marked.parse(reasonAnswerText);
 
-                        const chunk = decoder.decode(value, { stream: true });
-                        console.log("接收数据:", chunk);
-                        parser.feed(chunk)
+                    answerText += data.content;
+                    answerTextContent.innerHTML = marked.parse(answerText);
 
-                        read();
-                    });
+                    scrollToBottom();
                 }
-
-                read();
-            })
-            .catch(error => {
-                answerTextContent.textContent = answerTextContent.textContent + " 抱歉，发送消息失败。";
-                scrollToBottom();
-                answerTextContent = null;
-                reasonAnswerTextContent = null;
-                console.error('There has been a problem with your fetch operation:', error);
-                enableSendBtn();
             });
+
+            function read() {
+                return reader.read().then(({done, value}) => {
+                    if (done) {
+                        console.log("接收完成");
+                        enableSendBtn();
+                        answerTextContent = null;
+                        answerText = "";
+                        reasonAnswerTextContent = null;
+                        reasonAnswerText = "";
+                        return;
+                    }
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    // console.log("接收数据:", chunk);
+                    parser.feed(chunk);
+                    read();
+                });
+            }
+
+            read();
+        })
+        .catch(error => {
+            answerTextContent.textContent += " 抱歉，发送消息失败。";
+            scrollToBottom();
+            answerTextContent = null;
+            reasonAnswerTextContent = null;
+            console.error('发送失败:', error);
+            enableSendBtn();
+        });
     }
 
     function clearChat() {
-        mainContent.innerHTML = `<div class="item item-center"><span>你现在可以开始聊天了</span></div>`
+        mainContent.innerHTML = `
+            <div class="welcome-message">
+                <h2>👋 你好！我是你的 AI 助手</h2>
+                <p>有什么我可以帮助你的吗？现在可以开始聊天了</p>
+            </div>
+        `;
         conversationId = Math.random().toString(12);
     }
 
     function toggleFileUpload() {
-        let fileInput = document.getElementById('file-input');
         fileInput.click();
     }
 
@@ -762,23 +1159,23 @@
         const formData = new FormData();
         formData.append('file', file);
 
-
-        fetch('/spring/ai/chat/upload', { // 请确保此路径与您的后端匹配
+        fetch('/spring/ai/chat/upload', {
             method: 'POST',
             body: formData,
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
-        }).then(data => {
+        })
+        .then(data => {
             if (data) {
                 showToast(`文档 "${file.name}" 上传成功！`, 'success');
             }
-        }).catch(error => {
-            console.error('There has been a problem with your fetch operation:', error);
-            showToast('上传失败，请检查网络或联系管理员。', 'error');
         })
+        .catch(error => {
+            console.error('上传失败:', error);
+            showToast('上传失败，请检查网络或联系管理员。', 'error');
+        });
     }
 
     fileInput.addEventListener('change', window.handleFileUpload);
@@ -793,19 +1190,11 @@
     }
 
     function loadTools() {
-        toolsList.innerHTML = '';
-
-        const loadingDiv = document.createElement('div');
-        loadingDiv.textContent = '加载中...';
-        loadingDiv.style.padding = '20px';
-        loadingDiv.style.textAlign = 'center';
-        toolsList.appendChild(loadingDiv);
+        toolsList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载中...</div>';
 
         fetch('/spring/ai/chat/tools')
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
             .then(data => {
@@ -814,17 +1203,21 @@
                 if (data && data.length > 0) {
                     data.forEach(tool => {
                         const toolDiv = document.createElement('div');
-                        toolDiv.style.cssText = 'padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: space-between;';
-
-                        const checkboxLabel = document.createElement('label');
-                        checkboxLabel.style.cssText = 'display: flex; align-items: center; cursor: pointer; flex: 1;';
+                        toolDiv.style.cssText = 'padding: 16px; margin-bottom: 12px; border: 2px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;';
+                        toolDiv.onmouseover = () => {
+                            toolDiv.style.borderColor = 'var(--primary-color)';
+                            toolDiv.style.background = 'var(--bg-secondary)';
+                        };
+                        toolDiv.onmouseout = () => {
+                            toolDiv.style.borderColor = 'var(--border-color)';
+                            toolDiv.style.background = 'var(--bg-primary)';
+                        };
 
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
                         checkbox.value = tool.name;
                         checkbox.checked = selectedTools.includes(tool.name);
-                        checkbox.style.cssText = 'margin-right: 10px; width: 18px; height: 18px; cursor: pointer;';
-
+                        checkbox.style.cssText = 'width: 18px; height: 18px; cursor: pointer;';
                         checkbox.addEventListener('change', (e) => {
                             if (e.target.checked) {
                                 selectedTools.push(tool.name);
@@ -836,45 +1229,42 @@
                         const toolInfo = document.createElement('div');
                         toolInfo.style.cssText = 'flex: 1;';
 
-                        const toolName = document.createElement('strong');
+                        const toolName = document.createElement('div');
                         toolName.textContent = tool.title || tool.name;
-                        toolName.style.cssText = 'display: block; margin-bottom: 4px; font-size: 14px;';
+                        toolName.style.cssText = 'font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;';
 
-                        const toolDesc = document.createElement('span');
+                        const toolDesc = document.createElement('div');
                         toolDesc.textContent = `${tool.name} (v${tool.version})`;
-                        toolDesc.style.cssText = 'color: #666; font-size: 12px;';
+                        toolDesc.style.cssText = 'color: var(--text-muted); font-size: 12px;';
 
                         toolInfo.appendChild(toolName);
                         toolInfo.appendChild(toolDesc);
 
-                        checkboxLabel.appendChild(checkbox);
-                        checkboxLabel.appendChild(toolInfo);
-
-                        toolDiv.appendChild(checkboxLabel);
+                        toolDiv.appendChild(checkbox);
+                        toolDiv.appendChild(toolInfo);
                         toolsList.appendChild(toolDiv);
                     });
 
-                    // 添加保存按钮
-                    const saveDiv = document.createElement('div');
-                    saveDiv.style.cssText = 'padding: 12px; margin-top: 16px; text-align: right; border-top: 1px solid #ddd;';
-
-                    const saveBtn = document.createElement('button');
-                    saveBtn.textContent = '保存';
-                    saveBtn.style.cssText = 'padding: 8px 24px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;';
-                    saveBtn.onclick = () => {
-                        showToast(`已选择 ${selectedTools.length} 个工具`, 'success');
-                        closeToolsModal();
-                    };
-
-                    saveDiv.appendChild(saveBtn);
-                    toolsList.appendChild(saveDiv);
+                    // const saveDiv = document.createElement('div');
+                    // saveDiv.style.cssText = 'padding: 16px; margin-top: 16px; text-align: right; border-top: 1px solid var(--border-color);';
+                    //
+                    // const saveBtn = document.createElement('button');
+                    // saveBtn.textContent = '关闭';
+                    // saveBtn.style.cssText = 'padding: 12px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;';
+                    // saveBtn.onclick = () => {
+                    //     // showToast(`已选择 ${selectedTools.length} 个工具`, 'success');
+                    //     closeToolsModal();
+                    // };
+                    //
+                    // saveDiv.appendChild(saveBtn);
+                    // toolsList.appendChild(saveDiv);
                 } else {
-                    toolsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无可用工具</div>';
+                    toolsList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">暂无可用工具</div>';
                 }
             })
             .catch(error => {
-                console.error('Error loading tools:', error);
-                toolsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">加载失败，请稍后重试</div>';
+                console.error('加载工具失败:', error);
+                toolsList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--error-color);">加载失败，请稍后重试</div>';
             });
     }
 
@@ -888,77 +1278,57 @@
     }
 
     function loadKnowledgeData() {
-        // 清空现有表格内容
-        tableBody.innerHTML = '';
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">加载中...</td></tr>';
 
-        // 显示加载状态
-        const loadingRow = document.createElement('tr');
-        loadingRow.innerHTML = '<td colspan="5" style="text-align: center;">加载中...</td>';
-        tableBody.appendChild(loadingRow);
-
-        // 获取知识库数据
         fetch('/spring/ai/chat/knowledge')
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
             .then(data => {
-                console.debug('data', data)
-
-                // 清除加载行
+                console.debug('data', data);
                 tableBody.innerHTML = '';
 
-                // 填充表格数据
                 if (data && data.length > 0) {
                     data.forEach(item => {
                         const row = document.createElement('tr');
-
-                        // 格式化文件大小
                         const fileSize = formatFileSize(item.size);
-                        // 格式化日期
                         const formattedDate = formatDate(item.uploadTime);
 
                         row.innerHTML = `
-                        <td>${truncateText(item.fileName, 30)}</td>
-                        <td>${fileSize}</td>
-                        <td>${formattedDate}</td>
-                        <td>
-                            <div class="action-buttons">
+                            <td>${truncateText(item.fileName, 30)}</td>
+                            <td>${fileSize}</td>
+                            <td>${formattedDate}</td>
+                            <td>
                                 <button class="action-btn" onclick="deleteDocument('${item.id}', this)">删除</button>
-                            </div>
-                        </td>
-                    `;
+                            </td>
+                        `;
                         tableBody.appendChild(row);
                     });
                 } else {
                     const emptyRow = document.createElement('tr');
-                    emptyRow.innerHTML = '<td colspan="5" style="text-align: center;">暂无知识库文档</td>';
+                    emptyRow.innerHTML = '<td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">暂无知识库文档</td>';
                     tableBody.appendChild(emptyRow);
                 }
             })
             .catch(error => {
-                console.error('Error loading knowledge data:', error);
-                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">加载失败，请稍后重试</td></tr>';
+                console.error('加载知识库失败:', error);
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--error-color);">加载失败，请稍后重试</td></tr>';
             });
     }
 
     function deleteDocument(docId, element) {
         if (confirm('确定要删除这个文档吗？')) {
-            fetch(`/spring/ai/chat/knowledge/${docId}`, {
-                method: 'DELETE'
-            })
+            fetch(`/spring/ai/chat/knowledge/${docId}`, { method: 'DELETE' })
                 .then(response => response.json())
                 .then(data => {
                     if (data) {
-                        // 删除表格行
                         element.closest('tr').remove();
                         showToast('知识库删除成功', 'success');
                     }
                 })
                 .catch(error => {
-                    console.error('Error deleting document:', error);
+                    console.error('删除失败:', error);
                     showToast('文档删除失败，请稍后重试', 'error');
                 });
         }
@@ -987,6 +1357,182 @@
             hour: '2-digit',
             minute: '2-digit'
         });
+    }
+
+    function openSkillsModal() {
+        skillsModalOverlay.style.display = 'flex';
+        loadSkillsData();
+    }
+
+    function closeSkillsModal() {
+        skillsModalOverlay.style.display = 'none';
+    }
+
+    function loadSkillsData() {
+        skillsListContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载中...</div>';
+        skillsDetailContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><p style="font-size: 16px; margin-bottom: 8px;">请选择一个技能查看详情</p></div>';
+
+        fetch('/spring/ai/chat/skills')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                skillsListContainer.innerHTML = '';
+
+                if (data && data.length > 0) {
+                    data.forEach((skill, index) => {
+                        const skillItem = document.createElement('div');
+                        skillItem.className = 'skill-item';
+                        skillItem.onclick = () => selectSkill(skill, skillItem);
+
+                        const skillName = document.createElement('div');
+                        skillName.className = 'skill-item-name';
+                        skillName.textContent = skill.name;
+
+                        skillItem.appendChild(skillName);
+                        skillsListContainer.appendChild(skillItem);
+                    });
+                } else {
+                    skillsListContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">暂无可用技能</div>';
+                }
+            })
+            .catch(error => {
+                console.error('加载技能失败:', error);
+                skillsListContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--error-color);">加载失败，请稍后重试</div>';
+            });
+    }
+
+    function selectSkill(skill, element) {
+        currentSelectedSkill = skill;
+        skillParams = {};
+
+        const allItems = skillsListContainer.querySelectorAll('.skill-item');
+        allItems.forEach(item => item.classList.remove('selected'));
+        element.classList.add('selected');
+
+        document.getElementById('skill-detail-title').textContent = skill.name;
+        skillsDetailContainer.innerHTML = '';
+
+        // Part 1: Tools
+        const toolsSection = document.createElement('div');
+        toolsSection.className = 'detail-section';
+        toolsSection.innerHTML = `
+            <div class="detail-section-title">使用工具</div>
+            <div class="tools-tags" id="tools-tags"></div>
+        `;
+
+        const toolsTagsContainer = toolsSection.querySelector('#tools-tags');
+        if (skill.tools && skill.tools.length > 0) {
+            skill.tools.forEach(tool => {
+                const tag = document.createElement('span');
+                tag.className = 'tool-tag';
+                tag.textContent = tool;
+                toolsTagsContainer.appendChild(tag);
+            });
+        } else {
+            toolsTagsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">无指定工具</span>';
+        }
+        skillsDetailContainer.appendChild(toolsSection);
+
+        // Part 2: Content
+        const contentSection = document.createElement('div');
+        contentSection.className = 'detail-section';
+        contentSection.innerHTML = `
+            <div class="detail-section-title">技能说明</div>
+            <div class="detail-section-content" style="line-height: 1.8; color: var(--text-primary);"></div>
+        `;
+
+        if (skill.skill && skill.skill.content) {
+            contentSection.querySelector('.detail-section-content').innerHTML = marked.parse(skill.skill.content);
+        } else {
+            contentSection.querySelector('.detail-section-content').innerHTML = '<span style="color: var(--text-muted);">无详细说明</span>';
+        }
+        skillsDetailContainer.appendChild(contentSection);
+
+        // Part 3: Parameters
+        const paramsSection = document.createElement('div');
+        paramsSection.className = 'detail-section';
+        paramsSection.innerHTML = `
+            <div class="detail-section-title">参数设置</div>
+            <div id="params-container" style="display: flex; flex-direction: column; gap: 16px;"></div>
+        `;
+
+        const paramsContainer = paramsSection.querySelector('#params-container');
+        if (skill.skill && skill.skill.content) {
+            const paramRegex = /\{(\w+)\}/g;
+            const matches = [...skill.skill.content.matchAll(paramRegex)];
+            const uniqueParams = [...new Set(matches.map(m => m[1]))];
+
+            if (uniqueParams.length > 0) {
+                uniqueParams.forEach(param => {
+                    const paramGroup = document.createElement('div');
+                    paramGroup.className = 'param-input-group';
+                    paramGroup.innerHTML = `
+                        <label class="param-label">${param}</label>
+                        <input type="text" class="param-input" placeholder="请输入 ${param} 的值" data-param="${param}">
+                    `;
+
+                    const input = paramGroup.querySelector('.param-input');
+                    input.addEventListener('input', (e) => {
+                        skillParams[param] = e.target.value;
+                    });
+
+                    paramsContainer.appendChild(paramGroup);
+                });
+            } else {
+                paramsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">无需设置参数</span>';
+            }
+        }
+        skillsDetailContainer.appendChild(paramsSection);
+
+        // Part 4: Send Button
+        const actionSection = document.createElement('div');
+        actionSection.style.marginTop = '24px';
+        const sendSkillBtn = document.createElement('button');
+        sendSkillBtn.className = 'send-skill-btn';
+        sendSkillBtn.textContent = '应用技能并发送';
+        sendSkillBtn.onclick = () => sendSkillRequest();
+        actionSection.appendChild(sendSkillBtn);
+        skillsDetailContainer.appendChild(actionSection);
+    }
+
+    function sendSkillRequest() {
+        if (!currentSelectedSkill) {
+            showToast('请先选择一个技能', 'error');
+            return;
+        }
+
+        const requiredParams = [];
+        if (currentSelectedSkill.skill && currentSelectedSkill.skill.content) {
+            const paramRegex = /\{(\w+)\}/g;
+            const matches = [...currentSelectedSkill.skill.content.matchAll(paramRegex)];
+            const uniqueParams = [...new Set(matches.map(m => m[1]))];
+
+            uniqueParams.forEach(param => {
+                if (!skillParams[param] || skillParams[param].trim() === '') {
+                    requiredParams.push(param);
+                }
+            });
+        }
+
+        if (requiredParams.length > 0) {
+            showToast(`请填写完整参数：${requiredParams.join(', ')}`, 'error');
+            return;
+        }
+
+        let promptContent = currentSelectedSkill.skill.content;
+        Object.keys(skillParams).forEach(param => {
+            const regex = new RegExp(`\\{${param}\\}`, 'g');
+            promptContent = promptContent.replace(regex, skillParams[param]);
+        });
+
+        closeSkillsModal();
+        textarea.value = promptContent;
+        selectedTools = currentSelectedSkill.tools || [];
+        send();
+
+        // showToast('已应用技能模板', 'success');
     }
 </script>
 </body>
