@@ -65,6 +65,16 @@ where npx
         "mcp/cn-weather/target/cn-weather-0.0.1-SNAPSHOT.jar"
       ],
       "command": "java"
+    },
+    "amap-maps": {
+      "args": [
+        "-y",
+        "@amap/amap-maps-mcp-server"
+      ],
+      "command": "npx",
+      "env": {
+        "AMAP_MAPS_API_KEY": ""
+      }
     }
   }
 }
