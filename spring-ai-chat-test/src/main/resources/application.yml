@@ -77,6 +77,12 @@ spring:
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
             skill: classpath:skills/sequential-thinking.st
+          - name: "新闻热点词频图"
+            tools:
+              - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - mcp-server-chart
+            skill: classpath:skills/news-world-chart.st
   servlet:
     multipart:
       max-file-size: 10MB

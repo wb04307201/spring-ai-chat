@@ -20,7 +20,7 @@ where npx
 {
   "mcpServers": {
     "sequential-thinking": {
-      "command": "npx.cmd",
+      "command": "npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-sequential-thinking"
@@ -31,7 +31,7 @@ where npx
         "-y",
         "bing-cn-mcp"
       ],
-      "command": "npx.cmd"
+      "command": "npx"
     },
     "time": {
       "command": "uvx",
@@ -41,7 +41,7 @@ where npx
       ]
     },
     "playwright": {
-      "command": "npx.cmd",
+      "command": "npx",
       "args": [
         "@playwright/mcp@latest"
       ]
@@ -75,6 +75,20 @@ where npx
       "env": {
         "AMAP_MAPS_API_KEY": ""
       }
+    },
+    "12306-mcp": {
+      "args": [
+        "-y",
+        "12306-mcp"
+      ],
+      "command": "npx"
+    },
+    "mcp-server-chart": {
+      "args": [
+        "-y",
+        "@antv/mcp-server-chart"
+      ],
+      "command": "npx"
     }
   }
 }

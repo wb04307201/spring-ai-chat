@@ -1,0 +1,1 @@
+使用 @get_current_time 获取今天的日期， 使用 @bing_search 搜索今天的热点信息， 根据热点信息使用 @generate_word_cloud_chart 生成热点词云图， 返回的url使用img标签展示，并设置width为100%
