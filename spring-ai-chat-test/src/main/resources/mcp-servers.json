@@ -46,6 +46,15 @@
         "mcp/cn-weather/target/cn-weather-0.0.1-SNAPSHOT.jar"
       ],
       "command": "java"
+    },
+    "amap-maps": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@amap/amap-maps-mcp-server"
+      ],
+      "env": {
+      }
     }
   }
 }
