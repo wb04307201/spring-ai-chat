@@ -69,9 +69,17 @@ spring:
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - playwright
               - spring-ai-mcp-client - fetch
-            skill: classpath:skills/what-tools.st
-          - name: "深入思考"
+              - spring-ai-mcp-client - us-weather
+              - spring-ai-mcp-client - cn-weather
+              - spring-ai-mcp-client - amap-maps
+              - spring-ai-mcp-client - 12306-mcp
+              - spring-ai-mcp-client - mcp-server-chart
+              - spring-ai-mcp-client - chrome-devtools
+            skill: 你可以调用哪些工具？
+          - name: "顺序思维"
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
