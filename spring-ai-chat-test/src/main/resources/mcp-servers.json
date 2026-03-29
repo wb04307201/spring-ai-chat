@@ -69,6 +69,12 @@
         "@antv/mcp-server-chart"
       ],
       "command": "npx.cmd"
+    },
+    "chrome-devtools": {
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ],
+      "command": "npx.cmd"
     }
   }
 }
