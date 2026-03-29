@@ -55,6 +55,20 @@
       ],
       "env": {
       }
+    },
+    "12306-mcp": {
+      "args": [
+        "-y",
+        "12306-mcp"
+      ],
+      "command": "npx.cmd"
+    },
+    "mcp-server-chart": {
+      "args": [
+        "-y",
+        "@antv/mcp-server-chart"
+      ],
+      "command": "npx.cmd"
     }
   }
 }
