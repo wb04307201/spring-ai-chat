@@ -215,28 +215,32 @@ public class ChatUiConfiguration {
                     if (!mcpSyncClients.isEmpty()) {
                         List<McpSyncClient> tempMcpSyncClients = new ArrayList<>();
                         for (McpSyncClient mcpSyncClient : mcpSyncClients) {
-                            if (chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())) {
-                                if (mcpSyncClient.isInitialized())
+                            if (chatRecord.tools().contains(mcpSyncClient.getClientInfo().title())) {
+                                if (mcpSyncClient.isInitialized()){
                                     tempMcpSyncClients.add(mcpSyncClient);
-                                else
-                                    log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().name());
+                                }else{
+                                    log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().title());
+                                }
                             }
                         }
-                        if (!tempMcpSyncClients.isEmpty())
+                        if (!tempMcpSyncClients.isEmpty()){
                             toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(tempMcpSyncClients).build();
+                        }
                     }
                     if (!mcpAsyncClients.isEmpty()) {
                         List<McpAsyncClient> tempMcpAsyncClients = new ArrayList<>();
                         for (McpAsyncClient mcpAsyncClient : mcpAsyncClients) {
-                            if (chatRecord.tools().contains(mcpAsyncClient.getClientInfo().name())) {
-                                if (mcpAsyncClient.isInitialized())
+                            if (chatRecord.tools().contains(mcpAsyncClient.getClientInfo().title())) {
+                                if (mcpAsyncClient.isInitialized()){
                                     tempMcpAsyncClients.add(mcpAsyncClient);
-                                else
-                                    log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().name());
+                                }else{
+                                    log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().title());
+                                }
                             }
                         }
-                        if (!tempMcpAsyncClients.isEmpty())
+                        if (!tempMcpAsyncClients.isEmpty()){
                             toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(tempMcpAsyncClients).build();
+                        }
                     }
 
                     if (toolCallbackProvider != null) {
