@@ -65,7 +65,7 @@ spring:
             The user query is outside your knowledge base.
             Politely inform the user that you can't answer it.
         skills:
-          - name: "测试"
+          - name: 测试
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
@@ -79,18 +79,18 @@ spring:
               - spring-ai-mcp-client - mcp-server-chart
               - spring-ai-mcp-client - chrome-devtools
             skill: 你可以调用哪些工具？
-          - name: "顺序思维"
+          - name: 顺序思维
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
             skill: classpath:skills/sequential-thinking.st
-          - name: "新闻热点词频图"
+          - name: 词云图
             tools:
-              - spring-ai-mcp-client - time
               - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
               - spring-ai-mcp-client - mcp-server-chart
-            skill: classpath:skills/news-world-chart.st
+            skill: classpath:skills/word-cloud.st
   servlet:
     multipart:
       max-file-size: 10MB
