@@ -2,6 +2,7 @@ package cn.wubo.spring.ai.chat;
 
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.servlet.http.Part;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -42,6 +43,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @AutoConfiguration
 @AutoConfigureAfter(name = {
@@ -223,6 +225,7 @@ public class ChatUiConfiguration {
                             }
                         }
                         if (!tempMcpSyncClients.isEmpty()){
+                            log.debug("McpSyncClient {} 初始化完成", tempMcpSyncClients.stream().map(McpSyncClient::getClientInfo).map(McpSchema.Implementation::name).collect(Collectors.joining(",")));
                             toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(tempMcpSyncClients).build();
                         }
                     }
@@ -238,6 +241,7 @@ public class ChatUiConfiguration {
                             }
                         }
                         if (!tempMcpAsyncClients.isEmpty()){
+                            log.debug("McpAsyncClient {} 初始化完成", tempMcpAsyncClients.stream().map(McpAsyncClient::getClientInfo).map(McpSchema.Implementation::name).collect(Collectors.joining(",")));
                             toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(tempMcpAsyncClients).build();
                         }
                     }
