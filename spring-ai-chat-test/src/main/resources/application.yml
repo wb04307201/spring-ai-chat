@@ -104,7 +104,6 @@ spring:
 server:
   tomcat:
     max-swallow-size: 2MB
-    disable-upload-timeout: false
 
 logging:
   level:
