@@ -214,11 +214,11 @@ public class ChatUiConfiguration {
                     if (!mcpSyncClients.isEmpty()) {
                         List<McpSyncClient> tempMcpSyncClients = new ArrayList<>();
                         for (McpSyncClient mcpSyncClient : mcpSyncClients) {
-                            if (chatRecord.tools().contains(mcpSyncClient.getClientInfo().title())) {
+                            if (chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())) {
                                 if (mcpSyncClient.isInitialized()){
                                     tempMcpSyncClients.add(mcpSyncClient);
                                 }else{
-                                    log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().title());
+                                    log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().name());
                                 }
                             }
                         }
@@ -229,11 +229,11 @@ public class ChatUiConfiguration {
                     if (!mcpAsyncClients.isEmpty()) {
                         List<McpAsyncClient> tempMcpAsyncClients = new ArrayList<>();
                         for (McpAsyncClient mcpAsyncClient : mcpAsyncClients) {
-                            if (chatRecord.tools().contains(mcpAsyncClient.getClientInfo().title())) {
+                            if (chatRecord.tools().contains(mcpAsyncClient.getClientInfo().name())) {
                                 if (mcpAsyncClient.isInitialized()){
                                     tempMcpAsyncClients.add(mcpAsyncClient);
                                 }else{
-                                    log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().title());
+                                    log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().name());
                                 }
                             }
                         }
