@@ -96,6 +96,11 @@ spring:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - amap-maps
             skill: classpath:skills/road-trip.st
+          - name: 商品参数对比
+            tools:
+              - spring-ai-mcp-client - tavily-mcp
+              - spring-ai-mcp-client - sequential-thinking
+            skill: classpath:skills/goods-compare.st
 
   servlet:
     multipart:
