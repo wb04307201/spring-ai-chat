@@ -2,6 +2,7 @@ package cn.wubo.spring.ai.chat;
 
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.servlet.http.Part;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -42,6 +43,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @AutoConfiguration
 @AutoConfigureAfter(name = {
@@ -215,27 +217,33 @@ public class ChatUiConfiguration {
                         List<McpSyncClient> tempMcpSyncClients = new ArrayList<>();
                         for (McpSyncClient mcpSyncClient : mcpSyncClients) {
                             if (chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())) {
-                                if (mcpSyncClient.isInitialized())
+                                if (mcpSyncClient.isInitialized()){
                                     tempMcpSyncClients.add(mcpSyncClient);
-                                else
+                                }else{
                                     log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().name());
+                                }
                             }
                         }
-                        if (!tempMcpSyncClients.isEmpty())
+                        if (!tempMcpSyncClients.isEmpty()){
+                            log.debug("McpSyncClient {} 初始化完成", tempMcpSyncClients.stream().map(McpSyncClient::getClientInfo).map(McpSchema.Implementation::name).collect(Collectors.joining(",")));
                             toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(tempMcpSyncClients).build();
+                        }
                     }
                     if (!mcpAsyncClients.isEmpty()) {
                         List<McpAsyncClient> tempMcpAsyncClients = new ArrayList<>();
                         for (McpAsyncClient mcpAsyncClient : mcpAsyncClients) {
                             if (chatRecord.tools().contains(mcpAsyncClient.getClientInfo().name())) {
-                                if (mcpAsyncClient.isInitialized())
+                                if (mcpAsyncClient.isInitialized()){
                                     tempMcpAsyncClients.add(mcpAsyncClient);
-                                else
+                                }else{
                                     log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().name());
+                                }
                             }
                         }
-                        if (!tempMcpAsyncClients.isEmpty())
+                        if (!tempMcpAsyncClients.isEmpty()){
+                            log.debug("McpAsyncClient {} 初始化完成", tempMcpAsyncClients.stream().map(McpAsyncClient::getClientInfo).map(McpSchema.Implementation::name).collect(Collectors.joining(",")));
                             toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(tempMcpAsyncClients).build();
+                        }
                     }
 
                     if (toolCallbackProvider != null) {

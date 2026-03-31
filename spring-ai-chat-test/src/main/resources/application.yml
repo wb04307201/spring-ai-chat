@@ -91,6 +91,12 @@ spring:
               - spring-ai-mcp-client - fetch
               - spring-ai-mcp-client - mcp-server-chart
             skill: classpath:skills/word-cloud.st
+          - name: 自驾游出行规划
+            tools:
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - amap-maps
+            skill: classpath:skills/road-trip.st
+
   servlet:
     multipart:
       max-file-size: 10MB
