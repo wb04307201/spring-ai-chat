@@ -67,34 +67,34 @@ spring:
         skills:
           - name: 测试
             tools:
-              - sequential-thinking
-              - bing-search
-              - time
-              - playwright
-              - fetch
-              - us-weather
-              - cn-weather
-              - amap-maps
-              - 12306-mcp
-              - mcp-server-chart
-              - chrome-devtools
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - playwright
+              - spring-ai-mcp-client - fetch
+              - spring-ai-mcp-client - us-weather
+              - spring-ai-mcp-client - cn-weather
+              - spring-ai-mcp-client - amap-maps
+              - spring-ai-mcp-client - 12306-mcp
+              - spring-ai-mcp-client - mcp-server-chart
+              - spring-ai-mcp-client - chrome-devtools
             skill: 你可以调用哪些工具？
           - name: 顺序思维
             tools:
-              - sequential-thinking
-              - bing-search
-              - fetch
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
             skill: classpath:skills/sequential-thinking.st
           - name: 词云图
             tools:
-              - bing-search
-              - fetch
-              - mcp-server-chart
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
+              - spring-ai-mcp-client - mcp-server-chart
             skill: classpath:skills/word-cloud.st
           - name: 自驾游出行规划
             tools:
-              - sequential-thinking
-              - amap-maps
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - amap-maps
             skill: classpath:skills/road-trip.st
 
   servlet:
