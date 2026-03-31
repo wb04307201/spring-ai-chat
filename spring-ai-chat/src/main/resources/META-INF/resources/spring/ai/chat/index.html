@@ -220,7 +220,7 @@
             order: 2;
         }
 
-        .item.item-right {
+        .item-right {
             justify-content: flex-end;
         }
 
@@ -228,6 +228,40 @@
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-top-left-radius: 4px;
+        }
+
+        .bubble-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .bubble:hover .bubble-actions {
+            opacity: 1;
+        }
+
+        .bubble-action-btn {
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .bubble-action-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         .item-right .bubble {
@@ -1013,6 +1047,12 @@
                     </div>
                 </div>
                 <div id="${id}"></div>
+                <div class="bubble-actions">
+                    <button class="bubble-action-btn" onclick="window.copyMarkdown('${id}')">
+                        <span>📋</span>
+                        <span>复制</span>
+                    </button>
+                </div>
             </div>
         `;
         mainContent.appendChild(assistantItem);
@@ -1030,6 +1070,28 @@
             thinkingContent.classList.add('expanded');
             arrow.textContent = '▼';
         }
+    };
+
+    window.copyMarkdown = function (id) {
+        const messageElement = document.getElementById(id);
+        if (!messageElement) {
+            showToast('消息未找到', 'error');
+            return;
+        }
+
+        const textContent = messageElement.textContent;
+
+        if (!textContent || textContent.trim() === '') {
+            showToast('没有可复制的内容', 'error');
+            return;
+        }
+
+        navigator.clipboard.writeText(textContent).then(() => {
+            showToast('复制成功！', 'success');
+        }).catch(err => {
+            console.error('复制失败:', err);
+            showToast('复制失败，请手动复制', 'error');
+        });
     };
 
     function enableSendBtn() {
