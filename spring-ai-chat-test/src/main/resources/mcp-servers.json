@@ -77,10 +77,12 @@
       "command": "npx.cmd"
     },
     "tavily-mcp": {
+      "args": [
+        "-y",
+        "tavily-mcp@0.1.4"
+      ],
       "command": "npx.cmd",
-      "args": ["-y", "tavily-mcp@0.1.4"],
       "env": {
-        "TAVILY_API_KEY": "TAVILY_API_KEY"
       }
     }
   }

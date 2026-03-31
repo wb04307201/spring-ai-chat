@@ -95,6 +95,18 @@ where npx
         "chrome-devtools-mcp@latest"
       ],
       "command": "npx"
+    },
+    "tavily-mcp": {
+      "args": [
+        "-y",
+        "tavily-mcp@0.1.4"
+      ],
+      "autoApprove": [],
+      "command": "npx",
+      "disabled": false,
+      "env": {
+        "TAVILY_API_KEY": "your-api-key-here"
+      }
     }
   }
 }
