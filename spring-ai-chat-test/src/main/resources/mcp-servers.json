@@ -33,19 +33,11 @@
       ],
       "command": "uvx"
     },
-    "us-weather": {
+    "cn-weather-mcp": {
       "args": [
-        "-jar",
-        "mcp/us-weather/target/us-weather-0.0.1-SNAPSHOT.jar"
+        "io.github.wb04307201:cn-weather-mcp:0.0.1"
       ],
-      "command": "java"
-    },
-    "cn-weather": {
-      "args": [
-        "-jar",
-        "mcp/cn-weather/target/cn-weather-0.0.1-SNAPSHOT.jar"
-      ],
-      "command": "java"
+      "command": "jbang.cmd"
     },
     "amap-maps": {
       "command": "npx.cmd",
