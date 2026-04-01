@@ -58,7 +58,7 @@ iex "& { $(iwr https://ps.jbang.dev) } app setup"
     },
     "cn-weather-mcp": {
       "args": [
-        "io.github.wb04307201:cn-weather-mcp:0.0.1"
+        "io.github.wb04307201:cn-weather-mcp:1.0.0"
       ],
       "command": "jbang"
     },
