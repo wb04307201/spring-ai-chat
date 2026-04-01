@@ -14,6 +14,10 @@ pip install uv
 npm install -g npx
 where uv
 where npx
+# linux/mac
+curl -Ls https://sh.jbang.dev | bash -s - app setup
+# windows powershell
+iex "& { $(iwr https://ps.jbang.dev) } app setup"
 ```
 
 ```json
@@ -52,19 +56,11 @@ where npx
       ],
       "command": "uvx"
     },
-    "us-weather": {
+    "cn-weather-mcp": {
       "args": [
-        "-jar",
-        "mcp/us-weather/target/us-weather-0.0.1-SNAPSHOT.jar"
+        "io.github.wb04307201:cn-weather-mcp:1.0.0"
       ],
-      "command": "java"
-    },
-    "cn-weather": {
-      "args": [
-        "-jar",
-        "mcp/cn-weather/target/cn-weather-0.0.1-SNAPSHOT.jar"
-      ],
-      "command": "java"
+      "command": "jbang"
     },
     "amap-maps": {
       "args": [
