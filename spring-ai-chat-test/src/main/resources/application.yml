@@ -101,6 +101,10 @@ spring:
               - spring-ai-mcp-client - tavily-mcp
               - spring-ai-mcp-client - sequential-thinking
             skill: classpath:skills/goods-compare.st
+          - name: 热点新闻
+            tools:
+              - spring-ai-mcp-client - juhe-mcp-server
+            skill: classpath:skills/news.st
 
   servlet:
     multipart:

@@ -76,6 +76,16 @@
       "command": "npx.cmd",
       "env": {
       }
+    },
+    "juhe-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "juhe-mcp-proxy",
+        "https://mcp.juhe.cn/sse?token=RfXYPzmZigD4rTEkqSbUJgfi7AqqvVQgEpMTP4A8METwcr"
+      ],
+      "env": {
+        "LOG_LEVEL": "CRITICAL"
+      }
     }
   }
 }
