@@ -72,8 +72,7 @@ spring:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - playwright
               - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - us-weather
-              - spring-ai-mcp-client - cn-weather
+              - spring-ai-mcp-client - cn-weather-mcp
               - spring-ai-mcp-client - amap-maps
               - spring-ai-mcp-client - 12306-mcp
               - spring-ai-mcp-client - mcp-server-chart
