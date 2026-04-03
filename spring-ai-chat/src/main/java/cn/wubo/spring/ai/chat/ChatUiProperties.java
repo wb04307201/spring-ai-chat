@@ -53,6 +53,7 @@ public class ChatUiProperties {
     public static class Tool {
         private String name;
         private String label;
+        private ContentHolder description;
     }
 
     @Data

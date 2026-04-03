@@ -169,13 +169,24 @@ public class ChatUiConfiguration {
             if (!mcpSyncClients.isEmpty()) {
                 mcpSyncClients.stream().map(McpSyncClient::getClientInfo).forEach(impl -> {
                     Optional<ChatUiProperties.Tool> tool = properties.getTools().stream().filter(t -> t.getName().equals(impl.name())).findAny();
-                    tools.add(new ToolRecord(impl.name(), impl.title(), impl.version(), tool.isPresent() ? tool.get().getLabel() : impl.title()));
+                    tools.add(new ToolRecord(
+                            impl.name(),
+                            impl.title(),
+                            impl.version(),
+                            tool.isPresent() ? tool.get().getLabel() : impl.title(),
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null));
+
                 });
             }
             if (!mcpAsyncClients.isEmpty()) {
                 mcpAsyncClients.stream().map(McpAsyncClient::getClientInfo).forEach(impl -> {
                     Optional<ChatUiProperties.Tool> tool = properties.getTools().stream().filter(t -> t.getName().equals(impl.name())).findAny();
-                    tools.add(new ToolRecord(impl.name(), impl.title(), impl.version(), tool.isPresent() ? tool.get().getLabel() : impl.title()));
+                    tools.add(new ToolRecord(
+                            impl.name(),
+                            impl.title(),
+                            impl.version(),
+                            tool.isPresent() ? tool.get().getLabel() : impl.title(),
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null));
                 });
             }
             return ServerResponse.ok().body(tools);

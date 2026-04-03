@@ -1298,7 +1298,10 @@
                         toolName.style.cssText = 'font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;';
 
                         const toolDesc = document.createElement('div');
-                        toolDesc.textContent = `${tool.name} (v${tool.version})`;
+                        if (tool.description)
+                            toolDesc.textContent = `${tool.description}`;
+                        else
+                            toolDesc.textContent = `${tool.name} (v${tool.version})`;
                         toolDesc.style.cssText = 'color: var(--text-muted); font-size: 12px;';
 
                         toolInfo.appendChild(toolName);
