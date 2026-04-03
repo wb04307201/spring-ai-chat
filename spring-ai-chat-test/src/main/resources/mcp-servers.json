@@ -21,12 +21,6 @@
         "--local-timezone=Asia/Shanghai"
       ]
     },
-    "playwright": {
-      "command": "npx.cmd",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
-    },
     "fetch": {
       "args": [
         "mcp-server-fetch"
@@ -59,12 +53,6 @@
       "args": [
         "-y",
         "@antv/mcp-server-chart"
-      ],
-      "command": "npx.cmd"
-    },
-    "chrome-devtools": {
-      "args": [
-        "chrome-devtools-mcp@latest"
       ],
       "command": "npx.cmd"
     },

@@ -64,19 +64,38 @@ spring:
           defaultEmptyContextPromptTemplate: |
             The user query is outside your knowledge base.
             Politely inform the user that you can't answer it.
+        tools:
+          - name: spring-ai-mcp-client - sequential-thinking
+            label: 顺序思维
+          - name: spring-ai-mcp-client - bing-search
+            label: 必应搜索
+          - name: spring-ai-mcp-client - time
+            label: 时间
+          - name: spring-ai-mcp-client - fetch
+            label: 网页内容抓取
+          - name: spring-ai-mcp-client - cn-weather-mcp
+            label: 中国天气
+          - name: spring-ai-mcp-client - amap-maps
+            label: 高德地图
+          - name: spring-ai-mcp-client - 12306-mcp
+            label: 12306购票搜索
+          - name: spring-ai-mcp-client - tavily-mcp
+            label: 网络搜索与数据提取
+          - name: spring-ai-mcp-client - juhe-mcp-server
+            label: 聚合数据
+          - name: spring-ai-mcp-client - mcp-server-chart
+            label: 图表
         skills:
           - name: 测试
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - time
-              - spring-ai-mcp-client - playwright
               - spring-ai-mcp-client - fetch
               - spring-ai-mcp-client - cn-weather-mcp
               - spring-ai-mcp-client - amap-maps
               - spring-ai-mcp-client - 12306-mcp
               - spring-ai-mcp-client - mcp-server-chart
-              - spring-ai-mcp-client - chrome-devtools
             skill: 你可以调用哪些工具？
           - name: 顺序思维
             tools:
@@ -104,6 +123,19 @@ spring:
             tools:
               - spring-ai-mcp-client - juhe-mcp-server
             skill: classpath:skills/news.st
+            params:
+              - name: board
+                type: select
+                options:
+                  - name: 焦点
+                    value: 焦点
+                  - name: 娱乐
+                    value: 娱乐
+              - name: param1
+                type: text
+              - name: param2
+                type: text-area
+
 
   servlet:
     multipart:

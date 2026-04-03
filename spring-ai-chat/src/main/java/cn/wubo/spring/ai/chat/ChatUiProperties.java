@@ -18,6 +18,7 @@ public class ChatUiProperties {
     private String defaultSystem;
     private boolean init = true;
     private Rag rag = new Rag();
+    private List<Tool> tools;
     private List<Skill> skills;
 
     @Data
@@ -46,6 +47,12 @@ public class ChatUiProperties {
                 The user query is outside your knowledge base.
                 Politely inform the user that you can't answer it.
                 """;
+    }
+
+    @Data
+    public static class Tool {
+        private String name;
+        private String label;
     }
 
     @Data
