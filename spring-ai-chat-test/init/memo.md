@@ -23,11 +23,11 @@ iex "& { $(iwr https://ps.jbang.dev) } app setup"
 ```json
 {
   "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx",
+    "time": {
+      "command": "uvx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "mcp-server-time",
+        "--local-timezone=Asia/Shanghai"
       ]
     },
     "bing-search": {
@@ -37,24 +37,18 @@ iex "& { $(iwr https://ps.jbang.dev) } app setup"
       ],
       "command": "npx"
     },
-    "time": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-time",
-        "--local-timezone=Asia/Shanghai"
-      ]
-    },
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
-    },
     "fetch": {
       "args": [
         "mcp-server-fetch"
       ],
       "command": "uvx"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
     },
     "cn-weather-mcp": {
       "args": [
@@ -85,6 +79,12 @@ iex "& { $(iwr https://ps.jbang.dev) } app setup"
         "@antv/mcp-server-chart"
       ],
       "command": "npx"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
     },
     "chrome-devtools": {
       "args": [

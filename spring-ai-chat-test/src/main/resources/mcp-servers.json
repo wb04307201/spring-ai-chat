@@ -1,10 +1,10 @@
 {
   "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx.cmd",
+    "time": {
+      "command": "uvx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "mcp-server-time",
+        "--local-timezone=Asia/Shanghai"
       ]
     },
     "bing-search": {
@@ -14,18 +14,18 @@
       ],
       "command": "npx.cmd"
     },
-    "time": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-time",
-        "--local-timezone=Asia/Shanghai"
-      ]
-    },
     "fetch": {
       "args": [
         "mcp-server-fetch"
       ],
       "command": "uvx"
+    },
+    "sequential-thinking": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
     },
     "cn-weather-mcp": {
       "args": [
@@ -56,24 +56,17 @@
       ],
       "command": "npx.cmd"
     },
-    "tavily-mcp": {
-      "args": [
-        "-y",
-        "tavily-mcp@0.1.4"
-      ],
+    "playwright": {
       "command": "npx.cmd",
-      "env": {
-      }
-    },
-    "juhe-mcp-server": {
-      "command": "uvx",
       "args": [
-        "juhe-mcp-proxy",
-        "https://mcp.juhe.cn/sse?token=RfXYPzmZigD4rTEkqSbUJgfi7AqqvVQgEpMTP4A8METwcr"
+        "@playwright/mcp@latest"
+      ]
+    },
+    "chrome-devtools": {
+      "args": [
+        "chrome-devtools-mcp@latest"
       ],
-      "env": {
-        "LOG_LEVEL": "CRITICAL"
-      }
+      "command": "npx.cmd"
     }
   }
 }

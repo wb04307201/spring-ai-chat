@@ -2,11 +2,6 @@ spring:
   ai:
     zhipuai:
       api-key: ${ZHIPUAI_API_KEY}
-      chat:
-        options:
-          model: glm-4.6
-          thinking:
-            type: enabled
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
@@ -93,18 +88,20 @@ spring:
             label: 12306购票搜索
             description:
               12306购票搜索服务，允许大模型利用接口搜索12306购票信息。
-          - name: spring-ai-mcp-client - tavily-mcp
-            label: 网络搜索与数据提取
-            description:
-              Production ready MCP server with real-time search, extract, map & crawl.
-          - name: spring-ai-mcp-client - juhe-mcp-server
-            label: 聚合数据
           - name: spring-ai-mcp-client - mcp-server-chart
             label: 图表
             description:
               这是一个基于 TypeScript 的 MCP 服务器，提供图表生成功能。它允许您通过 MCP 工具创建各种类型的图表。
+          - name: spring-ai-mcp-client - playwright
+            label: Playwright
+            description:
+              一种模型上下文协议服务器，它使大型语言模型能够通过结构化的可访问性快照与网页交互，而无需使用视觉模型或截图。
+          - name: spring-ai-mcp-client - chrome-devtools
+            label: Chrome DevTools
+            description:
+              chrome-devtools-mcp lets your coding agent (such as Gemini, Claude, Cursor or Copilot) control and inspect a live Chrome browser. It acts as a Model-Context-Protocol (MCP) server, giving your AI coding assistant access to the full power of Chrome DevTools for reliable automation, in-depth debugging, and performance analysis.
         skills:
-          - name: 测试
+          - name: 测试1
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
@@ -115,118 +112,46 @@ spring:
               - spring-ai-mcp-client - 12306-mcp
               - spring-ai-mcp-client - mcp-server-chart
             skill: 你可以调用哪些工具？
-          - name: 顺序思维
+          - name: 测试2
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
-            skill: classpath:skills/sequential-thinking.st
-            parameters:
+            skill: classpath:skills/test2.st
+          - name: 测试3
+            skill: classpath:skills/test3.st
+            params:
               - name: param1
-                label: 关键词
+                label: 参数1
+                type: select
+                options:
+                  - label: 你好
+                    value: 你好
+                  - label: Hello
+                    value: Hello
+                default-value: 你好
+                required:  true
+              - name: prama2
+                label: 参数2
                 type: text
                 required: true
-          - name: 词云图
+                placeholder: 你想知道的事情
+              - name: param3
+                label: 参数3
+                type: text_area
+                required: false
+                placeholder: 补充内容，可以不输入
+          - name: 测试4
             tools:
+              - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
+              - spring-ai-mcp-client - cn-weather-mcp
               - spring-ai-mcp-client - mcp-server-chart
-            skill: classpath:skills/word-cloud.st
-#            template: "请生成一个词云图，内容为：{param1}"
-            parameters:
-                - name: param1
-                  label: 关键词
-                  type: text
-                  required: true
-          - name: 自驾游出行规划
-            tools:
-              - spring-ai-mcp-client - sequential-thinking
-              - spring-ai-mcp-client - amap-maps
-            skill: classpath:skills/road-trip.st
-#            template: "请根据以下要求，帮助我规划五一假期的出行路线和活动推荐，从{startCity}到{endCity}。结合高德地图MCP和大模型API的数据支持，以及Sequential-Thinking方法来提供个性化、灵活的出行建议："
-            parameters:
-              - name: startCity
-                label: 出发城市
-                type: text
-                required: true
-                description: 请输入出发城市名称
-              - name: endCity
-                label: 目的城市
-                type: text
-                required: true
-                description: 请输入目的城市名称
-          - name: 商品参数对比
-            tools:
-              - spring-ai-mcp-client - tavily-mcp
-              - spring-ai-mcp-client - sequential-thinking
-            skill: classpath:skills/goods-compare.st
-#            template: "请对比商品{param1}与{param2}的参数及评价，要求："
-            parameters:
-              - name: param1
-                label: 商品1
-                type: text
-                required: true
-                description: 请输入第一个商品名称
-              - name: param2
-                label: 商品2
-                type: text
-                required: true
-                description: 请输入第二个商品名称
-          - name: 热点新闻
-            tools:
-              - spring-ai-mcp-client - juhe-mcp-server
-            skill: classpath:skills/news.st
-            parameters:
-              - name: board
-                label: 查询类别
-                type: select
-                required: true
-                description: 请选择查询类别
-                options:
-                  - 新闻
-                  - 科技
-                  - 体育
-                  - 娱乐
-                defaultValue: 新闻
-              - name: keyword
-                label: 关键词
-                type: text
-                required: false
-                description: 请输入查询关键词
-              - name: requirements
-                label: 详细要求
-                type: text-area
-                required: false
-                description: 请输入其他详细要求
-                defaultValue: 请提供最新信息
-          - name: 综合查询示例
-            tools:
-              - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - fetch
-            template: "请帮我查询{category}类别的信息，关键词：{keyword}，详细要求：{requirements}"
-            parameters:
-              - name: category
-                label: 查询类别
-                type: select
-                required: true
-                description: 请选择查询类别
-                options:
-                  - 新闻
-                  - 科技
-                  - 体育
-                  - 娱乐
-                defaultValue: 新闻
-              - name: keyword
-                label: 关键词
-                type: text
-                required: true
-                description: 请输入查询关键词
-              - name: requirements
-                label: 详细要求
-                type: text-area
-                required: false
-                description: 请输入其他详细要求
-                defaultValue: 请提供最新信息
+              - spring-ai-mcp-client - playwright
+              - spring-ai-mcp-client - chrome-devtools
+            skill: classpath:skills/test4.st
 
   servlet:
     multipart:

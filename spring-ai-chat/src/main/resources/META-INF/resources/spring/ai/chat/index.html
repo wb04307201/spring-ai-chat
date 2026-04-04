@@ -722,11 +722,27 @@
             font-family: inherit;
             transition: all 0.2s;
             outline: none;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
 
         .param-input:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .param-input.param-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .param-input select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
         }
 
         .send-skill-btn {
@@ -1513,30 +1529,58 @@
         `;
 
         const paramsContainer = paramsSection.querySelector('#params-container');
-        if (skill.skill && skill.skill.content) {
-            const paramRegex = /\{(\w+)\}/g;
-            const matches = [...skill.skill.content.matchAll(paramRegex)];
-            const uniqueParams = [...new Set(matches.map(m => m[1]))];
+        if (skill.params && skill.params.length > 0) {
+            skill.params.forEach(param => {
+                const paramGroup = document.createElement('div');
+                paramGroup.className = 'param-input-group';
+                
+                const requiredMark = param.required ? '<span style="color: var(--error-color); margin-left: 4px;">*</span>' : '';
+                const labelHtml = `<label class="param-label">${param.label}${requiredMark}</label>`;
+                
+                let inputHtml = '';
+                if (param.type === 'SELECT') {
+                    inputHtml = `<select class="param-input" data-param="${param.name}" data-required="${param.required}">`;
+                    if (!param.required) {
+                        inputHtml += '<option value="">请选择</option>';
+                    }
+                    if (param.options && param.options.length > 0) {
+                        param.options.forEach(option => {
+                            const selected = param.defaultValue === option.value ? 'selected' : '';
+                            inputHtml += `<option value="${option.value}" ${selected}>${option.label}</option>`;
+                        });
+                    }
+                    inputHtml += '</select>';
+                } else if (param.type === 'TEXT_AREA') {
+                    const placeholder = param.placeholder || `请输入${param.label}`;
+                    const defaultValue = param.defaultValue || '';
+                    inputHtml = `<textarea class="param-input param-textarea" placeholder="${placeholder}" data-param="${param.name}" data-required="${param.required}">${defaultValue}</textarea>`;
+                } else {
+                    // TEXT type (default)
+                    const placeholder = param.placeholder || `请输入${param.label}`;
+                    const defaultValue = param.defaultValue || '';
+                    inputHtml = `<input type="text" class="param-input" placeholder="${placeholder}" value="${defaultValue}" data-param="${param.name}" data-required="${param.required}">`;
+                }
+                
+                paramGroup.innerHTML = labelHtml + inputHtml;
 
-            if (uniqueParams.length > 0) {
-                uniqueParams.forEach(param => {
-                    const paramGroup = document.createElement('div');
-                    paramGroup.className = 'param-input-group';
-                    paramGroup.innerHTML = `
-                        <label class="param-label">${param}</label>
-                        <input type="text" class="param-input" placeholder="请输入 ${param} 的值" data-param="${param}">
-                    `;
-
-                    const input = paramGroup.querySelector('.param-input');
-                    input.addEventListener('input', (e) => {
-                        skillParams[param] = e.target.value;
-                    });
-
-                    paramsContainer.appendChild(paramGroup);
+                const input = paramGroup.querySelector('.param-input');
+                input.addEventListener('input', (e) => {
+                    skillParams[param.name] = e.target.value;
                 });
-            } else {
-                paramsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">无需设置参数</span>';
-            }
+                if (param.type === 'SELECT') {
+                    input.addEventListener('change', (e) => {
+                        skillParams[param.name] = e.target.value;
+                    });
+                    // Initialize default value for SELECT
+                    if (param.defaultValue) {
+                        skillParams[param.name] = param.defaultValue;
+                    }
+                }
+
+                paramsContainer.appendChild(paramGroup);
+            });
+        } else {
+            paramsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">无需设置参数</span>';
         }
         skillsDetailContainer.appendChild(paramsSection);
 
@@ -1557,29 +1601,33 @@
             return;
         }
 
-        const requiredParams = [];
-        if (currentSelectedSkill.skill && currentSelectedSkill.skill.content) {
-            const paramRegex = /\{(\w+)\}/g;
-            const matches = [...currentSelectedSkill.skill.content.matchAll(paramRegex)];
-            const uniqueParams = [...new Set(matches.map(m => m[1]))];
-
-            uniqueParams.forEach(param => {
-                if (!skillParams[param] || skillParams[param].trim() === '') {
-                    requiredParams.push(param);
+        // Validate required parameters based on params definition
+        const missingParams = [];
+        if (currentSelectedSkill.params && currentSelectedSkill.params.length > 0) {
+            currentSelectedSkill.params.forEach(param => {
+                if (param.required) {
+                    const value = skillParams[param.name];
+                    if (!value || value.trim() === '') {
+                        missingParams.push(param.label || param.name);
+                    }
                 }
             });
         }
 
-        if (requiredParams.length > 0) {
-            showToast(`请填写完整参数：${requiredParams.join(', ')}`, 'error');
+        if (missingParams.length > 0) {
+            showToast(`请填写完整参数：${missingParams.join(', ')}`, 'error');
             return;
         }
 
+        // Build prompt content by replacing placeholders with parameter values
         let promptContent = currentSelectedSkill.skill.content;
-        Object.keys(skillParams).forEach(param => {
-            const regex = new RegExp(`\\{${param}\\}`, 'g');
-            promptContent = promptContent.replace(regex, skillParams[param]);
-        });
+        if (currentSelectedSkill.params && currentSelectedSkill.params.length > 0) {
+            currentSelectedSkill.params.forEach(param => {
+                const regex = new RegExp(`\\{${param.name}\\}`, 'g');
+                const value = skillParams[param.name] || '';
+                promptContent = promptContent.replace(regex, value);
+            });
+        }
 
         closeSkillsModal();
         textarea.value = promptContent;

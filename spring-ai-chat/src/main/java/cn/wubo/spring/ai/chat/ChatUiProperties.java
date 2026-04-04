@@ -2,13 +2,7 @@ package cn.wubo.spring.ai.chat;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Data
@@ -61,7 +55,29 @@ public class ChatUiProperties {
         private String name;
         private List<String> tools;
         private ContentHolder skill;
-        private List<SkillParameter> parameters;
-        private String template;
+        private List<SkillParam> params;
+
+        @Data
+        public static class SkillParam {
+            private String name;
+            private String label;
+            private ParameterType type;
+            private boolean required;
+            private String defaultValue;
+            private String placeholder;
+            private List<Option> options;
+
+            public enum ParameterType {
+                TEXT,
+                SELECT,
+                TEXT_AREA
+            }
+
+            @Data
+            public static class Option {
+                private String label;
+                private String value;
+            }
+        }
     }
 }

@@ -1,8 +1,5 @@
 package cn.wubo.spring.ai.chat;
 
-import cn.wubo.spring.ai.chat.ChatUiProperties;
-import cn.wubo.spring.ai.chat.ChatUiRuntimeException;
-import cn.wubo.spring.ai.chat.SkillTemplateService;
 import cn.wubo.spring.ai.chat.record.ChatRecord;
 import cn.wubo.spring.ai.chat.record.ChatResponse;
 import cn.wubo.spring.ai.chat.record.SkillRequest;
@@ -109,11 +106,6 @@ public class ChatUiConfiguration {
         return new ContentHolderConverter(resourceLoader);
     }
 
-    @Bean
-    public SkillTemplateService skillTemplateService() {
-        return new SkillTemplateService();
-    }
-
 //    @Bean
 //    @ConditionalOnMissingBean(ToolSearcher.class)
 //    ToolSearcher luceneToolSearcher() {
@@ -205,18 +197,6 @@ public class ChatUiConfiguration {
         builder.GET("spring/ai/chat/skills", request -> {
             return ServerResponse.ok().body(properties.getSkills());
         });
-        builder.GET("spring/ai/chat/skill/{skillName}/parameters", request -> {
-            String skillName = request.pathVariable("skillName");
-            ChatUiProperties.Skill skill = properties.getSkills().stream()
-                    .filter(s -> s.getName().equals(skillName))
-                    .findFirst()
-                    .orElse(null);
-            if (skill != null && skill.getParameters() != null) {
-                return ServerResponse.ok().body(skill.getParameters());
-            } else {
-                return ServerResponse.ok().body(Collections.emptyList());
-            }
-        });
         return builder.build();
     }
 
@@ -228,16 +208,11 @@ public class ChatUiConfiguration {
         private final ChatClient chatClient;
         private final List<McpSyncClient> mcpSyncClients;
         private final List<McpAsyncClient> mcpAsyncClients;
-        private final ChatUiProperties properties;
-        private final SkillTemplateService skillTemplateService;
 
-        public SseController(ChatClient chatClient, List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, 
-                           ChatUiProperties properties, SkillTemplateService skillTemplateService) {
+        public SseController(ChatClient chatClient, List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients) {
             this.chatClient = chatClient;
             this.mcpSyncClients = mcpSyncClients;
             this.mcpAsyncClients = mcpAsyncClients;
-            this.properties = properties;
-            this.skillTemplateService = skillTemplateService;
         }
 
         @PostMapping(value = "/spring/ai/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -319,141 +294,6 @@ public class ChatUiConfiguration {
                     emitter.completeWithError(e);
                 }
             });
-
-            return emitter;
-        }
-
-        /**
-         * 执行技能
-         * @param skillRequest
-         * @return SseEmitter
-         */
-        @PostMapping(value = "/spring/ai/chat/skill", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-        public SseEmitter executeSkill(@RequestBody SkillRequest skillRequest) {
-            // 1. 提前创建 SSE emitter，确保验证错误也能发送给用户
-            SseEmitter emitter = new SseEmitter(0L);
-            emitter.onTimeout(() -> {
-                log.debug("SSE 链接超时");
-                emitter.complete();
-            });
-            emitter.onCompletion(() -> log.debug("SSE 链接完成"));
-            emitter.onError(e -> log.debug("SSE 链接错误：{}", e.getMessage()));
-
-            // 2. 在异步线程中处理参数验证和 AI 请求
-            CompletableFuture.runAsync(() -> {
-                try {
-                    // 2.1 查找技能配置
-                    ChatUiProperties.Skill skill = properties.getSkills().stream()
-                            .filter(s -> s.getName().equals(skillRequest.skillName()))
-                            .findFirst()
-                            .orElseThrow(() -> new IllegalArgumentException("未找到技能: " + skillRequest.skillName()));
-
-                    // 2.2 解析参数
-                    Map<String, String> params = skillTemplateService.parseParameters(skillRequest.params());
-
-                    // 2.3 验证参数 - 捕获验证错误并直接发送给用户
-                    try {
-                        skillTemplateService.validateParameters(params, skill.getParameters());
-                    } catch (ChatUiRuntimeException e) {
-                        // 参数验证失败，直接发送错误消息到对话框
-                        String errorMessage = String.format("❌ 参数错误：%s", e.getMessage());
-                        emitter.send(new ChatResponse(errorMessage, null), MediaType.APPLICATION_JSON);
-                        emitter.complete();
-                        return;
-                    }
-
-                    // 2.4 加载并渲染模板（使用新的loadTemplate方法）
-                    String template = skillTemplateService.loadTemplate(skill);
-                    String promptContent = skillTemplateService.renderTemplate(template, params);
-
-                    // 2.5 发送确认消息，展示完整渲染内容
-                    String confirmMessage = String.format(
-                            "✅ 已接收参数，正在为您生成回复...\n\n**完整请求内容：**\n```\n%s\n```",
-                            promptContent
-                    );
-                    emitter.send(new ChatResponse(confirmMessage, null), MediaType.APPLICATION_JSON);
-
-                    // 3. 继续处理 AI 请求
-                    String finalConversationId = skillRequest.conversationId() != null ? skillRequest.conversationId() : Math.random() + "";
-                    ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt()
-                            .user(promptContent)
-                            .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, finalConversationId));
-
-                    ToolCallbackProvider toolCallbackProvider = null;
-                    List<String> tools = skillRequest.tools();
-                    if (tools == null) {
-                        tools = skill.getTools();
-                    }
-
-                    if (!mcpSyncClients.isEmpty()) {
-                        List<McpSyncClient> tempMcpSyncClients = new ArrayList<>();
-                        for (McpSyncClient mcpSyncClient : mcpSyncClients) {
-                            if (tools.contains(mcpSyncClient.getClientInfo().name())) {
-                                if (mcpSyncClient.isInitialized()){
-                                    tempMcpSyncClients.add(mcpSyncClient);
-                                }else{
-                                    log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().name());
-                                }
-                            }
-                        }
-                        if (!tempMcpSyncClients.isEmpty()){
-                            toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(tempMcpSyncClients).build();
-                        }
-                    }
-                    if (!mcpAsyncClients.isEmpty()) {
-                        List<McpAsyncClient> tempMcpAsyncClients = new ArrayList<>();
-                        for (McpAsyncClient mcpAsyncClient : mcpAsyncClients) {
-                            if (tools.contains(mcpAsyncClient.getClientInfo().name())) {
-                                if (mcpAsyncClient.isInitialized()){
-                                    tempMcpAsyncClients.add(mcpAsyncClient);
-                                }else{
-                                    log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().name());
-                                }
-                            }
-                        }
-                        if (!tempMcpAsyncClients.isEmpty()){
-                            toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(tempMcpAsyncClients).build();
-                        }
-                    }
-
-                    if (toolCallbackProvider != null) {
-                        requestSpec.toolCallbacks(toolCallbackProvider);
-                    }
-
-                    requestSpec.stream()
-                                .chatResponse()
-                                .subscribe(
-                                        chatResponse -> {
-                                            try {
-                                                String reasoningContent = (String) chatResponse.getResult().getOutput().getMetadata().get("reasoningContent");
-                                                emitter.send(new ChatResponse(chatResponse.getResult().getOutput().getText(), reasoningContent), MediaType.APPLICATION_JSON);
-                                            } catch (IOException e) {
-                                                emitter.completeWithError(e);
-                                            }
-                                        },
-                                        error -> {
-                                            // 捕获AI处理错误并发送给用户
-                                            try {
-                                                String errorMessage = String.format("❌ AI处理错误：%s", error.getMessage());
-                                                emitter.send(new ChatResponse(errorMessage, null), MediaType.APPLICATION_JSON);
-                                                emitter.complete();
-                                            } catch (IOException ioException) {
-                                                emitter.completeWithError(ioException);
-                                            }
-                                        },
-                                        emitter::complete
-                                );
-                        } catch (Exception e) {
-                            // 捕获所有其他异常并发送给用户
-                            try {
-                                String errorMessage = String.format("❌ 系统错误：%s", e.getMessage());
-                                emitter.send(new ChatResponse(errorMessage, null), MediaType.APPLICATION_JSON);
-                                emitter.complete();
-                            } catch (IOException ioException) {
-                                emitter.completeWithError(ioException);
-                            }
-                        }
-                    });
 
             return emitter;
         }
