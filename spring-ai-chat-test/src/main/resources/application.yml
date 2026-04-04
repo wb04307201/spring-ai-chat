@@ -121,26 +121,112 @@ spring:
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
             skill: classpath:skills/sequential-thinking.st
+            parameters:
+              - name: param1
+                label: 关键词
+                type: text
+                required: true
           - name: 词云图
             tools:
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
               - spring-ai-mcp-client - mcp-server-chart
             skill: classpath:skills/word-cloud.st
+#            template: "请生成一个词云图，内容为：{param1}"
+            parameters:
+                - name: param1
+                  label: 关键词
+                  type: text
+                  required: true
           - name: 自驾游出行规划
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - amap-maps
             skill: classpath:skills/road-trip.st
+#            template: "请根据以下要求，帮助我规划五一假期的出行路线和活动推荐，从{startCity}到{endCity}。结合高德地图MCP和大模型API的数据支持，以及Sequential-Thinking方法来提供个性化、灵活的出行建议："
+            parameters:
+              - name: startCity
+                label: 出发城市
+                type: text
+                required: true
+                description: 请输入出发城市名称
+              - name: endCity
+                label: 目的城市
+                type: text
+                required: true
+                description: 请输入目的城市名称
           - name: 商品参数对比
             tools:
               - spring-ai-mcp-client - tavily-mcp
               - spring-ai-mcp-client - sequential-thinking
             skill: classpath:skills/goods-compare.st
+#            template: "请对比商品{param1}与{param2}的参数及评价，要求："
+            parameters:
+              - name: param1
+                label: 商品1
+                type: text
+                required: true
+                description: 请输入第一个商品名称
+              - name: param2
+                label: 商品2
+                type: text
+                required: true
+                description: 请输入第二个商品名称
           - name: 热点新闻
             tools:
               - spring-ai-mcp-client - juhe-mcp-server
             skill: classpath:skills/news.st
+            parameters:
+              - name: board
+                label: 查询类别
+                type: select
+                required: true
+                description: 请选择查询类别
+                options:
+                  - 新闻
+                  - 科技
+                  - 体育
+                  - 娱乐
+                defaultValue: 新闻
+              - name: keyword
+                label: 关键词
+                type: text
+                required: false
+                description: 请输入查询关键词
+              - name: requirements
+                label: 详细要求
+                type: text-area
+                required: false
+                description: 请输入其他详细要求
+                defaultValue: 请提供最新信息
+          - name: 综合查询示例
+            tools:
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
+            template: "请帮我查询{category}类别的信息，关键词：{keyword}，详细要求：{requirements}"
+            parameters:
+              - name: category
+                label: 查询类别
+                type: select
+                required: true
+                description: 请选择查询类别
+                options:
+                  - 新闻
+                  - 科技
+                  - 体育
+                  - 娱乐
+                defaultValue: 新闻
+              - name: keyword
+                label: 关键词
+                type: text
+                required: true
+                description: 请输入查询关键词
+              - name: requirements
+                label: 详细要求
+                type: text-area
+                required: false
+                description: 请输入其他详细要求
+                defaultValue: 请提供最新信息
 
   servlet:
     multipart:

@@ -1,1 +1,1 @@
-帮我查询今天{board}的热点新闻。
+请帮我查询{board}的热点新闻，关键词：{keyword}，详细要求：{requirements}
