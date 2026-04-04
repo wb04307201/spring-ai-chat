@@ -61,5 +61,7 @@ public class ChatUiProperties {
         private String name;
         private List<String> tools;
         private ContentHolder skill;
+        private List<SkillParameter> parameters;
+        private String template;
     }
 }
