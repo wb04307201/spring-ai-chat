@@ -821,7 +821,7 @@
         </button>
         <button class="toolbar-btn" id="tools-button" onclick="openToolsModal()" style="display: none;">
             <span>🔧</span>
-            <span>工具选择</span>
+            <span>工具库</span>
         </button>
         <button class="toolbar-btn" id="skills-button" onclick="openSkillsModal()" style="display: none;">
             <span>🧠</span>
@@ -928,6 +928,7 @@
     let selectedTools = [];
     let currentSelectedSkill = null;
     let skillParams = {};
+    let tools = []
 
     // Global functions
     window.send = send;
@@ -970,6 +971,7 @@
             .then(data => {
                 console.log('工具列表:', data);
                 if (data && data.length > 0) {
+                    tools = data;
                     document.getElementById('tools-button').style.display = 'flex';
                 }
             })
@@ -1046,7 +1048,7 @@
                         <div class="thinking-body" id="thinking-body-${id}"></div>
                     </div>
                 </div>
-                <div id="${id}"></div>
+                <div id="${id}" style="margin: 16px"></div>
                 <div class="bubble-actions">
                     <button class="bubble-action-btn" onclick="window.copyMarkdown('${id}')">
                         <span>📋</span>
@@ -1292,11 +1294,14 @@
                         toolInfo.style.cssText = 'flex: 1;';
 
                         const toolName = document.createElement('div');
-                        toolName.textContent = tool.title || tool.name;
+                        toolName.textContent = tool.label || tool.title || tool.name;
                         toolName.style.cssText = 'font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;';
 
                         const toolDesc = document.createElement('div');
-                        toolDesc.textContent = `${tool.name} (v${tool.version})`;
+                        if (tool.description)
+                            toolDesc.textContent = `${tool.description}`;
+                        else
+                            toolDesc.textContent = `${tool.name} (v${tool.version})`;
                         toolDesc.style.cssText = 'color: var(--text-muted); font-size: 12px;';
 
                         toolInfo.appendChild(toolName);
@@ -1306,20 +1311,6 @@
                         toolDiv.appendChild(toolInfo);
                         toolsList.appendChild(toolDiv);
                     });
-
-                    // const saveDiv = document.createElement('div');
-                    // saveDiv.style.cssText = 'padding: 16px; margin-top: 16px; text-align: right; border-top: 1px solid var(--border-color);';
-                    //
-                    // const saveBtn = document.createElement('button');
-                    // saveBtn.textContent = '关闭';
-                    // saveBtn.style.cssText = 'padding: 12px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;';
-                    // saveBtn.onclick = () => {
-                    //     // showToast(`已选择 ${selectedTools.length} 个工具`, 'success');
-                    //     closeToolsModal();
-                    // };
-                    //
-                    // saveDiv.appendChild(saveBtn);
-                    // toolsList.appendChild(saveDiv);
                 } else {
                     toolsList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">暂无可用工具</div>';
                 }
@@ -1489,7 +1480,8 @@
             skill.tools.forEach(tool => {
                 const tag = document.createElement('span');
                 tag.className = 'tool-tag';
-                tag.textContent = tool;
+                let tagTool = tools.find(t => t.name === tool)
+                tag.textContent = tagTool ? tagTool.label : tool;
                 toolsTagsContainer.appendChild(tag);
             });
         } else {
