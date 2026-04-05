@@ -60,22 +60,25 @@ spring:
             The user query is outside your knowledge base.
             Politely inform the user that you can't answer it.
         tools:
-          - name: spring-ai-mcp-client - sequential-thinking
-            label: 顺序思维
-            description:
-              一种MCP服务器实现，它通过结构化的思维过程提供了一种动态且反射性的解决问题的工具。
-          - name: spring-ai-mcp-client - bing-search
-            label: 必应搜索
-            description:
-              一个集成了微软必应搜索API的模型上下文协议服务，允许人工智能助手进行网络、新闻和图片搜索。
           - name: spring-ai-mcp-client - time
             label: 时间
             description:
               一个提供时间和时区转换功能的模型上下文协议服务。该服务使大型语言模型能够获取当前时间信息，并使用IANA时区名称进行时区转换，同时具备自动检测系统时区的功能。
+            default-selected:  true
+          - name: spring-ai-mcp-client - bing-search
+            label: 必应搜索
+            description:
+              一个集成了微软必应搜索API的模型上下文协议服务，允许人工智能助手进行网络、新闻和图片搜索。
+            default-selected:  true
           - name: spring-ai-mcp-client - fetch
             label: 网页内容抓取
             description:
               该服务器使大型语言模型能够检索和处理网页内容，将HTML转换为markdown格式，以便于更轻松地使用。
+            default-selected:  true
+          - name: spring-ai-mcp-client - sequential-thinking
+            label: 顺序思维
+            description:
+              一种MCP服务器实现，它通过结构化的思维过程提供了一种动态且反射性的解决问题的工具。
           - name: spring-ai-mcp-client - cn-weather-mcp
             label: 中国天气
             description:
@@ -96,6 +99,7 @@ spring:
             label: Playwright
             description:
               一种模型上下文协议服务器，它使大型语言模型能够通过结构化的可访问性快照与网页交互，而无需使用视觉模型或截图。
+            default-selected: true
           - name: spring-ai-mcp-client - chrome-devtools
             label: Chrome DevTools
             description:
@@ -119,6 +123,8 @@ spring:
               - spring-ai-mcp-client - fetch
             skill: classpath:skills/test2.st
           - name: 测试3
+            tools:
+              - spring-ai-mcp-client - time
             skill: classpath:skills/test3.st
             params:
               - name: param1
@@ -139,7 +145,6 @@ spring:
               - name: param3
                 label: 参数3
                 type: text_area
-                required: false
                 placeholder: 补充内容，可以不输入
           - name: 测试4
             tools:

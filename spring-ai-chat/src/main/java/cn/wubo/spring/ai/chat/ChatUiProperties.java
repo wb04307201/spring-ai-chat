@@ -48,6 +48,7 @@ public class ChatUiProperties {
         private String name;
         private String label;
         private ContentHolder description;
+        private boolean defaultSelected;
     }
 
     @Data

@@ -175,7 +175,22 @@ spring:
 }
 ```
 
+通过配置课题为工具添加中文名和描述以及默认选中，例如
+```yaml
+spring:
+  ai:
+    chat:
+      ui:
+        tools:
+          - name: spring-ai-mcp-client - time
+            label: 时间
+            description:
+              一个提供时间和时区转换功能的模型上下文协议服务。该服务使大型语言模型能够获取当前时间信息，并使用IANA时区名称进行时区转换，同时具备自动检测系统时区的功能。
+            default-selected:  true
+```
+
 重启项目 访问`http://localhost:8080/spring/ai/chat`
+勾选工具，输入以下内容
 ```text
 1. 现在的时间
 2. 获取`https://www.163.com/`网页内容
@@ -185,73 +200,38 @@ spring:
 ```
 ![img_2.png](img_2.png)
 ![img_3.png](img_3.png)
+![img_6.png](img_6.png)
 
 ## 技能库
-可以依据工具编写提示词形成技能库，配置说明
+可以编写技能加入技能库，技能可以配置参数与使用的工具，配置说明如下：
 ```yaml
 spring:
   ai:
     chat:
       ui:
         skills:
-          - name: 技能名
-            tools:
-              - 工具1
-              - 工具2
-            skill: 提示词，支持classpath，可在在提示词中使用{param1}作为用户输入参数
-```
-
-例如深入思考：
-工具：
-```json
-{
-  "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx.cmd",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ]
-    },
-    "bing-search": {
-      "args": [
-        "-y",
-        "bing-cn-mcp"
-      ],
-      "command": "npx.cmd"
-    }
-    "fetch": {
-      "args": [
-        "mcp-server-fetch"
-      ],
-      "command": "uvx"
-    }
-  }
-}
-```
-配置：
-```yaml
-spring:
-  ai:
-    chat:
-      ui:
-        skills:
-          - name: "深入思考"
-            tools:
-              - spring-ai-mcp-client - sequential-thinking
-              - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - fetch
-            skill: classpath:skills/sequential-thinking.st
-```
-提示词：
-```text
-来深入思考一下，{param1}可以用于什么实际场景当中，要求：
-- 使用sequentialthinking工具来规划所有的步骤，思考和分支
-- 可以使用bing_search工具进行搜索，每一轮Thinking之前都先搜索验证
-- 可以用fetch工具来查看搜索到的网页详情
-- 思考轮数不低于5轮，且需要有发散脑暴意识，需要有思考分支
-- 每一轮需要根据查询的信息结果，反思自己的决策是否正确
-- 返回至少10个高价值的使用场景，并详细说明为什么价值高，如何用
+          - name: 测试3
+            skill: classpath:skills/test3.st  #技能描述，支持classpath test3.st内容"{param1}，现在几点了，另外你知道{prama2}吗？{param3}"
+            params:
+              - name: param1
+                label: 参数1
+                type: select # select | text | text_area 下拉框 | 文本 | 多行文本
+                options: # 下拉框选项
+                  - label: 你好
+                    value: 你好
+                  - label: Hello
+                    value: Hello
+                default-value: 你好 # 默认值
+                required:  true # 是否必填（默认非必填）
+              - name: prama2
+                label: 参数2
+                type: text
+                required: true
+                placeholder: 你想知道的事情
+              - name: param3
+                label: 参数3
+                type: text_area
+                placeholder: 补充内容，可以不输入
 ```
 
 重启项目 访问`http://localhost:8080/spring/ai/chat`

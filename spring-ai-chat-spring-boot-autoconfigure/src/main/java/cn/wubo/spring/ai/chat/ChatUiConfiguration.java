@@ -2,7 +2,6 @@ package cn.wubo.spring.ai.chat;
 
 import cn.wubo.spring.ai.chat.record.ChatRecord;
 import cn.wubo.spring.ai.chat.record.ChatResponse;
-import cn.wubo.spring.ai.chat.record.SkillRequest;
 import cn.wubo.spring.ai.chat.record.ToolRecord;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
@@ -45,9 +44,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -106,12 +103,6 @@ public class ChatUiConfiguration {
         return new ContentHolderConverter(resourceLoader);
     }
 
-//    @Bean
-//    @ConditionalOnMissingBean(ToolSearcher.class)
-//    ToolSearcher luceneToolSearcher() {
-//        return new LuceneToolSearcher(0.4f);  // similarity threshold
-//    }
-
     @ConditionalOnMissingBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
@@ -121,7 +112,6 @@ public class ChatUiConfiguration {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
-//                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 new SimpleLoggerAdvisor() // logger advisor
         );
         return builder.build();
@@ -136,7 +126,6 @@ public class ChatUiConfiguration {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
-//                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 RetrievalAugmentationAdvisor.builder()
                         .documentRetriever(VectorStoreDocumentRetriever.builder()
                                 .similarityThreshold(properties.getRag().getSimilarityThreshold())
@@ -177,7 +166,8 @@ public class ChatUiConfiguration {
                             impl.title(),
                             impl.version(),
                             tool.isPresent() ? tool.get().getLabel() : impl.title(),
-                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null));
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null,
+                            tool.isPresent() && tool.get().isDefaultSelected()));
 
                 });
             }
@@ -189,7 +179,8 @@ public class ChatUiConfiguration {
                             impl.title(),
                             impl.version(),
                             tool.isPresent() ? tool.get().getLabel() : impl.title(),
-                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null));
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null,
+                            tool.isPresent() && tool.get().isDefaultSelected()));
                 });
             }
             return ServerResponse.ok().body(tools);

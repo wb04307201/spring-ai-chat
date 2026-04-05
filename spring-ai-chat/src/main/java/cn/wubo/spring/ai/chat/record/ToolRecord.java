@@ -4,5 +4,6 @@ public record ToolRecord(String name,
                          String title,
                          String version,
                          String label,
-                         String description) {
+                         String description,
+                         boolean defaultSelected) {
 }
