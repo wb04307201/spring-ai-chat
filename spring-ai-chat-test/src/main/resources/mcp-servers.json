@@ -1,10 +1,10 @@
 {
   "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx.cmd",
+    "time": {
+      "command": "uvx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "mcp-server-time",
+        "--local-timezone=Asia/Shanghai"
       ]
     },
     "bing-search": {
@@ -14,24 +14,18 @@
       ],
       "command": "npx.cmd"
     },
-    "time": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-time",
-        "--local-timezone=Asia/Shanghai"
-      ]
-    },
-    "playwright": {
-      "command": "npx.cmd",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
-    },
     "fetch": {
       "args": [
         "mcp-server-fetch"
       ],
       "command": "uvx"
+    },
+    "sequential-thinking": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
     },
     "cn-weather-mcp": {
       "args": [
@@ -62,20 +56,17 @@
       ],
       "command": "npx.cmd"
     },
+    "playwright": {
+      "command": "npx.cmd",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
     "chrome-devtools": {
       "args": [
         "chrome-devtools-mcp@latest"
       ],
       "command": "npx.cmd"
-    },
-    "tavily-mcp": {
-      "args": [
-        "-y",
-        "tavily-mcp@0.1.4"
-      ],
-      "command": "npx.cmd",
-      "env": {
-      }
     }
   }
 }

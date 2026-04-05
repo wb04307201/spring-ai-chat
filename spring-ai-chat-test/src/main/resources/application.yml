@@ -2,11 +2,6 @@ spring:
   ai:
     zhipuai:
       api-key: ${ZHIPUAI_API_KEY}
-      chat:
-        options:
-          model: glm-4.6
-          thinking:
-            type: enabled
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
@@ -64,42 +59,104 @@ spring:
           defaultEmptyContextPromptTemplate: |
             The user query is outside your knowledge base.
             Politely inform the user that you can't answer it.
+        tools:
+          - name: spring-ai-mcp-client - time
+            label: 时间
+            description:
+              一个提供时间和时区转换功能的模型上下文协议服务。该服务使大型语言模型能够获取当前时间信息，并使用IANA时区名称进行时区转换，同时具备自动检测系统时区的功能。
+            default-selected:  true
+          - name: spring-ai-mcp-client - bing-search
+            label: 必应搜索
+            description:
+              一个集成了微软必应搜索API的模型上下文协议服务，允许人工智能助手进行网络、新闻和图片搜索。
+            default-selected:  true
+          - name: spring-ai-mcp-client - fetch
+            label: 网页内容抓取
+            description:
+              该服务器使大型语言模型能够检索和处理网页内容，将HTML转换为markdown格式，以便于更轻松地使用。
+            default-selected:  true
+          - name: spring-ai-mcp-client - sequential-thinking
+            label: 顺序思维
+            description:
+              一种MCP服务器实现，它通过结构化的思维过程提供了一种动态且反射性的解决问题的工具。
+          - name: spring-ai-mcp-client - cn-weather-mcp
+            label: 中国天气
+            description:
+              一个自研中国城市实时天气服务。提供城市代码搜索与实时天气查询，允许大模型获取中国城市实时天气数据，并生成相应的天气预报。
+          - name: spring-ai-mcp-client - amap-maps
+            label: 高德地图
+            description:
+              高德地图是一个支持任何MCP协议客户端的服务，允许用户轻松利用高德地图MCP服务器获取各种基于位置的服务。
+          - name: spring-ai-mcp-client - 12306-mcp
+            label: 12306购票搜索
+            description:
+              12306购票搜索服务，允许大模型利用接口搜索12306购票信息。
+          - name: spring-ai-mcp-client - mcp-server-chart
+            label: 图表
+            description:
+              这是一个基于 TypeScript 的 MCP 服务器，提供图表生成功能。它允许您通过 MCP 工具创建各种类型的图表。
+          - name: spring-ai-mcp-client - playwright
+            label: Playwright
+            description:
+              一种模型上下文协议服务器，它使大型语言模型能够通过结构化的可访问性快照与网页交互，而无需使用视觉模型或截图。
+            default-selected: true
+          - name: spring-ai-mcp-client - chrome-devtools
+            label: Chrome DevTools
+            description:
+              chrome-devtools-mcp lets your coding agent (such as Gemini, Claude, Cursor or Copilot) control and inspect a live Chrome browser. It acts as a Model-Context-Protocol (MCP) server, giving your AI coding assistant access to the full power of Chrome DevTools for reliable automation, in-depth debugging, and performance analysis.
         skills:
-          - name: 测试
+          - name: 测试1
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - time
-              - spring-ai-mcp-client - playwright
               - spring-ai-mcp-client - fetch
               - spring-ai-mcp-client - cn-weather-mcp
               - spring-ai-mcp-client - amap-maps
               - spring-ai-mcp-client - 12306-mcp
               - spring-ai-mcp-client - mcp-server-chart
-              - spring-ai-mcp-client - chrome-devtools
             skill: 你可以调用哪些工具？
-          - name: 顺序思维
+          - name: 测试2
             tools:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
-            skill: classpath:skills/sequential-thinking.st
-          - name: 词云图
+            skill: classpath:skills/test2.st
+          - name: 测试3
             tools:
+              - spring-ai-mcp-client - time
+            skill: classpath:skills/test3.st
+            params:
+              - name: param1
+                label: 参数1
+                type: select
+                options:
+                  - label: 你好
+                    value: 你好
+                  - label: Hello
+                    value: Hello
+                default-value: 你好
+                required:  true
+              - name: prama2
+                label: 参数2
+                type: text
+                required: true
+                placeholder: 你想知道的事情
+              - name: param3
+                label: 参数3
+                type: text_area
+                placeholder: 补充内容，可以不输入
+          - name: 测试4
+            tools:
+              - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
+              - spring-ai-mcp-client - cn-weather-mcp
               - spring-ai-mcp-client - mcp-server-chart
-            skill: classpath:skills/word-cloud.st
-          - name: 自驾游出行规划
-            tools:
-              - spring-ai-mcp-client - sequential-thinking
-              - spring-ai-mcp-client - amap-maps
-            skill: classpath:skills/road-trip.st
-          - name: 商品参数对比
-            tools:
-              - spring-ai-mcp-client - tavily-mcp
-              - spring-ai-mcp-client - sequential-thinking
-            skill: classpath:skills/goods-compare.st
+              - spring-ai-mcp-client - playwright
+              - spring-ai-mcp-client - chrome-devtools
+            skill: classpath:skills/test4.st
 
   servlet:
     multipart:

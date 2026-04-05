@@ -1,5 +1,8 @@
 package cn.wubo.spring.ai.chat;
 
+import cn.wubo.spring.ai.chat.record.ChatRecord;
+import cn.wubo.spring.ai.chat.record.ChatResponse;
+import cn.wubo.spring.ai.chat.record.ToolRecord;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -42,6 +45,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -99,12 +103,6 @@ public class ChatUiConfiguration {
         return new ContentHolderConverter(resourceLoader);
     }
 
-//    @Bean
-//    @ConditionalOnMissingBean(ToolSearcher.class)
-//    ToolSearcher luceneToolSearcher() {
-//        return new LuceneToolSearcher(0.4f);  // similarity threshold
-//    }
-
     @ConditionalOnMissingBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
@@ -114,7 +112,6 @@ public class ChatUiConfiguration {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
-//                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 new SimpleLoggerAdvisor() // logger advisor
         );
         return builder.build();
@@ -129,7 +126,6 @@ public class ChatUiConfiguration {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
-//                ToolSearchToolCallAdvisor.builder().toolSearcher(toolSearcher).build(), // tool-search advisor
                 RetrievalAugmentationAdvisor.builder()
                         .documentRetriever(VectorStoreDocumentRetriever.builder()
                                 .similarityThreshold(properties.getRag().getSimilarityThreshold())
@@ -161,13 +157,33 @@ public class ChatUiConfiguration {
         RouterFunctions.Builder builder = RouterFunctions.route();
         builder.GET("spring/ai/chat", request -> ServerResponse.temporaryRedirect(URI.create("/spring/ai/chat/index.html")).build());
         builder.GET("spring/ai/chat/tools", request -> {
+            List<ToolRecord> tools = new ArrayList<>();
             if (!mcpSyncClients.isEmpty()) {
-                return ServerResponse.ok().body(mcpSyncClients.stream().map(McpSyncClient::getClientInfo));
+                mcpSyncClients.stream().map(McpSyncClient::getClientInfo).forEach(impl -> {
+                    Optional<ChatUiProperties.Tool> tool = properties.getTools().stream().filter(t -> t.getName().equals(impl.name())).findAny();
+                    tools.add(new ToolRecord(
+                            impl.name(),
+                            impl.title(),
+                            impl.version(),
+                            tool.isPresent() ? tool.get().getLabel() : impl.title(),
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null,
+                            tool.isPresent() && tool.get().isDefaultSelected()));
+
+                });
             }
             if (!mcpAsyncClients.isEmpty()) {
-                return ServerResponse.ok().body(mcpAsyncClients.stream().map(McpAsyncClient::getClientInfo));
+                mcpAsyncClients.stream().map(McpAsyncClient::getClientInfo).forEach(impl -> {
+                    Optional<ChatUiProperties.Tool> tool = properties.getTools().stream().filter(t -> t.getName().equals(impl.name())).findAny();
+                    tools.add(new ToolRecord(
+                            impl.name(),
+                            impl.title(),
+                            impl.version(),
+                            tool.isPresent() ? tool.get().getLabel() : impl.title(),
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null,
+                            tool.isPresent() && tool.get().isDefaultSelected()));
+                });
             }
-            return ServerResponse.ok().body(new ArrayList<>());
+            return ServerResponse.ok().body(tools);
         });
         builder.GET("spring/ai/chat/skills", request -> {
             return ServerResponse.ok().body(properties.getSkills());

@@ -35,3 +35,6 @@ build/
 
 .DS_Store
 /mcp/
+
+*.log
+/.playwright-mcp/

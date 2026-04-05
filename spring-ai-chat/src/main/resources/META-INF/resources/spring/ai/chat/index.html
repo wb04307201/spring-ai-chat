@@ -378,8 +378,12 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
 
         .modal-content {
@@ -417,6 +421,35 @@
             font-size: 20px;
             font-weight: 600;
             color: var(--text-primary);
+        }
+
+        .modal-header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .modal-action-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-action-btn:hover {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .modal-action-btn:active {
+            transform: translateY(0);
         }
 
         .close-button {
@@ -722,11 +755,27 @@
             font-family: inherit;
             transition: all 0.2s;
             outline: none;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
 
         .param-input:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .param-input.param-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .param-input select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
         }
 
         .send-skill-btn {
@@ -821,7 +870,7 @@
         </button>
         <button class="toolbar-btn" id="tools-button" onclick="openToolsModal()" style="display: none;">
             <span>🔧</span>
-            <span>工具选择</span>
+            <span>工具库</span>
         </button>
         <button class="toolbar-btn" id="skills-button" onclick="openSkillsModal()" style="display: none;">
             <span>🧠</span>
@@ -868,6 +917,11 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>工具选择</h3>
+                <div class="modal-header-actions">
+                    <button class="modal-action-btn" onclick="selectAllTools()">全选</button>
+                    <button class="modal-action-btn" onclick="deselectAllTools()">全不选</button>
+                    <button class="modal-action-btn" onclick="refreshTools()">刷新</button>
+                </div>
                 <div class="close-button" onclick="closeToolsModal()">&times;</div>
             </div>
             <div class="modal-body">
@@ -925,9 +979,11 @@
     let answerText = "";
     let reasonAnswerTextContent = null;
     let reasonAnswerText = "";
+    let answerOriginTextContent = null;
     let selectedTools = [];
     let currentSelectedSkill = null;
     let skillParams = {};
+    let tools = []
 
     // Global functions
     window.send = send;
@@ -938,6 +994,11 @@
     window.closeModal = closeModal;
     window.openToolsModal = openToolsModal;
     window.closeToolsModal = closeToolsModal;
+    window.selectAllTools = selectAllTools;
+    window.deselectAllTools = deselectAllTools;
+    window.refreshTools = refreshTools;
+    window.copyMarkdown = copyMarkdown;
+    window.downloadMarkdown = downloadMarkdown;
     window.loadKnowledgeData = loadKnowledgeData;
     window.deleteDocument = deleteDocument;
     window.openSkillsModal = openSkillsModal;
@@ -945,8 +1006,9 @@
     window.loadSkillsData = loadSkillsData;
     window.selectSkill = selectSkill;
     window.sendSkillRequest = sendSkillRequest;
+    window.toggleThinking = toggleThinking;
 
-    document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
         // Check upload feature
         fetch('/spring/ai/chat/upload')
             .then(response => {
@@ -970,6 +1032,8 @@
             .then(data => {
                 console.log('工具列表:', data);
                 if (data && data.length > 0) {
+                    tools = data;
+                    selectedTools = data.filter(tool => tool.defaultSelected).map(tool => tool.name);
                     document.getElementById('tools-button').style.display = 'flex';
                 }
             })
@@ -1024,7 +1088,7 @@
         let userItem = document.createElement('div');
         userItem.className = 'item item-right';
         userItem.innerHTML = `
-            <div class="bubble bubble-right">${marked.parse(message)}</div>
+            <div class="bubble bubble-right"><div style="margin: 16px">${marked.parse(message)}</div></div>
             <div class="avatar"><img src="${userImage}" alt="用户"/></div>
         `;
         mainContent.appendChild(userItem);
@@ -1046,12 +1110,22 @@
                         <div class="thinking-body" id="thinking-body-${id}"></div>
                     </div>
                 </div>
-                <div id="${id}"></div>
+                <div id="origin-${id}" style="display: none"></div>
+                <div id="${id}" style="margin: 16px"></div>
                 <div class="bubble-actions">
                     <button class="bubble-action-btn" onclick="window.copyMarkdown('${id}')">
                         <span>📋</span>
                         <span>复制</span>
                     </button>
+                    <button class="bubble-action-btn" onclick="window.copyMarkdown('origin-${id}')">
+                        <span>📋</span>
+                        <span>复制MD</span>
+                    </button>
+                    <button class="bubble-action-btn" onclick="window.downloadMarkdown('origin-${id}')">
+                        <span>💾</span>
+                        <span>下载MD</span>
+                    </button>
+                                    
                 </div>
             </div>
         `;
@@ -1059,7 +1133,7 @@
         scrollToBottom();
     }
 
-    window.toggleThinking = function (id) {
+    function toggleThinking (id) {
         const thinkingContent = document.getElementById(`thinking-content-${id}`);
         const arrow = document.getElementById(`arrow-${id}`);
 
@@ -1072,7 +1146,7 @@
         }
     };
 
-    window.copyMarkdown = function (id) {
+    function copyMarkdown(id) {
         const messageElement = document.getElementById(id);
         if (!messageElement) {
             showToast('消息未找到', 'error');
@@ -1092,6 +1166,43 @@
             console.error('复制失败:', err);
             showToast('复制失败，请手动复制', 'error');
         });
+    };
+
+    function downloadMarkdown (id) {
+        const originElement = document.getElementById(`${id}`);
+        if (!originElement) {
+            showToast('消息未找到', 'error');
+            return;
+        }
+
+        const markdownContent = originElement.textContent;
+
+        if (!markdownContent || markdownContent.trim() === '') {
+            showToast('没有可下载的内容', 'error');
+            return;
+        }
+
+        // 创建 Blob 对象
+        const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+        
+        // 创建下载链接
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // 生成文件名（使用时间戳）
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        link.download = `chat-${timestamp}.md`;
+        
+        // 触发下载
+        document.body.appendChild(link);
+        link.click();
+        
+        // 清理
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showToast('下载成功！', 'success');
     };
 
     function enableSendBtn() {
@@ -1134,6 +1245,7 @@
         buildBotMessage(id);
 
         answerTextContent = document.getElementById(id);
+        answerOriginTextContent = document.getElementById(`origin-${id}`);
         reasonAnswerTextContent = document.getElementById(`thinking-body-${id}`);
 
         const selectedToolNames = selectedTools;
@@ -1147,57 +1259,59 @@
             },
             body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames}),
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.body;
-        })
-        .then(body => {
-            const reader = body.getReader();
-            const decoder = new TextDecoder();
-            const parser = createParser({
-                onEvent: (event) => {
-                    // console.log('接收事件:', event);
-                    let data = JSON.parse(event.data);
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.body;
+            })
+            .then(body => {
+                const reader = body.getReader();
+                const decoder = new TextDecoder();
+                const parser = createParser({
+                    onEvent: (event) => {
+                        // console.log('接收事件:', event);
+                        let data = JSON.parse(event.data);
 
-                    reasonAnswerText += data.reasoningContent;
-                    reasonAnswerTextContent.innerHTML = marked.parse(reasonAnswerText);
+                        reasonAnswerText += data.reasoningContent;
+                        reasonAnswerTextContent.innerHTML = marked.parse(reasonAnswerText);
 
-                    answerText += data.content;
-                    answerTextContent.innerHTML = marked.parse(answerText);
+                        answerText += data.content;
+                        answerTextContent.innerHTML = marked.parse(answerText);
+                        answerOriginTextContent.innerHTML = answerText;
 
-                    scrollToBottom();
-                }
-            });
-
-            function read() {
-                return reader.read().then(({done, value}) => {
-                    if (done) {
-                        console.log("接收完成");
-                        enableSendBtn();
-                        answerTextContent = null;
-                        answerText = "";
-                        reasonAnswerTextContent = null;
-                        reasonAnswerText = "";
-                        return;
+                        scrollToBottom();
                     }
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    // console.log("接收数据:", chunk);
-                    parser.feed(chunk);
-                    read();
                 });
-            }
 
-            read();
-        })
-        .catch(error => {
-            answerTextContent.textContent += " 抱歉，发送消息失败。";
-            scrollToBottom();
-            answerTextContent = null;
-            reasonAnswerTextContent = null;
-            console.error('发送失败:', error);
-            enableSendBtn();
-        });
+                function read() {
+                    return reader.read().then(({done, value}) => {
+                        if (done) {
+                            console.log("接收完成");
+                            enableSendBtn();
+                            answerTextContent = null;
+                            answerText = "";
+                            reasonAnswerTextContent = null;
+                            reasonAnswerText = "";
+                            answerOriginTextContent = null;
+                            return;
+                        }
+
+                        const chunk = decoder.decode(value, {stream: true});
+                        // console.log("接收数据:", chunk);
+                        parser.feed(chunk);
+                        read();
+                    });
+                }
+
+                read();
+            })
+            .catch(error => {
+                answerTextContent.textContent += " 抱歉，发送消息失败。";
+                scrollToBottom();
+                answerTextContent = null;
+                reasonAnswerTextContent = null;
+                console.error('发送失败:', error);
+                enableSendBtn();
+            });
     }
 
     function clearChat() {
@@ -1225,19 +1339,19 @@
             method: 'POST',
             body: formData,
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (data) {
-                showToast(`文档 "${file.name}" 上传成功！`, 'success');
-            }
-        })
-        .catch(error => {
-            console.error('上传失败:', error);
-            showToast('上传失败，请检查网络或联系管理员。', 'error');
-        });
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data) {
+                    showToast(`文档 "${file.name}" 上传成功！`, 'success');
+                }
+            })
+            .catch(error => {
+                console.error('上传失败:', error);
+                showToast('上传失败，请检查网络或联系管理员。', 'error');
+            });
     }
 
     fileInput.addEventListener('change', window.handleFileUpload);
@@ -1252,81 +1366,95 @@
     }
 
     function loadTools() {
-        toolsList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载中...</div>';
+        toolsList.innerHTML = '';
 
+        if (tools.length > 0) {
+            tools.forEach(tool => {
+                const toolDiv = document.createElement('div');
+                toolDiv.style.cssText = 'padding: 16px; margin-bottom: 12px; border: 2px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;';
+                toolDiv.onmouseover = () => {
+                    toolDiv.style.borderColor = 'var(--primary-color)';
+                    toolDiv.style.background = 'var(--bg-secondary)';
+                };
+                toolDiv.onmouseout = () => {
+                    toolDiv.style.borderColor = 'var(--border-color)';
+                    toolDiv.style.background = 'var(--bg-primary)';
+                };
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = tool.name;
+                checkbox.checked = selectedTools.includes(tool.name);
+                checkbox.style.cssText = 'width: 18px; height: 18px; cursor: pointer;';
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedTools.push(tool.name);
+                    } else {
+                        selectedTools = selectedTools.filter(t => t !== tool.name);
+                    }
+                });
+
+                const toolInfo = document.createElement('div');
+                toolInfo.style.cssText = 'flex: 1;';
+
+                const toolName = document.createElement('div');
+                toolName.textContent = tool.label || tool.title || tool.name;
+                toolName.style.cssText = 'font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;';
+
+                const toolDesc = document.createElement('div');
+                if (tool.description)
+                    toolDesc.textContent = `${tool.description}`;
+                else
+                    toolDesc.textContent = `${tool.name} (v${tool.version})`;
+                toolDesc.style.cssText = 'color: var(--text-muted); font-size: 12px;';
+
+                toolInfo.appendChild(toolName);
+                toolInfo.appendChild(toolDesc);
+
+                toolDiv.appendChild(checkbox);
+                toolDiv.appendChild(toolInfo);
+                toolsList.appendChild(toolDiv);
+            });
+        } else {
+            toolsList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">暂无可用工具</div>';
+        }
+    }
+
+    function selectAllTools() {
+        selectedTools = tools.map(tool => tool.name);
+        loadTools();
+        showToast('已全选所有工具', 'success');
+    }
+
+    function deselectAllTools() {
+        selectedTools = [];
+        loadTools();
+        showToast('已取消所有工具选择', 'success');
+    }
+
+    function refreshTools() {
         fetch('/spring/ai/chat/tools')
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
             .then(data => {
-                toolsList.innerHTML = '';
-
+                console.log('工具列表已刷新:', data);
                 if (data && data.length > 0) {
-                    data.forEach(tool => {
-                        const toolDiv = document.createElement('div');
-                        toolDiv.style.cssText = 'padding: 16px; margin-bottom: 12px; border: 2px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;';
-                        toolDiv.onmouseover = () => {
-                            toolDiv.style.borderColor = 'var(--primary-color)';
-                            toolDiv.style.background = 'var(--bg-secondary)';
-                        };
-                        toolDiv.onmouseout = () => {
-                            toolDiv.style.borderColor = 'var(--border-color)';
-                            toolDiv.style.background = 'var(--bg-primary)';
-                        };
-
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.value = tool.name;
-                        checkbox.checked = selectedTools.includes(tool.name);
-                        checkbox.style.cssText = 'width: 18px; height: 18px; cursor: pointer;';
-                        checkbox.addEventListener('change', (e) => {
-                            if (e.target.checked) {
-                                selectedTools.push(tool.name);
-                            } else {
-                                selectedTools = selectedTools.filter(t => t !== tool.name);
-                            }
-                        });
-
-                        const toolInfo = document.createElement('div');
-                        toolInfo.style.cssText = 'flex: 1;';
-
-                        const toolName = document.createElement('div');
-                        toolName.textContent = tool.title || tool.name;
-                        toolName.style.cssText = 'font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;';
-
-                        const toolDesc = document.createElement('div');
-                        toolDesc.textContent = `${tool.name} (v${tool.version})`;
-                        toolDesc.style.cssText = 'color: var(--text-muted); font-size: 12px;';
-
-                        toolInfo.appendChild(toolName);
-                        toolInfo.appendChild(toolDesc);
-
-                        toolDiv.appendChild(checkbox);
-                        toolDiv.appendChild(toolInfo);
-                        toolsList.appendChild(toolDiv);
-                    });
-
-                    // const saveDiv = document.createElement('div');
-                    // saveDiv.style.cssText = 'padding: 16px; margin-top: 16px; text-align: right; border-top: 1px solid var(--border-color);';
-                    //
-                    // const saveBtn = document.createElement('button');
-                    // saveBtn.textContent = '关闭';
-                    // saveBtn.style.cssText = 'padding: 12px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;';
-                    // saveBtn.onclick = () => {
-                    //     // showToast(`已选择 ${selectedTools.length} 个工具`, 'success');
-                    //     closeToolsModal();
-                    // };
-                    //
-                    // saveDiv.appendChild(saveBtn);
-                    // toolsList.appendChild(saveDiv);
+                    tools = data;
+                    selectedTools = data.filter(tool => tool.defaultSelected).map(tool => tool.name);
+                    loadTools();
+                    showToast('工具列表已刷新', 'success');
                 } else {
-                    toolsList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">暂无可用工具</div>';
+                    tools = [];
+                    selectedTools = [];
+                    loadTools();
+                    showToast('暂无可用工具', 'success');
                 }
             })
             .catch(error => {
-                console.error('加载工具失败:', error);
-                toolsList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--error-color);">加载失败，请稍后重试</div>';
+                console.error('刷新工具列表失败:', error);
+                showToast('刷新失败，请稍后重试', 'error');
             });
     }
 
@@ -1381,7 +1509,7 @@
 
     function deleteDocument(docId, element) {
         if (confirm('确定要删除这个文档吗？')) {
-            fetch(`/spring/ai/chat/knowledge/${docId}`, { method: 'DELETE' })
+            fetch(`/spring/ai/chat/knowledge/${docId}`, {method: 'DELETE'})
                 .then(response => response.json())
                 .then(data => {
                     if (data) {
@@ -1489,7 +1617,8 @@
             skill.tools.forEach(tool => {
                 const tag = document.createElement('span');
                 tag.className = 'tool-tag';
-                tag.textContent = tool;
+                let tagTool = tools.find(t => t.name === tool)
+                tag.textContent = tagTool ? tagTool.label : tool;
                 toolsTagsContainer.appendChild(tag);
             });
         } else {
@@ -1521,30 +1650,58 @@
         `;
 
         const paramsContainer = paramsSection.querySelector('#params-container');
-        if (skill.skill && skill.skill.content) {
-            const paramRegex = /\{(\w+)\}/g;
-            const matches = [...skill.skill.content.matchAll(paramRegex)];
-            const uniqueParams = [...new Set(matches.map(m => m[1]))];
+        if (skill.params && skill.params.length > 0) {
+            skill.params.forEach(param => {
+                const paramGroup = document.createElement('div');
+                paramGroup.className = 'param-input-group';
 
-            if (uniqueParams.length > 0) {
-                uniqueParams.forEach(param => {
-                    const paramGroup = document.createElement('div');
-                    paramGroup.className = 'param-input-group';
-                    paramGroup.innerHTML = `
-                        <label class="param-label">${param}</label>
-                        <input type="text" class="param-input" placeholder="请输入 ${param} 的值" data-param="${param}">
-                    `;
+                const requiredMark = param.required ? '<span style="color: var(--error-color); margin-left: 4px;">*</span>' : '';
+                const labelHtml = `<label class="param-label">${param.label}${requiredMark}</label>`;
 
-                    const input = paramGroup.querySelector('.param-input');
-                    input.addEventListener('input', (e) => {
-                        skillParams[param] = e.target.value;
-                    });
+                let inputHtml = '';
+                if (param.type === 'SELECT') {
+                    inputHtml = `<select class="param-input" data-param="${param.name}" data-required="${param.required}">`;
+                    if (!param.required) {
+                        inputHtml += '<option value="">请选择</option>';
+                    }
+                    if (param.options && param.options.length > 0) {
+                        param.options.forEach(option => {
+                            const selected = param.defaultValue === option.value ? 'selected' : '';
+                            inputHtml += `<option value="${option.value}" ${selected}>${option.label}</option>`;
+                        });
+                    }
+                    inputHtml += '</select>';
+                } else if (param.type === 'TEXT_AREA') {
+                    const placeholder = param.placeholder || `请输入${param.label}`;
+                    const defaultValue = param.defaultValue || '';
+                    inputHtml = `<textarea class="param-input param-textarea" placeholder="${placeholder}" data-param="${param.name}" data-required="${param.required}">${defaultValue}</textarea>`;
+                } else {
+                    // TEXT type (default)
+                    const placeholder = param.placeholder || `请输入${param.label}`;
+                    const defaultValue = param.defaultValue || '';
+                    inputHtml = `<input type="text" class="param-input" placeholder="${placeholder}" value="${defaultValue}" data-param="${param.name}" data-required="${param.required}">`;
+                }
 
-                    paramsContainer.appendChild(paramGroup);
+                paramGroup.innerHTML = labelHtml + inputHtml;
+
+                const input = paramGroup.querySelector('.param-input');
+                input.addEventListener('input', (e) => {
+                    skillParams[param.name] = e.target.value;
                 });
-            } else {
-                paramsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">无需设置参数</span>';
-            }
+                if (param.type === 'SELECT') {
+                    input.addEventListener('change', (e) => {
+                        skillParams[param.name] = e.target.value;
+                    });
+                    // Initialize default value for SELECT
+                    if (param.defaultValue) {
+                        skillParams[param.name] = param.defaultValue;
+                    }
+                }
+
+                paramsContainer.appendChild(paramGroup);
+            });
+        } else {
+            paramsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">无需设置参数</span>';
         }
         skillsDetailContainer.appendChild(paramsSection);
 
@@ -1565,29 +1722,33 @@
             return;
         }
 
-        const requiredParams = [];
-        if (currentSelectedSkill.skill && currentSelectedSkill.skill.content) {
-            const paramRegex = /\{(\w+)\}/g;
-            const matches = [...currentSelectedSkill.skill.content.matchAll(paramRegex)];
-            const uniqueParams = [...new Set(matches.map(m => m[1]))];
-
-            uniqueParams.forEach(param => {
-                if (!skillParams[param] || skillParams[param].trim() === '') {
-                    requiredParams.push(param);
+        // Validate required parameters based on params definition
+        const missingParams = [];
+        if (currentSelectedSkill.params && currentSelectedSkill.params.length > 0) {
+            currentSelectedSkill.params.forEach(param => {
+                if (param.required) {
+                    const value = skillParams[param.name];
+                    if (!value || value.trim() === '') {
+                        missingParams.push(param.label || param.name);
+                    }
                 }
             });
         }
 
-        if (requiredParams.length > 0) {
-            showToast(`请填写完整参数：${requiredParams.join(', ')}`, 'error');
+        if (missingParams.length > 0) {
+            showToast(`请填写完整参数：${missingParams.join(', ')}`, 'error');
             return;
         }
 
+        // Build prompt content by replacing placeholders with parameter values
         let promptContent = currentSelectedSkill.skill.content;
-        Object.keys(skillParams).forEach(param => {
-            const regex = new RegExp(`\\{${param}\\}`, 'g');
-            promptContent = promptContent.replace(regex, skillParams[param]);
-        });
+        if (currentSelectedSkill.params && currentSelectedSkill.params.length > 0) {
+            currentSelectedSkill.params.forEach(param => {
+                const regex = new RegExp(`\\{${param.name}\\}`, 'g');
+                const value = skillParams[param.name] || '';
+                promptContent = promptContent.replace(regex, value);
+            });
+        }
 
         closeSkillsModal();
         textarea.value = promptContent;

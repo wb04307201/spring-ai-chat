@@ -21,12 +21,6 @@
         "--local-timezone=Asia/Shanghai"
       ]
     },
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
-    },
     "fetch": {
       "args": [
         "mcp-server-fetch"

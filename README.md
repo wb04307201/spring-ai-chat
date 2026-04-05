@@ -4,7 +4,7 @@
   English | <a href="README.zh-CN.md">中文</a>
 </div>
 
-> Quickly add a chat interface for your Spring Ai.
+> Quickly add a chat interface to your Spring AI application.
 
 [![](https://jitpack.io/v/com.gitee.wb04307201/spring-ai-chat.svg)](https://jitpack.io/#com.gitee.wb04307201/spring-ai-chat)
 [![star](https://gitee.com/wb04307201/spring-ai-chat/badge/star.svg?theme=dark)](https://gitee.com/wb04307201/spring-ai-chat)
@@ -17,11 +17,12 @@
 - 🤖 AI Chat Interface
 - 📚 Knowledge Base (RAG)
 - 🔧 Tools (MCP)
-- 🧠 Skill Library
+- 🧠 Skills Library
 - ⚙️ Auto Configuration
 
-## Quick Add Chat Interface
-Here we use Zhipu AI as an example, you can replace it with other LLM dependencies as needed:
+## Quick Start: Add Chat Interface
+The following example uses Zhipu AI. You can replace it with other LLM dependencies as needed:
+
 ### 1. Add Chat Dependency
 Add JitPack repository:
 ```xml
@@ -32,6 +33,7 @@ Add JitPack repository:
     </repository>
 </repositories>
 ```
+
 Add dependency:
 ```xml
 <dependencyManagement>
@@ -39,7 +41,7 @@ Add dependency:
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-bom</artifactId>
-            <version>1.1.3</version>
+            <version>1.1.4</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -49,7 +51,7 @@ Add dependency:
     <dependency>
         <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
         <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-        <version>1.1.11</version>
+        <version>1.1.12</version>
     </dependency>
 </dependencies>
 ```
@@ -70,12 +72,12 @@ spring:
       api-key: ${ZHIPUAI_API_KEY}
 ```
 
-### 4. Start Project
+### 4. Start the Project
 Visit `http://localhost:8080/spring/ai/chat`
 ![img.png](img.png)
 
-## RAG
-Here we use Redis as vector database and Tika as document parser as an example, add dependencies:
+## RAG (Retrieval-Augmented Generation)
+The following example uses Redis as the vector database and Tika as the document parsing tool. Add dependencies:
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -103,12 +105,12 @@ spring:
       password: 123456
 ```
 
-Implement [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java) interface  
-For example [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
+Implement the [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java) interface  
+For example: [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
 
-Restart project and visit `http://localhost:8080/spring/ai/chat`
+Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ![img_1.png](img_1.png)
-Upload file and knowledge base buttons will appear
+File upload and knowledge base buttons will appear.
 
 RAG configuration:
 ```yaml
@@ -118,7 +120,7 @@ spring:
       ui:
         rag:
           similarityThreshold: 0.50   # Similarity threshold, default 0.0
-          top-k: 4                    # top-k, default 4
+          top-k: 4                    # Top-k results, default 4
           defaultPromptTemplate: |
             Context information is below.
 
@@ -141,8 +143,8 @@ spring:
             Politely inform the user that you can't answer it.
 ```
 
-## MCP
-Taking time MCP service as an example, add dependency:
+## MCP (Model Context Protocol)
+Taking the time MCP service as an example, add dependency:
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -175,85 +177,65 @@ spring:
 }
 ```
 
-Restart project and visit `http://localhost:8080/spring/ai/chat`
+Configure Chinese labels, descriptions, and default selection for tools:
+```yaml
+spring:
+  ai:
+    chat:
+      ui:
+        tools:
+          - name: spring-ai-mcp-client - time
+            label: Time
+            description:
+              A Model Context Protocol service that provides time and timezone conversion functionality. This service enables large language models to obtain current time information and perform timezone conversions using IANA timezone names, with automatic system timezone detection.
+            default-selected:  true
+```
+
+Restart the project and visit `http://localhost:8080/spring/ai/chat`
+Check the tool and input the following content:
 ```text
 1. Current time
-2. Get content from `https://www.163.com/`
-3. Randomly select a news item from the previous webpage content
+2. Get webpage content from `https://www.163.com/`
+3. Randomly select one news item from the previous step's webpage content
 4. Open browser and visit `https://www.baidu.com/`
-5. Enter the news from step 3 in the search box and click search
+5. Input the news from step 3 into the search box and click search
 ```
 ![img_2.png](img_2.png)
 ![img_3.png](img_3.png)
+![img_6.png](img_6.png)
 
-## Skill Library
-You can create skill library based on tools by writing prompts, configuration description:
+## Skills Library
+You can write skills and add them to the skills library. Skills can be configured with parameters and tools. Configuration example:
 ```yaml
 spring:
   ai:
     chat:
       ui:
         skills:
-          - name: SkillName
-            tools:
-              - Tool1
-              - Tool2
-            skill: Prompt, supports classpath, you can use {param1} in the prompt as user input parameter
+          - name: Test 3
+            skill: classpath:skills/test3.st  # Skill description, supports classpath. Content of test3.st: "{param1}, what time is it now, also do you know {prama2}? {param3}"
+            params:
+              - name: param1
+                label: Parameter 1
+                type: select # select | text | text_area (dropdown | text | multi-line text)
+                options: # Dropdown options
+                  - label: Hello
+                    value: Hello
+                  - label: Hello
+                    value: Hello
+                default-value: Hello # Default value
+                required:  true # Whether required (default: optional)
+              - name: prama2
+                label: Parameter 2
+                type: text
+                required: true
+                placeholder: What you want to know
+              - name: param3
+                label: Parameter 3
+                type: text_area
+                placeholder: Additional content, optional
 ```
 
-For example, deep thinking:
-Tools:
-```json
-{
-  "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx.cmd",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ]
-    },
-    "bing-search": {
-      "args": [
-        "-y",
-        "bing-cn-mcp"
-      ],
-      "command": "npx.cmd"
-    }
-    "fetch": {
-      "args": [
-        "mcp-server-fetch"
-      ],
-      "command": "uvx"
-    }
-  }
-}
-```
-Configuration:
-```yaml
-spring:
-  ai:
-    chat:
-      ui:
-        skills:
-          - name: "Deep Thinking"
-            tools:
-              - spring-ai-mcp-client - sequential-thinking
-              - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - fetch
-            skill: classpath:skills/sequential-thinking.st
-```
-Prompt:
-```text
-Let's think deeply about {param1}, what practical scenarios it can be used in, requirements:
-- Use sequentialthinking tool to plan all steps, thoughts and branches
-- Can use bing_search tool for verification before each round of thinking
-- Can use fetch tool to view details of searched webpages
-- No less than 5 rounds of thinking, need to have divergent brainstorming, need to have thinking branches
-- Each round needs to reflect on whether own decision is correct based on queried information results
-- Return at least 10 high-value usage scenarios, explain in detail why they are valuable and how to use them
-```
-
-Restart project and visit `http://localhost:8080/spring/ai/chat`
+Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ![img_4.png](img_4.png)
 ![img_5.png](img_5.png)
