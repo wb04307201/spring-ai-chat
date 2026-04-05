@@ -153,10 +153,7 @@ spring:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - cn-weather-mcp
               - spring-ai-mcp-client - mcp-server-chart
-              - spring-ai-mcp-client - playwright
-              - spring-ai-mcp-client - chrome-devtools
             skill: classpath:skills/test4.st
             params:
               - name: param1
