@@ -142,6 +142,7 @@ spring:
                 type: text
                 required: true
                 placeholder: 你想知道的事情
+                default-value: 地球是平的
               - name: param3
                 label: 参数3
                 type: text_area
@@ -157,6 +158,12 @@ spring:
               - spring-ai-mcp-client - playwright
               - spring-ai-mcp-client - chrome-devtools
             skill: classpath:skills/test4.st
+            params:
+              - name: param1
+                label: 测试参数1
+                type: text
+                required: true
+                default-value: 党
 
   servlet:
     multipart:

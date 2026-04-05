@@ -1696,6 +1696,11 @@
                     if (param.defaultValue) {
                         skillParams[param.name] = param.defaultValue;
                     }
+                } else {
+                    // Initialize default value for TEXT and TEXT_AREA
+                    if (param.defaultValue) {
+                        skillParams[param.name] = param.defaultValue;
+                    }
                 }
 
                 paramsContainer.appendChild(paramGroup);
@@ -1726,6 +1731,7 @@
         const missingParams = [];
         if (currentSelectedSkill.params && currentSelectedSkill.params.length > 0) {
             currentSelectedSkill.params.forEach(param => {
+                console.log( param,'-----------',skillParams)
                 if (param.required) {
                     const value = skillParams[param.name];
                     if (!value || value.trim() === '') {
@@ -1752,7 +1758,8 @@
 
         closeSkillsModal();
         textarea.value = promptContent;
-        selectedTools = currentSelectedSkill.tools || [];
+        const addToolNames = currentSelectedSkill.tools.filter(name => !selectedTools.includes(name));
+        selectedTools  = [...selectedTools, ...addToolNames];
         send();
 
         // showToast('已应用技能模板', 'success');
