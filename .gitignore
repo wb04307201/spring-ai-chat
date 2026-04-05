@@ -37,3 +37,4 @@ build/
 /mcp/
 
 *.log
+/.playwright-mcp/
