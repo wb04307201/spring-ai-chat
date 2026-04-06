@@ -113,31 +113,16 @@ spring:
             description:
               HTTP客户端 MCP 服务 - 提供通用HTTP请求功能（GET/POST/PUT/DELETE）
         skills:
-          - name: 测试1
-            tools:
-              - spring-ai-mcp-client - sequential-thinking
-              - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - time
-              - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - cn-weather-mcp
-              - spring-ai-mcp-client - amap-maps
-              - spring-ai-mcp-client - 12306-mcp
-              - spring-ai-mcp-client - mcp-server-chart
+          - name: 工具
             skill: 你可以调用哪些工具？
-          - name: 测试2
-            tools:
-              - spring-ai-mcp-client - sequential-thinking
-              - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - fetch
-            skill: classpath:skills/test2.st
-          - name: 测试3
+          - name: 参数测试
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - cn-weather-mcp
-            skill: classpath:skills/test3.st
+            skill: classpath:skills/params.st
             params:
               - name: param1
-                label: 参数1
+                label: 打招呼
                 type: select
                 options:
                   - label: 你好
@@ -147,16 +132,18 @@ spring:
                 default-value: 你好
                 required:  true
               - name: prama2
-                label: 参数2
+                label: 问题
                 type: text
                 required: true
-                placeholder: 你想知道的事情
+                placeholder: 你想询问的主题
                 default-value: 地球是平的
               - name: param3
                 label: 参数3
                 type: text_area
                 placeholder: 补充内容，可以不输入
-          - name: 测试4
+          - name: 【新闻看】洞察报告
+            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告与关联思维导图，适用于企业情报监控、行业趋势追踪等场景
+            preloading: true
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking
@@ -164,17 +151,17 @@ spring:
               - spring-ai-mcp-client - fetch
               - spring-ai-mcp-client - mcp-server-chart
               - spring-ai-mcp-client - filesystem
-            skill: classpath:skills/test4.st
+            skill: classpath:skills/news-watch.st
             params:
               - name: param1
-                label: 测试参数1
+                label: 主题
                 type: text
                 required: true
                 default-value: 党
-          - name: 测试5
+          - name: http-client
             tools:
               - spring-ai-mcp-client - http-client-mcp
-            skill: classpath:skills/test5.st
+            skill: classpath:skills/http.st
   servlet:
     multipart:
       max-file-size: 10MB

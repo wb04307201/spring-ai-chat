@@ -49,7 +49,7 @@
     <dependency>
         <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
         <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-        <version>1.1.14</version>
+        <version>1.1.15</version>
     </dependency>
 </dependencies>
 ```
@@ -210,29 +210,47 @@ spring:
     chat:
       ui:
         skills:
-          - name: 测试3
-            skill: classpath:skills/test3.st  #技能描述，支持classpath test3.st内容"{param1}，现在几点了，另外你知道{prama2}吗？{param3}"
+          - name: 【新闻看】洞察报告
+            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告与关联思维导图，适用于企业情报监控、行业趋势追踪等场景
+            preloading: true # 是否预加载
+            tools:
+              - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
+              - spring-ai-mcp-client - mcp-server-chart
+              - spring-ai-mcp-client - filesystem
+            skill: classpath:skills/news-watch.st
             params:
               - name: param1
-                label: 参数1
-                type: select # select | text | text_area 下拉框 | 文本 | 多行文本
-                options: # 下拉框选项
-                  - label: 你好
-                    value: 你好
-                  - label: Hello
-                    value: Hello
-                default-value: 你好 # 默认值
-                required:  true # 是否必填（默认非必填）
-              - name: prama2
-                label: 参数2
-                type: text
-                required: true
-                placeholder: 你想知道的事情
-              - name: param3
-                label: 参数3
-                type: text_area
-                placeholder: 补充内容，可以不输入
+                label: 主题
+                type: text # select | text | text_area 下拉框 | 文本 | 多行文本 下拉需配合options属性进行配置
+                # options: 下拉框选项
+                #  - label: 你好
+                #    value: 你好
+                #  - label: Hello
+                #    value: Hello
+                required: true # 是否必填（默认非必填）
+                default-value: 党 # 默认值
+                # placeholder: 输入提示
 ```
+
+```text
+通过网络搜索获取{param1}当前年每月的重要的事件，通过深度分析生成洞察报告，并形成思维导图，要求：
+- 使用 @get_current_time 获取当前时间
+- 使用 @sequentialthinking 来规划所有的步骤，思考和分支
+- 可以使用 @bing_search 按照当前年逐月进行一汽的重要的事件搜索，每一轮Thinking之前都先搜索验证
+- 可以用 @fetch 来查看搜索到的网页详情
+- 思考轮数不低于5轮，且需要有发散脑暴意识，需要有思考分支
+- 每一轮需要根据查询的信息结果，反思自己的决策是否正确
+- 形成"新闻看{param1}洞察报告"，并使用 @write_file 保存报告为*.md
+- 分析报告保存后返回下载地址，格式为 http://localhost:8080/spring/ai/chat/file/download/{fileName} ，fileName为保存的文件名，使用a标签展示，点击打开新的标签进行下载
+- 进行事件关联分析，使用 @generate_mind_map 形成思维导图
+- 返回的思维导图url使用img标签展示，并设置width为100%，点击图片打开新的标签页显示图片
+```
+
+可以通过技能库按钮精准使用技能
+如果技能设置了预加载，也可以在对话中直接使用
 
 重启项目 访问`http://localhost:8080/spring/ai/chat`
 ![img_4.png](img_4.png)

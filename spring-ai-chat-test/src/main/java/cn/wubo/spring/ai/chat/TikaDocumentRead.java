@@ -1,5 +1,7 @@
 package cn.wubo.spring.ai.chat;
 
+import cn.wubo.spring.ai.chat.document.FileInfo;
+import cn.wubo.spring.ai.chat.document.IDocumentRead;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.model.transformer.KeywordMetadataEnricher;
@@ -19,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 public class TikaDocumentRead implements IDocumentRead {
