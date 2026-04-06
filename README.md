@@ -51,7 +51,7 @@ Add dependency:
     <dependency>
         <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
         <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-        <version>1.1.15</version>
+        <version>1.1.16</version>
     </dependency>
 </dependencies>
 ```

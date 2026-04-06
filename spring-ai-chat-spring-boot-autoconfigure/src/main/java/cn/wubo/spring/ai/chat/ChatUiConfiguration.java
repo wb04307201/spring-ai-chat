@@ -202,8 +202,7 @@ public class ChatUiConfiguration {
     @ConditionalOnMissingBean(ISkillStorage.class)
     @Bean
     public ISkillStorage skillStorage(ChatUiProperties properties) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        return new LocalSkillStorage(properties.getSkills(),objectMapper);
+        return new LocalSkillStorage(properties.getSkills());
     }
 
     @Slf4j
