@@ -27,12 +27,6 @@
         "@modelcontextprotocol/server-sequential-thinking"
       ]
     },
-    "cn-weather-mcp": {
-      "args": [
-        "io.github.wb04307201:cn-weather-mcp:1.0.0"
-      ],
-      "command": "jbang.cmd"
-    },
     "amap-maps": {
       "command": "npx.cmd",
       "args": [
@@ -67,6 +61,27 @@
         "chrome-devtools-mcp@latest"
       ],
       "command": "npx.cmd"
+    },
+    "filesystem": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "./temp",
+        "."
+      ],
+      "command": "npx.cmd"
+    },
+    "cn-weather-mcp": {
+      "args": [
+        "io.github.wb04307201:cn-weather-mcp:1.0.1"
+      ],
+      "command": "jbang.cmd"
+    },
+    "http-client-mcp": {
+      "args": [
+        "io.github.wb04307201:http-mcp:1.0.0"
+      ],
+      "command": "jbang.cmd"
     }
   }
 }

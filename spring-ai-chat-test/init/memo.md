@@ -50,12 +50,6 @@ iex "& { $(iwr https://ps.jbang.dev) } app setup"
         "@modelcontextprotocol/server-sequential-thinking"
       ]
     },
-    "cn-weather-mcp": {
-      "args": [
-        "io.github.wb04307201:cn-weather-mcp:1.0.0"
-      ],
-      "command": "jbang"
-    },
     "amap-maps": {
       "args": [
         "-y",
@@ -103,6 +97,27 @@ iex "& { $(iwr https://ps.jbang.dev) } app setup"
       "env": {
         "TAVILY_API_KEY": "your-api-key-here"
       }
+    },
+    "filesystem": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/username/Desktop",
+        "/path/to/other/allowed/dir"
+      ],
+      "command": "npx"
+    },
+    "cn-weather-mcp": {
+      "args": [
+        "io.github.wb04307201:cn-weather-mcp:1.0.0"
+      ],
+      "command": "jbang"
+    },
+    "http-client-mcp": {
+      "args": [
+        "io.github.wb04307201:http-mcp:1.0.0"
+      ],
+      "command": "jbang"
     }
   }
 }

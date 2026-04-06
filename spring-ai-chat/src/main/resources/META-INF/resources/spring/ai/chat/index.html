@@ -1731,7 +1731,6 @@
         const missingParams = [];
         if (currentSelectedSkill.params && currentSelectedSkill.params.length > 0) {
             currentSelectedSkill.params.forEach(param => {
-                console.log( param,'-----------',skillParams)
                 if (param.required) {
                     const value = skillParams[param.name];
                     if (!value || value.trim() === '') {

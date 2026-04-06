@@ -104,6 +104,14 @@ spring:
             label: Chrome DevTools
             description:
               chrome-devtools-mcp lets your coding agent (such as Gemini, Claude, Cursor or Copilot) control and inspect a live Chrome browser. It acts as a Model-Context-Protocol (MCP) server, giving your AI coding assistant access to the full power of Chrome DevTools for reliable automation, in-depth debugging, and performance analysis.
+          - name: spring-ai-mcp-client - filesystem
+            label: 文件系统
+            description:
+              用于文件系统操作的模型上下文协议（MCP）的 Node.js 服务。
+          - name: spring-ai-mcp-client - http-client-mcp
+            label: HTTP 客户端
+            description:
+              HTTP客户端 MCP 服务 - 提供通用HTTP请求功能（GET/POST/PUT/DELETE）
         skills:
           - name: 测试1
             tools:
@@ -125,6 +133,7 @@ spring:
           - name: 测试3
             tools:
               - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - cn-weather-mcp
             skill: classpath:skills/test3.st
             params:
               - name: param1
@@ -153,10 +162,8 @@ spring:
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - cn-weather-mcp
               - spring-ai-mcp-client - mcp-server-chart
-              - spring-ai-mcp-client - playwright
-              - spring-ai-mcp-client - chrome-devtools
+              - spring-ai-mcp-client - filesystem
             skill: classpath:skills/test4.st
             params:
               - name: param1
@@ -164,7 +171,10 @@ spring:
                 type: text
                 required: true
                 default-value: 党
-
+          - name: 测试5
+            tools:
+              - spring-ai-mcp-client - http-client-mcp
+            skill: classpath:skills/test5.st
   servlet:
     multipart:
       max-file-size: 10MB

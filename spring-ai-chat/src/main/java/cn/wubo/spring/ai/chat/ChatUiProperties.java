@@ -14,6 +14,7 @@ public class ChatUiProperties {
     private Rag rag = new Rag();
     private List<Tool> tools;
     private List<Skill> skills;
+    private File file = new File();
 
     @Data
     public static class Rag {
@@ -80,5 +81,11 @@ public class ChatUiProperties {
                 private String value;
             }
         }
+    }
+
+    @Data
+    public static class File {
+        private boolean enableDownload = true;
+        private String fileRoot = "temp";
     }
 }
