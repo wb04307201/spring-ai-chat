@@ -66,8 +66,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "./temp",
-        "."
+        "./temp"
       ],
       "command": "npx.cmd"
     },
