@@ -1,12 +1,16 @@
 package cn.wubo.spring.ai.chat;
 
-import cn.wubo.spring.ai.chat.record.ChatRecord;
-import cn.wubo.spring.ai.chat.record.ChatResponse;
-import cn.wubo.spring.ai.chat.record.ToolRecord;
+import cn.wubo.spring.ai.chat.document.IDocumentRead;
+import cn.wubo.spring.ai.chat.model.*;
+import cn.wubo.spring.ai.chat.skill.ISkillStorage;
+import cn.wubo.spring.ai.chat.skill.LocalSkillStorage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.servlet.http.Part;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -21,6 +25,7 @@ import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.template.st.StTemplateRenderer;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -49,6 +54,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -170,7 +176,7 @@ public class ChatUiConfiguration {
                             impl.title(),
                             impl.version(),
                             tool.isPresent() ? tool.get().getLabel() : impl.title(),
-                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null,
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription() : null,
                             tool.isPresent() && tool.get().isDefaultSelected()));
 
                 });
@@ -183,19 +189,26 @@ public class ChatUiConfiguration {
                             impl.title(),
                             impl.version(),
                             tool.isPresent() ? tool.get().getLabel() : impl.title(),
-                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription().getContent() : null,
+                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription(): null,
                             tool.isPresent() && tool.get().isDefaultSelected()));
                 });
             }
             return ServerResponse.ok().body(tools);
         });
-        builder.GET("spring/ai/chat/skills", request -> {
-            return ServerResponse.ok().body(properties.getSkills());
-        });
+        builder.GET("spring/ai/chat/skills", request -> ServerResponse.ok().body(properties.getSkills()));
         return builder.build();
     }
 
+    @ConditionalOnMissingBean(ISkillStorage.class)
+    @Bean
+    public ISkillStorage skillStorage(ChatUiProperties properties) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return new LocalSkillStorage(properties.getSkills(),objectMapper);
+    }
+
     @Slf4j
+    @Data
+    @RequiredArgsConstructor
     @RestController
     @RequestMapping
     public static class SseController {
@@ -203,12 +216,7 @@ public class ChatUiConfiguration {
         private final ChatClient chatClient;
         private final List<McpSyncClient> mcpSyncClients;
         private final List<McpAsyncClient> mcpAsyncClients;
-
-        public SseController(ChatClient chatClient, List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients) {
-            this.chatClient = chatClient;
-            this.mcpSyncClients = mcpSyncClients;
-            this.mcpAsyncClients = mcpAsyncClients;
-        }
+        private final ISkillStorage skillStorage;
 
         @PostMapping(value = "/spring/ai/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
         public SseEmitter streamAi(@RequestBody ChatRecord chatRecord) {
@@ -230,6 +238,7 @@ public class ChatUiConfiguration {
                     // 4. 订阅 Flux 流并将数据发送给 emitter
                     ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt()
                             .user(chatRecord.message())
+                            .tools(skillStorage)
                             .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatRecord.conversationId()));
 
                     ToolCallbackProvider toolCallbackProvider = null;

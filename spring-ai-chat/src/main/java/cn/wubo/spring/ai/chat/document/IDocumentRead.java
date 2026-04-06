@@ -1,4 +1,4 @@
-package cn.wubo.spring.ai.chat;
+package cn.wubo.spring.ai.chat.document;
 
 import org.springframework.ai.document.Document;
 

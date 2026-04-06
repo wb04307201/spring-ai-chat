@@ -1,19 +1,21 @@
-package cn.wubo.spring.ai.chat;
+package cn.wubo.spring.ai.chat.model;
 
+import cn.wubo.spring.ai.chat.ContentHolder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @ConfigurationProperties(prefix = "spring.ai.chat.ui")
 public class ChatUiProperties {
 
-    private String defaultSystem;
+    private String defaultSystem = "首先调用 @skillContents 获取技能目录，如果有与用户意图一致的技能,则调用 @getSkill 获取技能信息";
     private boolean init = true;
     private Rag rag = new Rag();
-    private List<Tool> tools;
-    private List<Skill> skills;
+    private List<Tool> tools = new ArrayList<>();
+    private List<Skill> skills = new ArrayList<>();
     private File file = new File();
 
     @Data
@@ -48,13 +50,15 @@ public class ChatUiProperties {
     public static class Tool {
         private String name;
         private String label;
-        private ContentHolder description;
+        private String description;
         private boolean defaultSelected;
     }
 
     @Data
     public static class Skill{
         private String name;
+        private String description;
+        private boolean preloading;
         private List<String> tools;
         private ContentHolder skill;
         private List<SkillParam> params;
