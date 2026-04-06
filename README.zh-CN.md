@@ -210,8 +210,8 @@ spring:
     chat:
       ui:
         skills:
-          - name: 【新闻看】洞察报告
-            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告与关联思维导图，适用于企业情报监控、行业趋势追踪等场景
+          - name: 【新闻看】洞察报告 # 技能名称
+            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告与关联思维导图，适用于企业情报监控、行业趋势追踪等场景 # 技能描述
             preloading: true # 是否预加载
             tools:
               - spring-ai-mcp-client - time
@@ -243,7 +243,7 @@ spring:
 - 可以用 @fetch 来查看搜索到的网页详情
 - 思考轮数不低于5轮，且需要有发散脑暴意识，需要有思考分支
 - 每一轮需要根据查询的信息结果，反思自己的决策是否正确
-- 形成"新闻看{param1}洞察报告"，并使用 @write_file 保存报告为*.md
+- 形成"新闻看{param1}洞察报告"，并使用 @write_file 在允许访问的目录里保存报告为*.md
 - 分析报告保存后返回下载地址，格式为 http://localhost:8080/spring/ai/chat/file/download/{fileName} ，fileName为保存的文件名，使用a标签展示，点击打开新的标签进行下载
 - 进行事件关联分析，使用 @generate_mind_map 形成思维导图
 - 返回的思维导图url使用img标签展示，并设置width为100%，点击图片打开新的标签页显示图片
@@ -255,3 +255,4 @@ spring:
 重启项目 访问`http://localhost:8080/spring/ai/chat`
 ![img_4.png](img_4.png)
 ![img_5.png](img_5.png)
+![img_7.png](img_7.png)

@@ -17,7 +17,7 @@
 - 🤖 AI Chat Interface
 - 📚 Knowledge Base (RAG)
 - 🔧 Tools (MCP)
-- 🧠 Skills Library
+- 🧠 Skill Library
 - ⚙️ Auto Configuration
 
 ## Quick Start: Add Chat Interface
@@ -105,7 +105,7 @@ spring:
       password: 123456
 ```
 
-Implement the [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java) interface  
+Implement the [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/document/IDocumentRead.java) interface  
 For example: [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
 
 Restart the project and visit `http://localhost:8080/spring/ai/chat`
@@ -120,7 +120,7 @@ spring:
       ui:
         rag:
           similarityThreshold: 0.50   # Similarity threshold, default 0.0
-          top-k: 4                    # Top-k results, default 4
+          top-k: 4                    # Top-k, default 4
           defaultPromptTemplate: |
             Context information is below.
 
@@ -177,7 +177,7 @@ spring:
 }
 ```
 
-Configure Chinese labels, descriptions, and default selection for tools:
+Configure Chinese labels, descriptions, and default selection for tools. For example:
 ```yaml
 spring:
   ai:
@@ -196,7 +196,7 @@ Check the tool and input the following content:
 ```text
 1. Current time
 2. Get webpage content from `https://www.163.com/`
-3. Randomly select one news item from the previous step's webpage content
+3. Randomly select one news item from the webpage content obtained in the previous step
 4. Open browser and visit `https://www.baidu.com/`
 5. Input the news from step 3 into the search box and click search
 ```
@@ -204,38 +204,57 @@ Check the tool and input the following content:
 ![img_3.png](img_3.png)
 ![img_6.png](img_6.png)
 
-## Skills Library
-You can write skills and add them to the skills library. Skills can be configured with parameters and tools. Configuration example:
+## Skill Library
+You can write skills and add them to the skill library. Skills can be configured with parameters and tools. Configuration details:
 ```yaml
 spring:
   ai:
     chat:
       ui:
         skills:
-          - name: Test 3
-            skill: classpath:skills/test3.st  # Skill description, supports classpath. Content of test3.st: "{param1}, what time is it now, also do you know {prama2}? {param3}"
+          - name: 【News Watch】Insight Report # Skill name
+            description: Collect monthly events on specified topics through web search, generate monthly event insight reports and associated mind maps through in-depth analysis, suitable for enterprise intelligence monitoring, industry trend tracking, etc. # Skill description
+            preloading: true # Whether to preload
+            tools:
+              - spring-ai-mcp-client - time
+              - spring-ai-mcp-client - sequential-thinking
+              - spring-ai-mcp-client - bing-search
+              - spring-ai-mcp-client - fetch
+              - spring-ai-mcp-client - mcp-server-chart
+              - spring-ai-mcp-client - filesystem
+            skill: classpath:skills/news-watch.st
             params:
               - name: param1
-                label: Parameter 1
-                type: select # select | text | text_area (dropdown | text | multi-line text)
-                options: # Dropdown options
-                  - label: Hello
-                    value: Hello
-                  - label: Hello
-                    value: Hello
-                default-value: Hello # Default value
-                required:  true # Whether required (default: optional)
-              - name: prama2
-                label: Parameter 2
-                type: text
-                required: true
-                placeholder: What you want to know
-              - name: param3
-                label: Parameter 3
-                type: text_area
-                placeholder: Additional content, optional
+                label: Topic
+                type: text # select | text | text_area Dropdown | Text | Multi-line text. Dropdown requires options property
+                # options: Dropdown options
+                #  - label: Hello
+                #    value: Hello
+                #  - label: 你好
+                #    value: 你好
+                required: true # Whether required (default: false)
+                default-value: Party # Default value
+                # placeholder: Input hint
 ```
+
+```text
+Search the web to obtain important monthly events for {param1} in the current year, generate insight reports through in-depth analysis, and create mind maps. Requirements:
+- Use @get_current_time to get current time
+- Use @sequentialthinking to plan all steps, thoughts, and branches
+- Use @bing_search to search for FAW's important events month by month for the current year. Verify with search before each Thinking round
+- Use @fetch to view detailed webpage content from search results
+- Thinking rounds should be no less than 5, with divergent brainstorming awareness and thinking branches
+- Each round needs to reflect on whether decisions are correct based on query results
+- Create "News Watch {param1} Insight Report" and use @write_file to save the report as *.md in allowed directories
+- After saving the analysis report, return the download URL in format http://localhost:8080/spring/ai/chat/file/download/{fileName}, where fileName is the saved filename. Display using anchor tag, clicking opens new tab for download
+- Perform event correlation analysis and use @generate_mind_map to create mind map
+- Display the returned mind map URL using img tag with width set to 100%. Clicking the image opens new tab to display the image
+```
+
+You can precisely use skills through the skill library button.
+If a skill is set to preload, it can also be used directly in conversations.
 
 Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ![img_4.png](img_4.png)
 ![img_5.png](img_5.png)
+![img_7.png](img_7.png)
