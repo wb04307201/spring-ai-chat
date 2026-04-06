@@ -36,13 +36,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.RouterFunctions;
 import org.springframework.web.servlet.function.ServerResponse;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -315,4 +319,26 @@ public class ChatUiConfiguration {
 
         return builder.build();
     }
+
+    @ConditionalOnProperty(name = "spring.ai.chat.ui.file.enableDownload", havingValue = "true", matchIfMissing = true)
+    @Bean("wb04307201ChatUiFileRouter")
+    public RouterFunction<ServerResponse> chatUiFileRouter(ChatUiProperties chatUiProperties) {
+        RouterFunctions.Builder builder = RouterFunctions.route();
+        builder.GET("/spring/ai/chat/file/download/{fileName}", request -> {
+            String fileName = request.pathVariable("fileName");
+            return ServerResponse.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .build((res, req) -> {
+                        try (OutputStream os = req.getOutputStream()) {
+                            Path path = Path.of(chatUiProperties.getFile().getFileRoot(), fileName);
+                            os.write(Files.readAllBytes(path));
+                            os.flush();
+                        }
+                        return new ModelAndView();
+                    });
+        });
+
+        return builder.build();
+    }
+
 }
