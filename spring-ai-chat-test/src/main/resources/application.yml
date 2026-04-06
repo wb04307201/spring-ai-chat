@@ -142,14 +142,13 @@ spring:
                 type: text_area
                 placeholder: 补充内容，可以不输入
           - name: 【新闻看】洞察报告
-            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告与关联思维导图，适用于企业情报监控、行业趋势追踪等场景
+            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告，适用于企业情报监控、行业趋势追踪等场景
             preloading: true
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - mcp-server-chart
               - spring-ai-mcp-client - filesystem
             skill: classpath:skills/news-watch.st
             params:

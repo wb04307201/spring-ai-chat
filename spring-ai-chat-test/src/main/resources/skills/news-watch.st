@@ -1,9 +1,10 @@
-通过网络搜索获取{param1}当前年每月的重要的事件，通过深度分析生成洞察报告，并形成思维导图，要求：
+通过网络搜索获取{param1}当前年每月的重要的事件，通过深度分析生成洞察报告，要求：
 - 使用 @get_current_time 获取当前时间
 - 使用 @sequentialthinking 来规划所有的步骤，思考和分支
 - 可以使用 @bing_search 按照当前年逐月进行一汽的重要的事件搜索，每一轮Thinking之前都先搜索验证
 - 可以用 @fetch 来查看搜索到的网页详情
 - 思考轮数不低于5轮，且需要有发散脑暴意识，需要有思考分支
 - 每一轮需要根据查询的信息结果，反思自己的决策是否正确
-- 形成"新闻看{param1}洞察报告"，并使用 @write_file 在允许访问的目录里保存报告为*.md，分析报告保存后返回下载地址，格式为 http://localhost:8080/spring/ai/chat/file/download/{fileName} ，fileName为保存的文件名，使用a标签展示，点击打开新的标签进行下载
-- 进行事件关联分析，使用 @generate_mind_map 形成思维导图，返回的思维导图url使用img标签展示，并设置width为100%，点击图片打开新的标签页显示图片
+- 进行事件关联分析与结论形成 新闻看{param1}洞察报告
+- 使用 @write_file 在允许访问的目录里保存报告为*.md，
+- 保存后返回下载地址，格式为 http://localhost:8080/spring/ai/chat/file/download/文件名，使用a标签展示，点击进行下载

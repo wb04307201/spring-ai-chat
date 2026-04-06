@@ -1,9 +1,6 @@
 package cn.wubo.spring.ai.chat.skill;
 
 import cn.wubo.spring.ai.chat.model.ChatUiProperties;
-import cn.wubo.spring.ai.chat.model.SkillContent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +15,6 @@ import java.util.List;
 public class LocalSkillStorage implements ISkillStorage {
 
     private final List<ChatUiProperties.Skill> skills;
-    private final ObjectMapper objectMapper;
 
     @Override
     public List<ChatUiProperties.Skill> skills() {
@@ -28,26 +24,37 @@ public class LocalSkillStorage implements ISkillStorage {
     @Tool(description = "根据技能名返回技能信息")
     @Override
     public String getSkill(@ToolParam(description = "技能名") String name) {
-        try {
-            return objectMapper.writeValueAsString(skills.stream().filter(skill -> skill.getName().equals(name)).toList());
-        } catch (JsonProcessingException e) {
-            log.warn("技能信息转换失败", e);
-            return e.getMessage();
+        List<ChatUiProperties.Skill> results = skills.stream().filter(skill -> skill.getName().equals(name)).toList();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("找到 %d 个技能:%n%n", results.size()));
+
+        for (ChatUiProperties.Skill skill : results) {
+            sb.append(String.format("技能名:%s%n", skill.getName()));
+            sb.append(String.format("技能描述:%s%n", skill.getDescription()));
+            sb.append(String.format("技能内容:%s%n", skill.getSkill().getContent()));
+            sb.append(String.format("技能参数:%s%n", skill.getParams()));
         }
+
+        sb.append("\n提示：技能内容中类似{param1}需要用参数补全");
+        return sb.toString();
     }
 
 
     @Tool(description = "获取技能目录")
     @Override
     public String skillContents() {
-        try {
-            return objectMapper.writeValueAsString(skills.stream()
-                    .filter(ChatUiProperties.Skill::isPreloading)
-                    .map(skill -> new SkillContent(skill.getName(), skill.getDescription(), skill.getParams()))
-                    .toList());
-        } catch (JsonProcessingException e) {
-            log.warn("技能内容转换失败", e);
-            return e.getMessage();
+        List<ChatUiProperties.Skill> results = skills.stream().filter(ChatUiProperties.Skill::isPreloading).toList();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("找到 %d 个技能目录:%n%n", results.size()));
+        sb.append(String.format("%-10s %-50s %-50s%n", "技能名", "技能描述","参数"));
+
+        for (ChatUiProperties.Skill skill : results) {
+            sb.append(String.format("%-10s %-50s %-50s%n", skill.getName(), skill.getDescription(),skill.getParams()));
         }
+
+        sb.append("\n提示：使用技能名可以查询具体技能信息");
+        return sb.toString();
     }
 }
