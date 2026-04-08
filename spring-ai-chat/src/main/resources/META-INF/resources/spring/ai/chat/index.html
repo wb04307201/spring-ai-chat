@@ -1820,8 +1820,10 @@
 
         closeSkillsModal();
         textarea.value = promptContent;
-        const addToolNames = currentSelectedSkill.tools.filter(name => !selectedTools.includes(name));
-        selectedTools  = [...selectedTools, ...addToolNames];
+        if(currentSelectedSkill.tools){
+            const addToolNames = currentSelectedSkill.tools.filter(name => !selectedTools.includes(name));
+            selectedTools  = [...selectedTools, ...addToolNames];
+        }
         send();
 
         // showToast('已应用技能模板', 'success');
