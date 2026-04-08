@@ -136,30 +136,36 @@ public class ChatUiConfiguration {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
-                RetrievalAugmentationAdvisor.builder()
-                        .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                .similarityThreshold(properties.getRag().getSimilarityThreshold())
-                                .topK(properties.getRag().getTopK())
-                                .vectorStore(vectorStore)
-                                .build())
-                        .queryAugmenter(
-                                ContextualQueryAugmenter.builder()
-                                        .promptTemplate(
-                                                PromptTemplate.builder()
-                                                        .template(properties.getRag().getDefaultPromptTemplate())
-                                                        .build()
-                                        )
-                                        .emptyContextPromptTemplate(
-                                                PromptTemplate.builder()
-                                                        .template(properties.getRag().getDefaultEmptyContextPromptTemplate())
-                                                        .build()
-                                        )
-                                        .allowEmptyContext(true)
-                                        .build())
-                        .build(),  // RAG advisor
                 SimpleLoggerAdvisor.builder().build() // logger advisor
         );
         return builder.build();
+    }
+
+    @ConditionalOnBean(VectorStore.class)
+    @Bean
+    public RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, ChatUiProperties properties) {
+        return RetrievalAugmentationAdvisor.builder()
+                .documentRetriever(VectorStoreDocumentRetriever.builder()
+                        .similarityThreshold(properties.getRag().getSimilarityThreshold())
+                        .topK(properties.getRag().getTopK())
+                        .vectorStore(vectorStore)
+                        .build())
+                .queryAugmenter(
+                        ContextualQueryAugmenter.builder()
+                                .promptTemplate(
+                                        PromptTemplate.builder()
+                                                .template(properties.getRag().getDefaultPromptTemplate())
+                                                .build()
+                                )
+                                .emptyContextPromptTemplate(
+                                        PromptTemplate.builder()
+                                                .template(properties.getRag().getDefaultEmptyContextPromptTemplate())
+                                                .build()
+                                )
+                                .allowEmptyContext(true)
+                                .build() // RAG advisor
+                )
+                .build();
     }
 
     @Bean("wb04307201ChatUiRouter")
@@ -213,6 +219,7 @@ public class ChatUiConfiguration {
     public static class SseController {
 
         private final ChatClient chatClient;
+        private final Optional<RetrievalAugmentationAdvisor> retrievalAugmentationAdvisor;
         private final List<McpSyncClient> mcpSyncClients;
         private final List<McpAsyncClient> mcpAsyncClients;
         private final ISkillStorage skillStorage;
@@ -237,8 +244,12 @@ public class ChatUiConfiguration {
                     // 4. 订阅 Flux 流并将数据发送给 emitter
                     ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt()
                             .user(chatRecord.message())
-                            .tools(skillStorage)
-                            .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatRecord.conversationId()));
+                            .tools(skillStorage);
+
+                    if(retrievalAugmentationAdvisor.isPresent() && chatRecord.enableRag())
+                        requestSpec.advisors(retrievalAugmentationAdvisor.get());
+
+                    requestSpec.advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatRecord.conversationId()));
 
                     ToolCallbackProvider toolCallbackProvider = null;
                     if (!mcpSyncClients.isEmpty()) {

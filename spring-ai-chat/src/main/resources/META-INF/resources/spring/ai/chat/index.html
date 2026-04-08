@@ -614,6 +614,62 @@
             color: var(--text-secondary);
         }
 
+        /* Toggle Switch */
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 16px;
+            height: 36px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-switch:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            user-select: none;
+        }
+
+        .toggle-slider {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: var(--border-color);
+            border-radius: 11px;
+            transition: all 0.3s;
+        }
+
+        .toggle-slider::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .toggle-switch.active .toggle-slider::after {
+            transform: translateX(18px);
+        }
+
         /* Skills Modal Specific */
         .skills-modal-layout {
             display: flex;
@@ -864,6 +920,10 @@
             <span>上传文件</span>
             <input type="file" id="file-input" accept="*/*" style="display: none;">
         </button>
+        <button class="toolbar-btn toggle-switch active" id="rag-toggle" onclick="toggleRag()">
+            <span>启用知识库</span>
+            <div class="toggle-slider"></div>
+        </button>
         <button class="toolbar-btn" id="repo-button" onclick="openModal()" style="display: none;">
             <span>📚</span>
             <span>知识库</span>
@@ -983,7 +1043,8 @@
     let selectedTools = [];
     let currentSelectedSkill = null;
     let skillParams = {};
-    let tools = []
+    let tools = [];
+    let enableRag = true;
 
     // Global functions
     window.send = send;
@@ -1007,6 +1068,7 @@
     window.selectSkill = selectSkill;
     window.sendSkillRequest = sendSkillRequest;
     window.toggleThinking = toggleThinking;
+    window.toggleRag = toggleRag;
 
         document.addEventListener('DOMContentLoaded', () => {
         // Check upload feature
@@ -1019,6 +1081,7 @@
                 if (data) {
                     fileInputButton.style.display = 'flex';
                     repoButton.style.display = 'flex';
+                    document.getElementById('rag-toggle').style.display = 'flex';
                 }
             })
             .catch(_ => console.debug("不开启上传按钮"));
@@ -1257,7 +1320,7 @@
                 'Content-Type': 'application/json',
                 'Accept': 'text/event-stream'
             },
-            body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames}),
+            body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames, enableRag: enableRag}),
         })
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -1757,11 +1820,25 @@
 
         closeSkillsModal();
         textarea.value = promptContent;
-        const addToolNames = currentSelectedSkill.tools.filter(name => !selectedTools.includes(name));
-        selectedTools  = [...selectedTools, ...addToolNames];
+        if(currentSelectedSkill.tools){
+            const addToolNames = currentSelectedSkill.tools.filter(name => !selectedTools.includes(name));
+            selectedTools  = [...selectedTools, ...addToolNames];
+        }
         send();
 
         // showToast('已应用技能模板', 'success');
+    }
+
+    function toggleRag() {
+        enableRag = !enableRag;
+        const ragToggle = document.getElementById('rag-toggle');
+        if (enableRag) {
+            ragToggle.classList.add('active');
+            showToast('RAG知识库已开启', 'success');
+        } else {
+            ragToggle.classList.remove('active');
+            showToast('RAG知识库已关闭', 'success');
+        }
     }
 </script>
 </body>
