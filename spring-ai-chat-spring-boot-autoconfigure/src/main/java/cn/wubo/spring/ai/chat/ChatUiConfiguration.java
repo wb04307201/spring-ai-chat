@@ -4,7 +4,6 @@ import cn.wubo.spring.ai.chat.document.IDocumentRead;
 import cn.wubo.spring.ai.chat.model.*;
 import cn.wubo.spring.ai.chat.skill.ISkillStorage;
 import cn.wubo.spring.ai.chat.skill.LocalSkillStorage;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -25,7 +24,6 @@ import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.template.st.StTemplateRenderer;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -54,7 +52,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -113,7 +110,6 @@ public class ChatUiConfiguration {
         return new ContentHolderConverter(resourceLoader);
     }
 
-    @ConditionalOnMissingBean(VectorStore.class)
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
     public ChatClient chatClient(ChatModel chatModel, ChatUiProperties properties) {
@@ -123,20 +119,6 @@ public class ChatUiConfiguration {
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
                 new SimpleLoggerAdvisor() // logger advisor
-        );
-        return builder.build();
-    }
-
-    @ConditionalOnBean(VectorStore.class)
-    @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
-    @Bean
-    public ChatClient chatClientVectorStore(ChatModel chatModel, VectorStore vectorStore, ChatUiProperties properties) {
-        ChatClient.Builder builder = ChatClient.builder(chatModel);
-        if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
-        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
-        builder.defaultAdvisors(
-                MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
-                SimpleLoggerAdvisor.builder().build() // logger advisor
         );
         return builder.build();
     }
