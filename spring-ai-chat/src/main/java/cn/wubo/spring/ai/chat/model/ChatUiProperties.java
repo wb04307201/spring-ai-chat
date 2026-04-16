@@ -11,7 +11,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "spring.ai.chat.ui")
 public class ChatUiProperties {
 
-    private String defaultSystem = "首先调用 @skillContents 获取技能目录，如果有与用户意图一致的技能,则调用 @getSkill 获取技能信息";
+    private String defaultSystem = "每次对话都先使用 @skillContents 获取技能目录，如果有与用户意图匹配的技能,则调用 @getSkill 获取技能信息";
     private boolean init = true;
     private Rag rag = new Rag();
     private List<Tool> tools = new ArrayList<>();
@@ -51,14 +51,14 @@ public class ChatUiProperties {
         private String name;
         private String label;
         private String description;
-        private boolean defaultSelected;
+        private boolean defaultSelected = true;
     }
 
     @Data
     public static class Skill{
         private String name;
         private String description;
-        private boolean preloading;
+        private boolean defaultPreload = true;
         private List<String> tools;
         private ContentHolder skill;
         private List<SkillParam> params;

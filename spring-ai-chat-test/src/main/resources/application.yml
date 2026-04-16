@@ -33,7 +33,8 @@ spring:
     mcp:
       client:
         stdio:
-          servers-configuration: classpath:mcp-servers.json
+#          servers-configuration: classpath:mcp-servers.json
+          servers-configuration: classpath:mcp-servers-simple.json
     chat:
       ui:
         rag:
@@ -79,10 +80,6 @@ spring:
             label: 顺序思维
             description:
               一种MCP服务器实现，它通过结构化的思维过程提供了一种动态且反射性的解决问题的工具。
-          - name: spring-ai-mcp-client - cn-weather-mcp
-            label: 中国天气
-            description:
-              一个自研中国城市实时天气服务。提供城市代码搜索与实时天气查询，允许大模型获取中国城市实时天气数据，并生成相应的天气预报。
           - name: spring-ai-mcp-client - amap-maps
             label: 高德地图
             description:
@@ -99,27 +96,29 @@ spring:
             label: Playwright
             description:
               一种模型上下文协议服务器，它使大型语言模型能够通过结构化的可访问性快照与网页交互，而无需使用视觉模型或截图。
-            default-selected: true
           - name: spring-ai-mcp-client - chrome-devtools
             label: Chrome DevTools
             description:
-              chrome-devtools-mcp lets your coding agent (such as Gemini, Claude, Cursor or Copilot) control and inspect a live Chrome browser. It acts as a Model-Context-Protocol (MCP) server, giving your AI coding assistant access to the full power of Chrome DevTools for reliable automation, in-depth debugging, and performance analysis.
+              作为 MCP 服务，让 AI 编码助手（如 Gemini、Claude）能够控制和检查 Chrome 浏览器，实现自动化操作、调试和性能分析。
           - name: spring-ai-mcp-client - filesystem
             label: 文件系统
             description:
               用于文件系统操作的模型上下文协议（MCP）的 Node.js 服务。
+          - name: spring-ai-mcp-client - cn-weather-mcp
+            label: 中国天气
+            description:
+              一个自研中国城市实时天气服务。提供城市代码搜索与实时天气查询，允许大模型获取中国城市实时天气数据，并生成相应的天气预报。
           - name: spring-ai-mcp-client - http-client-mcp
             label: HTTP 客户端
             description:
               HTTP客户端 MCP 服务 - 提供通用HTTP请求功能（GET/POST/PUT/DELETE）
         skills:
-          - name: 工具
-            skill: 你可以调用哪些工具？
           - name: 参数测试
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - cn-weather-mcp
             skill: classpath:skills/params.st
+            default-preload: false
             params:
               - name: param1
                 label: 打招呼
@@ -143,7 +142,6 @@ spring:
                 placeholder: 补充内容，可以不输入
           - name: 【新闻看】洞察报告
             description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告，适用于企业情报监控、行业趋势追踪等场景
-            preloading: true
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking
@@ -161,6 +159,7 @@ spring:
             tools:
               - spring-ai-mcp-client - http-client-mcp
             skill: classpath:skills/http.st
+            default-preload: false
   servlet:
     multipart:
       max-file-size: 10MB

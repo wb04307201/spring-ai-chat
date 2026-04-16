@@ -186,7 +186,7 @@ spring:
             label: 时间
             description:
               一个提供时间和时区转换功能的模型上下文协议服务。该服务使大型语言模型能够获取当前时间信息，并使用IANA时区名称进行时区转换，同时具备自动检测系统时区的功能。
-            default-selected:  true
+            default-selected:  true # 是否默认加载工具，默认true
 ```
 
 重启项目 访问`http://localhost:8080/spring/ai/chat`
@@ -212,7 +212,7 @@ spring:
         skills:
           - name: 【新闻看】洞察报告 # 技能名称
             description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告与关联思维导图，适用于企业情报监控、行业趋势追踪等场景 # 技能描述
-            preloading: true # 是否预加载
+            preload: true # 是否默认加载技能，默认true
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking

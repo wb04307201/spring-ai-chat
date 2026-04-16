@@ -44,7 +44,7 @@ public class LocalSkillStorage implements ISkillStorage {
     @Tool(description = "获取技能目录")
     @Override
     public String skillContents() {
-        List<ChatUiProperties.Skill> results = skills.stream().filter(ChatUiProperties.Skill::isPreloading).toList();
+        List<ChatUiProperties.Skill> results = skills.stream().filter(ChatUiProperties.Skill::isDefaultPreload).toList();
 
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("找到 %d 个技能目录:%n%n", results.size()));
