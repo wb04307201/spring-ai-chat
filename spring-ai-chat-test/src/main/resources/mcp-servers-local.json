@@ -7,31 +7,12 @@
         "--local-timezone=Asia/Shanghai"
       ]
     },
-    "bing-search": {
-      "args": [
-        "-y",
-        "bing-cn-mcp"
-      ],
-      "command": "npx.cmd"
-    },
-    "fetch": {
-      "args": [
-        "mcp-server-fetch"
-      ],
-      "command": "uvx"
-    },
     "sequential-thinking": {
       "command": "npx.cmd",
       "args": [
         "-y",
         "@modelcontextprotocol/server-sequential-thinking"
       ]
-    },
-    "cn-weather-mcp": {
-      "args": [
-        "io.github.wb04307201:cn-weather-mcp:1.0.1"
-      ],
-      "command": "jbang.cmd"
     },
     "http-client-mcp": {
       "args": [

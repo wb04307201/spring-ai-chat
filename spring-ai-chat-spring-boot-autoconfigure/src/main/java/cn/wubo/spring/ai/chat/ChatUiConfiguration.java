@@ -1,7 +1,10 @@
 package cn.wubo.spring.ai.chat;
 
 import cn.wubo.spring.ai.chat.document.IDocumentRead;
-import cn.wubo.spring.ai.chat.model.*;
+import cn.wubo.spring.ai.chat.model.ChatRecord;
+import cn.wubo.spring.ai.chat.model.ChatResponse;
+import cn.wubo.spring.ai.chat.model.ChatUiProperties;
+import cn.wubo.spring.ai.chat.model.ToolRecord;
 import cn.wubo.spring.ai.chat.skill.ISkillStorage;
 import cn.wubo.spring.ai.chat.skill.LocalSkillStorage;
 import io.modelcontextprotocol.client.McpAsyncClient;
@@ -15,7 +18,10 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
@@ -39,17 +45,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.RouterFunctions;
 import org.springframework.web.servlet.function.ServerResponse;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -110,12 +112,19 @@ public class ChatUiConfiguration {
         return new ContentHolderConverter(resourceLoader);
     }
 
+    @Bean
+    public ChatMemory jdbChatMemory(JdbcChatMemoryRepository chatMemoryRepository) {
+        return MessageWindowChatMemory.builder()
+                .chatMemoryRepository(chatMemoryRepository)
+                .maxMessages(2)
+                .build();
+    }
+
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, ChatUiProperties properties) {
+    public ChatClient chatClient(ChatModel chatModel, ChatMemory chatMemory, ChatUiProperties properties) {
         ChatClient.Builder builder = ChatClient.builder(chatModel);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
-        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
         builder.defaultAdvisors(
                 MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
                 new SimpleLoggerAdvisor() // logger advisor
