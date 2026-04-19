@@ -36,7 +36,7 @@ public class LocalSkillStorage implements ISkillStorage {
             sb.append(String.format("技能参数:%s%n", skill.getParams()));
         }
 
-        sb.append("\n提示：技能内容中类似{param1}需要用参数补全");
+        sb.append("\n提示：技能内容中类似{param}的参数定义需要用参数值补全");
         return sb.toString();
     }
 

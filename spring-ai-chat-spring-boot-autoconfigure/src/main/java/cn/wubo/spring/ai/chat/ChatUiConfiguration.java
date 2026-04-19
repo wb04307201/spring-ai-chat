@@ -321,25 +321,4 @@ public class ChatUiConfiguration {
         return builder.build();
     }
 
-    @ConditionalOnProperty(name = "spring.ai.chat.ui.file.enableDownload", havingValue = "true", matchIfMissing = true)
-    @Bean("wb04307201ChatUiFileRouter")
-    public RouterFunction<ServerResponse> chatUiFileRouter(ChatUiProperties chatUiProperties) {
-        RouterFunctions.Builder builder = RouterFunctions.route();
-        builder.GET("/spring/ai/chat/file/download/{fileName}", request -> {
-            String fileName = request.pathVariable("fileName");
-            return ServerResponse.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .build((res, req) -> {
-                        try (OutputStream os = req.getOutputStream()) {
-                            Path path = Path.of(chatUiProperties.getFile().getFileRoot(), fileName);
-                            os.write(Files.readAllBytes(path));
-                            os.flush();
-                        }
-                        return new ModelAndView();
-                    });
-        });
-
-        return builder.build();
-    }
-
 }
