@@ -2,6 +2,7 @@ package cn.wubo.spring.ai.chat;
 
 import cn.wubo.spring.ai.chat.document.IDocumentRead;
 import cn.wubo.spring.ai.chat.model.ChatRecord;
+import cn.wubo.spring.ai.chat.model.ConversationRecord;
 import cn.wubo.spring.ai.chat.model.ChatResponse;
 import cn.wubo.spring.ai.chat.model.ChatUiProperties;
 import cn.wubo.spring.ai.chat.model.ToolRecord;
@@ -18,10 +19,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.ChatMemoryRepository;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
@@ -116,7 +116,7 @@ public class ChatUiConfiguration {
     public ChatMemory jdbChatMemory(JdbcChatMemoryRepository chatMemoryRepository) {
         return MessageWindowChatMemory.builder()
                 .chatMemoryRepository(chatMemoryRepository)
-                .maxMessages(2)
+                .maxMessages(20)
                 .build();
     }
 
@@ -160,10 +160,10 @@ public class ChatUiConfiguration {
     }
 
     @Bean("wb04307201ChatUiRouter")
-    public RouterFunction<ServerResponse> chatUiRouter(List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, ChatUiProperties properties) {
+    public RouterFunction<ServerResponse> chatUiRouter(List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, JdbcChatMemoryRepository chatMemoryRepository, ChatUiProperties properties) {
         RouterFunctions.Builder builder = RouterFunctions.route();
         builder.GET("spring/ai/chat", request -> ServerResponse.temporaryRedirect(URI.create("/spring/ai/chat/index.html")).build());
-        builder.GET("spring/ai/chat/tools", request -> {
+        builder.GET("spring/ai/chat/tool", request -> {
             List<ToolRecord> tools = new ArrayList<>();
             if (!mcpSyncClients.isEmpty()) {
                 mcpSyncClients.stream().map(McpSyncClient::getClientInfo).forEach(impl -> {
@@ -192,7 +192,18 @@ public class ChatUiConfiguration {
             }
             return ServerResponse.ok().body(tools);
         });
-        builder.GET("spring/ai/chat/skills", request -> ServerResponse.ok().body(properties.getSkills()));
+        builder.GET("spring/ai/chat/skill", request -> ServerResponse.ok().body(properties.getSkills()));
+        builder.GET("spring/ai/chat/memory", request -> {
+            List<String> conversationIds = chatMemoryRepository.findConversationIds();
+            List<ConversationRecord> conversations = new ArrayList<>();
+            for (String conversationId : conversationIds) {
+                List<Message> messages = chatMemoryRepository.findByConversationId(conversationId);
+                String text = messages.get(0).getText();
+                String preview = text.length() > 20 ? text.substring(0, 20) : text;
+                conversations.add(new ConversationRecord(conversationId, preview));
+            }
+            return ServerResponse.ok().body(conversations);
+        });
         return builder.build();
     }
 

@@ -1017,7 +1017,7 @@
 <script type="module">
     import {createParser} from "/eventsource-parser@3.0.6/dist/index.js";
 
-    let conversationId = Math.random().toString(12);
+    let conversationId = crypto.randomUUID();
     const aiImage = "/spring/ai/chat/ai.jpg";
     const userImage = "/spring/ai/chat/user.png";
     const mainContent = document.getElementById('mainContent');
@@ -1087,7 +1087,7 @@
             .catch(_ => console.debug("不开启上传按钮"));
 
         // Check tools
-        fetch('/spring/ai/chat/tools')
+        fetch('/spring/ai/chat/tool')
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
@@ -1103,7 +1103,7 @@
             .catch(_ => console.debug("不显示工具按钮"));
 
         // Check skills
-        fetch('/spring/ai/chat/skills')
+        fetch('/spring/ai/chat/skill')
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
@@ -1384,7 +1384,7 @@
                 <p>有什么我可以帮助你的吗？现在可以开始聊天了</p>
             </div>
         `;
-        conversationId = Math.random().toString(12);
+        conversationId = crypto.randomUUID();
     }
 
     function toggleFileUpload() {
@@ -1496,7 +1496,7 @@
     }
 
     function refreshTools() {
-        fetch('/spring/ai/chat/tools')
+        fetch('/spring/ai/chat/tool')
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
@@ -1625,7 +1625,7 @@
         skillsListContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载中...</div>';
         skillsDetailContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><p style="font-size: 16px; margin-bottom: 8px;">请选择一个技能查看详情</p></div>';
 
-        fetch('/spring/ai/chat/skills')
+        fetch('/spring/ai/chat/skill')
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
