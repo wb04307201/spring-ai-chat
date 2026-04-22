@@ -129,41 +129,6 @@ public class ChatUiConfiguration {
             }
             return ServerResponse.ok().body(tools);
         });
-        builder.GET("spring/ai/chat/skill", request -> ServerResponse.ok().body(skillStorage.list()));
-        builder.PUT("spring/ai/chat/skill", request -> {
-            ChatUiProperties.Skill skill = request.body(ChatUiProperties.Skill.class);
-            skillStorage.save(skill);
-            return ServerResponse.ok().body(true);
-        });
-        builder.GET("spring/ai/chat/skill/{name}", request -> {
-            String name = request.pathVariable("name");
-            return ServerResponse.ok().body(skillStorage.get(name));
-        });
-        builder.DELETE("spring/ai/chat/skill/{name}", request -> {
-            String name = request.pathVariable("name");
-            skillStorage.remove(name);
-            return ServerResponse.ok().body(true);
-        });
-        builder.GET("spring/ai/chat/memory", request -> {
-            List<String> conversationIds = chatMemoryRepository.findConversationIds();
-            List<ConversationRecord> conversations = new ArrayList<>();
-            for (String conversationId : conversationIds) {
-                List<Message> messages = chatMemoryRepository.findByConversationId(conversationId);
-                String text = messages.get(0).getText();
-                String preview = text.length() > 20 ? text.substring(0, 20) : text;
-                conversations.add(new ConversationRecord(conversationId, preview));
-            }
-            return ServerResponse.ok().body(conversations);
-        });
-        builder.GET("spring/ai/chat/memory/{conversationId}", request -> {
-            String conversationId = request.pathVariable("conversationId");
-            return ServerResponse.ok().body(chatMemoryRepository.findByConversationId(conversationId));
-        });
-        builder.DELETE("spring/ai/chat/memory/{conversationId}", request -> {
-            String conversationId = request.pathVariable("conversationId");
-            chatMemoryRepository.deleteByConversationId(conversationId);
-            return ServerResponse.ok().body(true);
-        });
         return builder.build();
     }
 
