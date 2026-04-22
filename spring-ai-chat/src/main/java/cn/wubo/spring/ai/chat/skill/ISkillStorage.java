@@ -1,14 +1,17 @@
 package cn.wubo.spring.ai.chat.skill;
 
 import cn.wubo.spring.ai.chat.model.ChatUiProperties;
+import cn.wubo.spring.ai.chat.model.SkillDocument;
 
 import java.util.List;
 
 public interface ISkillStorage {
 
-    List<ChatUiProperties.Skill> skills();
+    List<SkillDocument> list();
 
-    String getSkill(String name);
+    void save(ChatUiProperties.Skill skill);
 
-    String skillContents();
+    SkillDocument get(String name);
+
+    void remove(String name);
 }

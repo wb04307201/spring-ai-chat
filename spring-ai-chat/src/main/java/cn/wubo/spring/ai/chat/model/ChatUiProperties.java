@@ -1,7 +1,9 @@
 package cn.wubo.spring.ai.chat.model;
 
 import cn.wubo.spring.ai.chat.ContentHolder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
@@ -54,7 +56,9 @@ public class ChatUiProperties {
     }
 
     @Data
-    public static class Skill{
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Skill {
         private String name;
         private String description;
         private boolean defaultPreload = true;

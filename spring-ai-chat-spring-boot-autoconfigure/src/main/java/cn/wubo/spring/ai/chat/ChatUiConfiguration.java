@@ -1,13 +1,11 @@
 package cn.wubo.spring.ai.chat;
 
 import cn.wubo.spring.ai.chat.document.IDocumentRead;
-import cn.wubo.spring.ai.chat.model.ChatRecord;
-import cn.wubo.spring.ai.chat.model.ConversationRecord;
-import cn.wubo.spring.ai.chat.model.ChatResponse;
-import cn.wubo.spring.ai.chat.model.ChatUiProperties;
-import cn.wubo.spring.ai.chat.model.ToolRecord;
+import cn.wubo.spring.ai.chat.model.*;
+import cn.wubo.spring.ai.chat.skill.DefaultSkillStorage;
 import cn.wubo.spring.ai.chat.skill.ISkillStorage;
-import cn.wubo.spring.ai.chat.skill.LocalSkillStorage;
+import cn.wubo.spring.ai.chat.tool.DefaultEmbedTool;
+import cn.wubo.spring.ai.chat.tool.IEmbedTool;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -61,48 +59,11 @@ import java.util.stream.Collectors;
 @AutoConfiguration
 @AutoConfigureAfter(name = {
         // ChatModel
-        "org.springframework.ai.model.anthropic.autoconfigure.AnthropicChatAutoConfiguration",
-        "org.springframework.ai.model.azure.openai.autoconfigure.AzureOpenAiChatAutoConfiguration",
-        "org.springframework.ai.model.bedrock.autoconfigure.BedrockAiChatAutoConfiguration",
-        "org.springframework.ai.model.deepseek.autoconfigure.DeepSeekChatAutoConfiguration",
-        "org.springframework.ai.model.elevenlabs.autoconfigure.ElevenLabsChatAutoConfiguration",
-        "org.springframework.ai.model.google.genai.autoconfigure.GoogleGenAiChatAutoConfiguration",
-        "org.springframework.ai.model.huggingface.autoconfigure.HuggingFaceChatAutoConfiguration",
-        "org.springframework.ai.model.minimax.autoconfigure.MinimaxChatAutoConfiguration",
-        "org.springframework.ai.model.mistralai.autoconfigure.MistralAiChatAutoConfiguration",
-        "org.springframework.ai.model.oci.genai.autoconfigure.OciGenAiChatAutoConfiguration",
-        "org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfiguration",
-        "org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration",
-        "org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkEmbeddingAutoConfiguration",
-        "org.springframework.ai.model.postgresml.autoconfigure.PostgresMlEmbeddingAutoConfiguration",
-        "org.springframework.ai.model.stabilityai.autoconfigure.StabilityAiChatAutoConfiguration",
-        "org.springframework.ai.model.transformers.autoconfigure.TransformersChatAutoConfiguration",
-        "org.springframework.ai.model.vertexai.autoconfigure.VertexAiChatAutoConfiguration",
-        "org.springframework.ai.model.zhipuai.autoconfigure.ZhipuAiChatAutoConfiguration",
+        "org.springframework.ai.model.anthropic.autoconfigure.AnthropicChatAutoConfiguration", "org.springframework.ai.model.azure.openai.autoconfigure.AzureOpenAiChatAutoConfiguration", "org.springframework.ai.model.bedrock.autoconfigure.BedrockAiChatAutoConfiguration", "org.springframework.ai.model.deepseek.autoconfigure.DeepSeekChatAutoConfiguration", "org.springframework.ai.model.elevenlabs.autoconfigure.ElevenLabsChatAutoConfiguration", "org.springframework.ai.model.google.genai.autoconfigure.GoogleGenAiChatAutoConfiguration", "org.springframework.ai.model.huggingface.autoconfigure.HuggingFaceChatAutoConfiguration", "org.springframework.ai.model.minimax.autoconfigure.MinimaxChatAutoConfiguration", "org.springframework.ai.model.mistralai.autoconfigure.MistralAiChatAutoConfiguration", "org.springframework.ai.model.oci.genai.autoconfigure.OciGenAiChatAutoConfiguration", "org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfiguration", "org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration", "org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkEmbeddingAutoConfiguration", "org.springframework.ai.model.postgresml.autoconfigure.PostgresMlEmbeddingAutoConfiguration", "org.springframework.ai.model.stabilityai.autoconfigure.StabilityAiChatAutoConfiguration", "org.springframework.ai.model.transformers.autoconfigure.TransformersChatAutoConfiguration", "org.springframework.ai.model.vertexai.autoconfigure.VertexAiChatAutoConfiguration", "org.springframework.ai.model.zhipuai.autoconfigure.ZhipuAiChatAutoConfiguration",
         // Vectorstore
-        "org.springframework.ai.vectorstore.azure.autoconfigure.AzureVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.cosmosdb.autoconfigure.CosmosDBVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.cassandra.autoconfigure.CassandraVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.couchbase.autoconfigure.CouchbaseSearchVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.elasticsearch.autoconfigure.ElasticsearchVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.gemfire.autoconfigure.GemFireVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.mariadb.autoconfigure.MariaDbStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.mongodb.autoconfigure.MongoDBAtlasVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.neo4j.autoconfigure.Neo4jVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.observation.autoconfigure.VectorStoreObservationAutoConfiguration",
-        "org.springframework.ai.vectorstore.opensearch.autoconfigure.OpenSearchVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.oracle.autoconfigure.OracleVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.pinecone.autoconfigure.PineconeVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.qdrant.autoconfigure.QdrantVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.redis.autoconfigure.RedisVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.typesense.autoconfigure.TypesenseVectorStoreAutoConfiguration",
-        "org.springframework.ai.vectorstore.weaviate.autoconfigure.WeaviateVectorStoreAutoConfiguration",
+        "org.springframework.ai.vectorstore.azure.autoconfigure.AzureVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.cosmosdb.autoconfigure.CosmosDBVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.cassandra.autoconfigure.CassandraVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.couchbase.autoconfigure.CouchbaseSearchVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.elasticsearch.autoconfigure.ElasticsearchVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.gemfire.autoconfigure.GemFireVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.mariadb.autoconfigure.MariaDbStoreAutoConfiguration", "org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.mongodb.autoconfigure.MongoDBAtlasVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.neo4j.autoconfigure.Neo4jVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.observation.autoconfigure.VectorStoreObservationAutoConfiguration", "org.springframework.ai.vectorstore.opensearch.autoconfigure.OpenSearchVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.oracle.autoconfigure.OracleVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.pinecone.autoconfigure.PineconeVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.qdrant.autoconfigure.QdrantVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.redis.autoconfigure.RedisVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.typesense.autoconfigure.TypesenseVectorStoreAutoConfiguration", "org.springframework.ai.vectorstore.weaviate.autoconfigure.WeaviateVectorStoreAutoConfiguration",
         // MCP
-        "org.springframework.ai.mcp.client.common.autoconfigure.McpClientAutoConfiguration"
-})
+        "org.springframework.ai.mcp.client.common.autoconfigure.McpClientAutoConfiguration"})
 @EnableConfigurationProperties({ChatUiProperties.class})
 @Slf4j
 public class ChatUiConfiguration {
@@ -114,10 +75,7 @@ public class ChatUiConfiguration {
 
     @Bean
     public ChatMemory jdbChatMemory(JdbcChatMemoryRepository chatMemoryRepository) {
-        return MessageWindowChatMemory.builder()
-                .chatMemoryRepository(chatMemoryRepository)
-                .maxMessages(20)
-                .build();
+        return MessageWindowChatMemory.builder().chatMemoryRepository(chatMemoryRepository).maxMessages(20).build();
     }
 
     @ConditionalOnProperty(name = "spring.ai.chat.ui.init", havingValue = "true", matchIfMissing = true)
@@ -125,8 +83,7 @@ public class ChatUiConfiguration {
     public ChatClient chatClient(ChatModel chatModel, ChatMemory chatMemory, ChatUiProperties properties) {
         ChatClient.Builder builder = ChatClient.builder(chatModel);
         if (properties.getDefaultSystem() != null) builder.defaultSystem(properties.getDefaultSystem());
-        builder.defaultAdvisors(
-                MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
+        builder.defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(), // chat-memory advisor
                 new SimpleLoggerAdvisor() // logger advisor
         );
         return builder.build();
@@ -135,32 +92,24 @@ public class ChatUiConfiguration {
     @ConditionalOnBean(VectorStore.class)
     @Bean
     public RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, ChatUiProperties properties) {
-        return RetrievalAugmentationAdvisor.builder()
-                .documentRetriever(VectorStoreDocumentRetriever.builder()
-                        .similarityThreshold(properties.getRag().getSimilarityThreshold())
-                        .topK(properties.getRag().getTopK())
-                        .vectorStore(vectorStore)
-                        .build())
-                .queryAugmenter(
-                        ContextualQueryAugmenter.builder()
-                                .promptTemplate(
-                                        PromptTemplate.builder()
-                                                .template(properties.getRag().getDefaultPromptTemplate())
-                                                .build()
-                                )
-                                .emptyContextPromptTemplate(
-                                        PromptTemplate.builder()
-                                                .template(properties.getRag().getDefaultEmptyContextPromptTemplate())
-                                                .build()
-                                )
-                                .allowEmptyContext(true)
-                                .build() // RAG advisor
-                )
-                .build();
+        return RetrievalAugmentationAdvisor.builder().documentRetriever(VectorStoreDocumentRetriever.builder().similarityThreshold(properties.getRag().getSimilarityThreshold()).topK(properties.getRag().getTopK()).vectorStore(vectorStore).build()).queryAugmenter(ContextualQueryAugmenter.builder().promptTemplate(PromptTemplate.builder().template(properties.getRag().getDefaultPromptTemplate()).build()).emptyContextPromptTemplate(PromptTemplate.builder().template(properties.getRag().getDefaultEmptyContextPromptTemplate()).build()).allowEmptyContext(true).build() // RAG advisor
+        ).build();
+    }
+
+    @ConditionalOnMissingBean(ISkillStorage.class)
+    @Bean
+    public ISkillStorage skillStorage(ChatUiProperties properties) {
+        return new DefaultSkillStorage(properties.getSkills());
+    }
+
+    @ConditionalOnMissingBean(IEmbedTool.class)
+    @Bean
+    public IEmbedTool embedTool(ISkillStorage skillStorage) {
+        return new DefaultEmbedTool(skillStorage);
     }
 
     @Bean("wb04307201ChatUiRouter")
-    public RouterFunction<ServerResponse> chatUiRouter(List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, JdbcChatMemoryRepository chatMemoryRepository, ChatUiProperties properties) {
+    public RouterFunction<ServerResponse> chatUiRouter(List<McpSyncClient> mcpSyncClients, List<McpAsyncClient> mcpAsyncClients, JdbcChatMemoryRepository chatMemoryRepository, ISkillStorage skillStorage, ChatUiProperties properties) {
         RouterFunctions.Builder builder = RouterFunctions.route();
         builder.GET("spring/ai/chat", request -> ServerResponse.temporaryRedirect(URI.create("/spring/ai/chat/index.html")).build());
         builder.GET("spring/ai/chat/tool", request -> {
@@ -168,31 +117,33 @@ public class ChatUiConfiguration {
             if (!mcpSyncClients.isEmpty()) {
                 mcpSyncClients.stream().map(McpSyncClient::getClientInfo).forEach(impl -> {
                     Optional<ChatUiProperties.Tool> tool = properties.getTools().stream().filter(t -> t.getName().equals(impl.name())).findAny();
-                    tools.add(new ToolRecord(
-                            impl.name(),
-                            impl.title(),
-                            impl.version(),
-                            tool.isPresent() ? tool.get().getLabel() : impl.title(),
-                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription() : null,
-                            tool.isPresent() && tool.get().isDefaultSelected()));
+                    tools.add(new ToolRecord(impl.name(), impl.title(), impl.version(), tool.isPresent() ? tool.get().getLabel() : impl.title(), tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription() : null, tool.isPresent() && tool.get().isDefaultSelected()));
 
                 });
             }
             if (!mcpAsyncClients.isEmpty()) {
                 mcpAsyncClients.stream().map(McpAsyncClient::getClientInfo).forEach(impl -> {
                     Optional<ChatUiProperties.Tool> tool = properties.getTools().stream().filter(t -> t.getName().equals(impl.name())).findAny();
-                    tools.add(new ToolRecord(
-                            impl.name(),
-                            impl.title(),
-                            impl.version(),
-                            tool.isPresent() ? tool.get().getLabel() : impl.title(),
-                            tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription(): null,
-                            tool.isPresent() && tool.get().isDefaultSelected()));
+                    tools.add(new ToolRecord(impl.name(), impl.title(), impl.version(), tool.isPresent() ? tool.get().getLabel() : impl.title(), tool.isPresent() && tool.get().getDescription() != null ? tool.get().getDescription() : null, tool.isPresent() && tool.get().isDefaultSelected()));
                 });
             }
             return ServerResponse.ok().body(tools);
         });
-        builder.GET("spring/ai/chat/skill", request -> ServerResponse.ok().body(properties.getSkills()));
+        builder.GET("spring/ai/chat/skill", request -> ServerResponse.ok().body(skillStorage.list()));
+        builder.PUT("spring/ai/chat/skill", request -> {
+            ChatUiProperties.Skill skill = request.body(ChatUiProperties.Skill.class);
+            skillStorage.save(skill);
+            return ServerResponse.ok().body(true);
+        });
+        builder.GET("spring/ai/chat/skill/{name}", request -> {
+            String name = request.pathVariable("name");
+            return ServerResponse.ok().body(skillStorage.get(name));
+        });
+        builder.DELETE("spring/ai/chat/skill/{name}", request -> {
+            String name = request.pathVariable("name");
+            skillStorage.remove(name);
+            return ServerResponse.ok().body(true);
+        });
         builder.GET("spring/ai/chat/memory", request -> {
             List<String> conversationIds = chatMemoryRepository.findConversationIds();
             List<ConversationRecord> conversations = new ArrayList<>();
@@ -204,13 +155,63 @@ public class ChatUiConfiguration {
             }
             return ServerResponse.ok().body(conversations);
         });
+        builder.GET("spring/ai/chat/memory/{conversationId}", request -> {
+            String conversationId = request.pathVariable("conversationId");
+            return ServerResponse.ok().body(chatMemoryRepository.findByConversationId(conversationId));
+        });
+        builder.DELETE("spring/ai/chat/memory/{conversationId}", request -> {
+            String conversationId = request.pathVariable("conversationId");
+            chatMemoryRepository.deleteByConversationId(conversationId);
+            return ServerResponse.ok().body(true);
+        });
         return builder.build();
     }
 
-    @ConditionalOnMissingBean(ISkillStorage.class)
-    @Bean
-    public ISkillStorage skillStorage(ChatUiProperties properties) {
-        return new LocalSkillStorage(properties.getSkills());
+    @Bean("wb04307201ChatUiSkillRouter")
+    public RouterFunction<ServerResponse> chatUiSkillRouter(ISkillStorage skillStorage) {
+        RouterFunctions.Builder builder = RouterFunctions.route();
+        builder.GET("spring/ai/chat/skill", request -> ServerResponse.ok().body(skillStorage.list()));
+        builder.PUT("spring/ai/chat/skill", request -> {
+            ChatUiProperties.Skill skill = request.body(ChatUiProperties.Skill.class);
+            skillStorage.save(skill);
+            return ServerResponse.ok().body(true);
+        });
+        builder.GET("spring/ai/chat/skill/{name}", request -> {
+            String name = request.pathVariable("name");
+            return ServerResponse.ok().body(skillStorage.get(name));
+        });
+        builder.DELETE("spring/ai/chat/skill/{name}", request -> {
+            String name = request.pathVariable("name");
+            skillStorage.remove(name);
+            return ServerResponse.ok().body(true);
+        });
+        return builder.build();
+    }
+
+    @Bean("wb04307201ChatUiMemoryRouter")
+    public RouterFunction<ServerResponse> chatUiMemoryRouter(JdbcChatMemoryRepository chatMemoryRepository) {
+        RouterFunctions.Builder builder = RouterFunctions.route();
+        builder.GET("spring/ai/chat/memory", request -> {
+            List<String> conversationIds = chatMemoryRepository.findConversationIds();
+            List<ConversationRecord> conversations = new ArrayList<>();
+            for (String conversationId : conversationIds) {
+                List<Message> messages = chatMemoryRepository.findByConversationId(conversationId);
+                String text = messages.get(0).getText();
+                String preview = text.length() > 20 ? text.substring(0, 20) : text;
+                conversations.add(new ConversationRecord(conversationId, preview));
+            }
+            return ServerResponse.ok().body(conversations);
+        });
+        builder.GET("spring/ai/chat/memory/{conversationId}", request -> {
+            String conversationId = request.pathVariable("conversationId");
+            return ServerResponse.ok().body(chatMemoryRepository.findByConversationId(conversationId));
+        });
+        builder.DELETE("spring/ai/chat/memory/{conversationId}", request -> {
+            String conversationId = request.pathVariable("conversationId");
+            chatMemoryRepository.deleteByConversationId(conversationId);
+            return ServerResponse.ok().body(true);
+        });
+        return builder.build();
     }
 
     @Slf4j
@@ -224,7 +225,7 @@ public class ChatUiConfiguration {
         private final Optional<RetrievalAugmentationAdvisor> retrievalAugmentationAdvisor;
         private final List<McpSyncClient> mcpSyncClients;
         private final List<McpAsyncClient> mcpAsyncClients;
-        private final ISkillStorage skillStorage;
+        private final IEmbedTool embedTool;
 
         @PostMapping(value = "/spring/ai/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
         public SseEmitter streamAi(@RequestBody ChatRecord chatRecord) {
@@ -244,11 +245,9 @@ public class ChatUiConfiguration {
             CompletableFuture.runAsync(() -> {
                 try {
                     // 4. 订阅 Flux 流并将数据发送给 emitter
-                    ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt()
-                            .user(chatRecord.message())
-                            .tools(skillStorage);
+                    ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt().user(chatRecord.message()).tools(embedTool);
 
-                    if(retrievalAugmentationAdvisor.isPresent() && chatRecord.enableRag())
+                    if (retrievalAugmentationAdvisor.isPresent() && chatRecord.enableRag())
                         requestSpec.advisors(retrievalAugmentationAdvisor.get());
 
                     requestSpec.advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatRecord.conversationId()));
@@ -258,14 +257,14 @@ public class ChatUiConfiguration {
                         List<McpSyncClient> tempMcpSyncClients = new ArrayList<>();
                         for (McpSyncClient mcpSyncClient : mcpSyncClients) {
                             if (chatRecord.tools().contains(mcpSyncClient.getClientInfo().name())) {
-                                if (mcpSyncClient.isInitialized()){
+                                if (mcpSyncClient.isInitialized()) {
                                     tempMcpSyncClients.add(mcpSyncClient);
-                                }else{
+                                } else {
                                     log.warn("McpSyncClient {} 未初始化", mcpSyncClient.getClientInfo().name());
                                 }
                             }
                         }
-                        if (!tempMcpSyncClients.isEmpty()){
+                        if (!tempMcpSyncClients.isEmpty()) {
                             log.debug("McpSyncClient {} 初始化完成", tempMcpSyncClients.stream().map(McpSyncClient::getClientInfo).map(McpSchema.Implementation::name).collect(Collectors.joining(",")));
                             toolCallbackProvider = SyncMcpToolCallbackProvider.builder().mcpClients(tempMcpSyncClients).build();
                         }
@@ -274,14 +273,14 @@ public class ChatUiConfiguration {
                         List<McpAsyncClient> tempMcpAsyncClients = new ArrayList<>();
                         for (McpAsyncClient mcpAsyncClient : mcpAsyncClients) {
                             if (chatRecord.tools().contains(mcpAsyncClient.getClientInfo().name())) {
-                                if (mcpAsyncClient.isInitialized()){
+                                if (mcpAsyncClient.isInitialized()) {
                                     tempMcpAsyncClients.add(mcpAsyncClient);
-                                }else{
+                                } else {
                                     log.warn("McpAsyncClient {} 未初始化", mcpAsyncClient.getClientInfo().name());
                                 }
                             }
                         }
-                        if (!tempMcpAsyncClients.isEmpty()){
+                        if (!tempMcpAsyncClients.isEmpty()) {
                             log.debug("McpAsyncClient {} 初始化完成", tempMcpAsyncClients.stream().map(McpAsyncClient::getClientInfo).map(McpSchema.Implementation::name).collect(Collectors.joining(",")));
                             toolCallbackProvider = AsyncMcpToolCallbackProvider.builder().mcpClients(tempMcpAsyncClients).build();
                         }
@@ -291,21 +290,14 @@ public class ChatUiConfiguration {
                         requestSpec.toolCallbacks(toolCallbackProvider);
                     }
 
-                    requestSpec
-                            .stream()
-                            .chatResponse()
-                            .subscribe(
-                                    chatResponse -> {
-                                        try {
-                                            String reasoningContent = (String) chatResponse.getResult().getOutput().getMetadata().get("reasoningContent");
-                                            emitter.send(new ChatResponse(chatResponse.getResult().getOutput().getText(), reasoningContent), MediaType.APPLICATION_JSON);
-                                        } catch (IOException e) {
-                                            emitter.completeWithError(e);
-                                        }
-                                    },
-                                    emitter::completeWithError,
-                                    emitter::complete
-                            );
+                    requestSpec.stream().chatResponse().subscribe(chatResponse -> {
+                        try {
+                            String reasoningContent = (String) chatResponse.getResult().getOutput().getMetadata().get("reasoningContent");
+                            emitter.send(new ChatResponse(chatResponse.getResult().getOutput().getText(), reasoningContent), MediaType.APPLICATION_JSON);
+                        } catch (IOException e) {
+                            emitter.completeWithError(e);
+                        }
+                    }, emitter::completeWithError, emitter::complete);
                 } catch (Exception e) {
                     emitter.completeWithError(e);
                 }
@@ -337,7 +329,6 @@ public class ChatUiConfiguration {
             documentRead.delete(id);
             return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(true);
         });
-
         return builder.build();
     }
 
