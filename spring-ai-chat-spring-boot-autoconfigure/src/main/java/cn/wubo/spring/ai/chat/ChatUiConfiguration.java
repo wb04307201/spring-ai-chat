@@ -193,7 +193,7 @@ public class ChatUiConfiguration {
         private final IEmbedTool embedTool;
 
         @PostMapping(value = "/spring/ai/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-        public SseEmitter streamAi(@RequestBody ChatRecord chatRecord) {
+        public SseEmitter stream(@RequestBody ChatRecord chatRecord) {
             // 1. 显式设置超时时间（单位毫秒），0 表示永不超时
             SseEmitter emitter = new SseEmitter(0L);
 
