@@ -928,9 +928,9 @@
             <span>📚</span>
             <span>知识库</span>
         </button>
-        <button class="toolbar-btn" id="tools-button" onclick="openToolsModal()" style="display: none;">
+        <button class="toolbar-btn" id="mcp-button" onclick="openMcpModal()" style="display: none;">
             <span>🔧</span>
-            <span>工具库</span>
+            <span>MCP服务</span>
         </button>
         <button class="toolbar-btn" id="skills-button" onclick="openSkillsModal()" style="display: none;">
             <span>🧠</span>
@@ -972,20 +972,25 @@
         </div>
     </div>
 
-    <!-- Tools Modal -->
-    <div id="tools-modal-overlay" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>工具选择</h3>
-                <div class="modal-header-actions">
-                    <button class="modal-action-btn" onclick="selectAllTools()">全选</button>
-                    <button class="modal-action-btn" onclick="deselectAllTools()">全不选</button>
-                    <button class="modal-action-btn" onclick="refreshTools()">刷新</button>
+    <!-- MCP Modal -->
+    <div id="mcp-modal-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content skills-modal-layout">
+            <div class="skills-sidebar">
+                <div class="skills-sidebar-header">
+                    <h3>MCP服务</h3>
                 </div>
-                <div class="close-button" onclick="closeToolsModal()">&times;</div>
+                <div class="skills-list" id="mcp-list"></div>
             </div>
-            <div class="modal-body">
-                <div id="tools-list"></div>
+            <div class="skills-detail-panel">
+                <div class="skills-detail-header">
+                    <h3 class="skills-detail-title" id="mcp-detail-title">MCP详情</h3>
+                    <div class="close-button" onclick="closeMcpModal()">&times;</div>
+                </div>
+                <div class="skills-detail-body" id="mcp-detail">
+                    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                        <p style="font-size: 16px; margin-bottom: 8px;">请选择一个MCP服务查看详情</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1029,8 +1034,9 @@
     const toast = document.getElementById('toast-notification');
     const modalOverlay = document.getElementById('modal-overlay');
     const tableBody = document.getElementById('table-body');
-    const toolsModalOverlay = document.getElementById('tools-modal-overlay');
-    const toolsList = document.getElementById('tools-list');
+    const mcpModalOverlay = document.getElementById('mcp-modal-overlay');
+    const mcpListContainer = document.getElementById('mcp-list');
+    const mcpDetailContainer = document.getElementById('mcp-detail');
     const skillsModalOverlay = document.getElementById('skills-modal-overlay');
     const skillsListContainer = document.getElementById('skills-list');
     const skillsDetailContainer = document.getElementById('skills-detail');
@@ -1040,11 +1046,13 @@
     let reasonAnswerTextContent = null;
     let reasonAnswerText = "";
     let answerOriginTextContent = null;
-    let selectedTools = [];
+    let selectedMcps = [];
+    let currentSelectedMcp = null;
+    let mcps = [];
+    let enableRag = true;
     let currentSelectedSkill = null;
     let skillParams = {};
     let tools = [];
-    let enableRag = true;
 
     // Global functions
     window.send = send;
@@ -1053,11 +1061,11 @@
     window.handleFileUpload = handleFileUpload;
     window.openModal = openModal;
     window.closeModal = closeModal;
-    window.openToolsModal = openToolsModal;
-    window.closeToolsModal = closeToolsModal;
-    window.selectAllTools = selectAllTools;
-    window.deselectAllTools = deselectAllTools;
-    window.refreshTools = refreshTools;
+    window.openMcpModal = openMcpModal;
+    window.closeMcpModal = closeMcpModal;
+    window.loadMcpData = loadMcpData;
+    window.selectMcp = selectMcp;
+    window.toggleMcpSelection = toggleMcpSelection;
     window.copyMarkdown = copyMarkdown;
     window.downloadMarkdown = downloadMarkdown;
     window.loadKnowledgeData = loadKnowledgeData;
@@ -1086,21 +1094,21 @@
             })
             .catch(_ => console.debug("不开启上传按钮"));
 
-        // Check tools
-        fetch('/spring/ai/chat/tool')
+        // Check MCPs
+        fetch('/spring/ai/chat/mcp')
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
             .then(data => {
-                console.log('工具列表:', data);
+                console.log('MCP列表:', data);
                 if (data && data.length > 0) {
-                    tools = data;
-                    selectedTools = data.filter(tool => tool.defaultSelected).map(tool => tool.name);
-                    document.getElementById('tools-button').style.display = 'flex';
+                    mcps = data;
+                    selectedMcps = data.filter(mcp => mcp.defaultSelected).map(mcp => mcp.name);
+                    document.getElementById('mcp-button').style.display = 'flex';
                 }
             })
-            .catch(_ => console.debug("不显示工具按钮"));
+            .catch(_ => console.debug("不显示MCP按钮"));
 
         // Check skills
         fetch('/spring/ai/chat/skill')
@@ -1135,8 +1143,8 @@
         if (event.target === modalOverlay) closeModal();
     });
 
-    toolsModalOverlay.addEventListener('click', function (event) {
-        if (event.target === toolsModalOverlay) closeToolsModal();
+    mcpModalOverlay.addEventListener('click', function (event) {
+        if (event.target === mcpModalOverlay) closeMcpModal();
     });
 
     skillsModalOverlay.addEventListener('click', function (event) {
@@ -1311,8 +1319,8 @@
         answerOriginTextContent = document.getElementById(`origin-${id}`);
         reasonAnswerTextContent = document.getElementById(`thinking-body-${id}`);
 
-        const selectedToolNames = selectedTools;
-        console.log('当前选择的工具:', selectedToolNames);
+        const selectedMcpNames = selectedMcps;
+        console.log('当前选择的MCP:', selectedMcpNames);
 
         fetch('/spring/ai/chat/stream', {
             method: 'POST',
@@ -1320,7 +1328,7 @@
                 'Content-Type': 'application/json',
                 'Accept': 'text/event-stream'
             },
-            body: JSON.stringify({message: text, conversationId: conversationId, tools: selectedToolNames, enableRag: enableRag}),
+            body: JSON.stringify({message: text, conversationId: conversationId, mcps: selectedMcpNames, enableRag: enableRag}),
         })
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -1419,106 +1427,121 @@
 
     fileInput.addEventListener('change', window.handleFileUpload);
 
-    function openToolsModal() {
-        toolsModalOverlay.style.display = 'flex';
-        loadTools();
+    function openMcpModal() {
+        mcpModalOverlay.style.display = 'flex';
+        loadMcpData();
     }
 
-    function closeToolsModal() {
-        toolsModalOverlay.style.display = 'none';
+    function closeMcpModal() {
+        mcpModalOverlay.style.display = 'none';
     }
 
-    function loadTools() {
-        toolsList.innerHTML = '';
+    function loadMcpData() {
+        mcpListContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载中...</div>';
+        mcpDetailContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><p style="font-size: 16px; margin-bottom: 8px;">请选择一个MCP服务查看详情</p></div>';
 
-        if (tools.length > 0) {
-            tools.forEach(tool => {
-                const toolDiv = document.createElement('div');
-                toolDiv.style.cssText = 'padding: 16px; margin-bottom: 12px; border: 2px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;';
-                toolDiv.onmouseover = () => {
-                    toolDiv.style.borderColor = 'var(--primary-color)';
-                    toolDiv.style.background = 'var(--bg-secondary)';
-                };
-                toolDiv.onmouseout = () => {
-                    toolDiv.style.borderColor = 'var(--border-color)';
-                    toolDiv.style.background = 'var(--bg-primary)';
-                };
+        if (mcps.length > 0) {
+            mcpListContainer.innerHTML = '';
+            mcps.forEach((mcp, index) => {
+                const mcpItem = document.createElement('div');
+                mcpItem.className = 'skill-item';
+                if (selectedMcps.includes(mcp.name)) {
+                    mcpItem.classList.add('selected');
+                }
+
+                const mcpHeader = document.createElement('div');
+                mcpHeader.style.cssText = 'display: flex; align-items: center; gap: 12px;';
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.value = tool.name;
-                checkbox.checked = selectedTools.includes(tool.name);
+                checkbox.checked = selectedMcps.includes(mcp.name);
                 checkbox.style.cssText = 'width: 18px; height: 18px; cursor: pointer;';
-                checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        selectedTools.push(tool.name);
-                    } else {
-                        selectedTools = selectedTools.filter(t => t !== tool.name);
-                    }
-                });
+                checkbox.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleMcpSelection(mcp.name, mcpItem);
+                };
 
-                const toolInfo = document.createElement('div');
-                toolInfo.style.cssText = 'flex: 1;';
+                const mcpInfo = document.createElement('div');
+                mcpInfo.style.cssText = 'flex: 1; cursor: pointer;';
+                mcpInfo.onclick = () => selectMcp(mcp, mcpItem);
 
-                const toolName = document.createElement('div');
-                toolName.textContent = tool.label || tool.title || tool.name;
-                toolName.style.cssText = 'font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;';
+                const mcpName = document.createElement('div');
+                mcpName.className = 'skill-item-name';
+                mcpName.textContent = mcp.title || mcp.name;
 
-                const toolDesc = document.createElement('div');
-                if (tool.description)
-                    toolDesc.textContent = `${tool.description}`;
-                else
-                    toolDesc.textContent = `${tool.name} (v${tool.version})`;
-                toolDesc.style.cssText = 'color: var(--text-muted); font-size: 12px;';
+                mcpInfo.appendChild(mcpName);
 
-                toolInfo.appendChild(toolName);
-                toolInfo.appendChild(toolDesc);
+                mcpHeader.appendChild(checkbox);
+                mcpHeader.appendChild(mcpInfo);
 
-                toolDiv.appendChild(checkbox);
-                toolDiv.appendChild(toolInfo);
-                toolsList.appendChild(toolDiv);
+                mcpItem.appendChild(mcpHeader);
+                mcpListContainer.appendChild(mcpItem);
             });
         } else {
-            toolsList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">暂无可用工具</div>';
+            mcpListContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">暂无可用MCP服务</div>';
         }
     }
 
-    function selectAllTools() {
-        selectedTools = tools.map(tool => tool.name);
-        loadTools();
-        showToast('已全选所有工具', 'success');
+    function toggleMcpSelection(mcpName, element) {
+        if (selectedMcps.includes(mcpName)) {
+            selectedMcps = selectedMcps.filter(name => name !== mcpName);
+            element.classList.remove('selected');
+        } else {
+            selectedMcps.push(mcpName);
+            element.classList.add('selected');
+        }
+        showToast(`已${selectedMcps.includes(mcpName) ? '选中' : '取消'}MCP服务`, 'success');
     }
 
-    function deselectAllTools() {
-        selectedTools = [];
-        loadTools();
-        showToast('已取消所有工具选择', 'success');
-    }
+    function selectMcp(mcp, element) {
+        currentSelectedMcp = mcp;
 
-    function refreshTools() {
-        fetch('/spring/ai/chat/tool')
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                console.log('工具列表已刷新:', data);
-                if (data && data.length > 0) {
-                    tools = data;
-                    selectedTools = data.filter(tool => tool.defaultSelected).map(tool => tool.name);
-                    loadTools();
-                    showToast('工具列表已刷新', 'success');
-                } else {
-                    tools = [];
-                    selectedTools = [];
-                    loadTools();
-                    showToast('暂无可用工具', 'success');
-                }
-            })
-            .catch(error => {
-                console.error('刷新工具列表失败:', error);
-                showToast('刷新失败，请稍后重试', 'error');
+        document.getElementById('mcp-detail-title').textContent = mcp.title || mcp.name;
+        mcpDetailContainer.innerHTML = '';
+
+        // Part 1: Basic Info
+        const infoSection = document.createElement('div');
+        infoSection.className = 'detail-section';
+        infoSection.innerHTML = `
+            <div class="detail-section-title">基本信息</div>
+            <div style="line-height: 1.8; color: var(--text-primary);">
+                <div style="margin-bottom: 12px;"><strong>名称：</strong>${mcp.name}</div>
+                <div style="margin-bottom: 12px;"><strong>版本：</strong>${mcp.version || '1.0.0'}</div>
+                <div><strong>描述：</strong>${mcp.description || '无描述'}</div>
+            </div>
+        `;
+        mcpDetailContainer.appendChild(infoSection);
+
+        // Part 2: Tools
+        const toolsSection = document.createElement('div');
+        toolsSection.className = 'detail-section';
+        toolsSection.innerHTML = `
+            <div class="detail-section-title">包含工具 (${mcp.tools ? mcp.tools.length : 0})</div>
+            <div id="tools-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        `;
+
+        const toolsContainer = toolsSection.querySelector('#tools-container');
+        if (mcp.tools && mcp.tools.length > 0) {
+            mcp.tools.forEach(tool => {
+                const toolCard = document.createElement('div');
+                toolCard.style.cssText = 'padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px;';
+                
+                const toolName = document.createElement('div');
+                toolName.style.cssText = 'font-weight: 600; font-size: 14px; color: var(--primary-color); margin-bottom: 8px;';
+                toolName.textContent = tool.title || tool.name;
+                
+                const toolDesc = document.createElement('div');
+                toolDesc.style.cssText = 'font-size: 13px; color: var(--text-secondary); line-height: 1.6; white-space: pre-wrap;';
+                toolDesc.textContent = tool.description || '无描述';
+                
+                toolCard.appendChild(toolName);
+                toolCard.appendChild(toolDesc);
+                toolsContainer.appendChild(toolCard);
             });
+        } else {
+            toolsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">无可用工具</span>';
+        }
+        mcpDetailContainer.appendChild(toolsSection);
     }
 
     function openModal() {
@@ -1697,8 +1720,8 @@
             <div class="detail-section-content" style="line-height: 1.8; color: var(--text-primary);"></div>
         `;
 
-        if (skill.skill && skill.skill.content) {
-            contentSection.querySelector('.detail-section-content').innerHTML = marked.parse(skill.skill.content);
+        if (skill.content && skill.content.text) {
+            contentSection.querySelector('.detail-section-content').innerHTML = marked.parse(skill.content.text);
         } else {
             contentSection.querySelector('.detail-section-content').innerHTML = '<span style="color: var(--text-muted);">无详细说明</span>';
         }
@@ -1809,7 +1832,7 @@
         }
 
         // Build prompt content by replacing placeholders with parameter values
-        let promptContent = currentSelectedSkill.skill.content;
+        let promptContent = currentSelectedSkill.content.text;
         if (currentSelectedSkill.params && currentSelectedSkill.params.length > 0) {
             currentSelectedSkill.params.forEach(param => {
                 const regex = new RegExp(`\\{${param.name}\\}`, 'g');
@@ -1821,8 +1844,8 @@
         closeSkillsModal();
         textarea.value = promptContent;
         if(currentSelectedSkill.tools){
-            const addToolNames = currentSelectedSkill.tools.filter(name => !selectedTools.includes(name));
-            selectedTools  = [...selectedTools, ...addToolNames];
+            const addMcpNames = currentSelectedSkill.tools.filter(name => !selectedMcps.includes(name));
+            selectedMcps  = [...selectedMcps, ...addMcpNames];
         }
         send();
 

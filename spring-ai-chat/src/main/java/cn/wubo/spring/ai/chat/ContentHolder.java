@@ -1,13 +1,13 @@
 package cn.wubo.spring.ai.chat;
 
 public class ContentHolder {
-    private final String content;
+    private final String text;
 
-    public ContentHolder(String content) {
-        this.content = content;
+    public ContentHolder(String text) {
+        this.text = text;
     }
 
-    public String getContent() {
-        return content;
+    public String getText() {
+        return text;
     }
 }

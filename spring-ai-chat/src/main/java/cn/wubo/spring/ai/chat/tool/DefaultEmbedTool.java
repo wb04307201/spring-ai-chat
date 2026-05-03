@@ -51,7 +51,7 @@ public class DefaultEmbedTool implements IEmbedTool {
         for (ChatUiProperties.Skill skill : results) {
             sb.append(String.format("技能名:%s%n", skill.getName()));
             sb.append(String.format("技能描述:%s%n", skill.getDescription()));
-            sb.append(String.format("技能内容:%s%n", skill.getSkill().getContent()));
+            sb.append(String.format("技能内容:%s%n", skill.getContent().getText()));
             sb.append(String.format("技能参数:%s%n", skill.getParams()));
         }
 

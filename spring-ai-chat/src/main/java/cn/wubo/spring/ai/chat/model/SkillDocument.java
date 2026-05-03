@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 public class SkillDocument extends ChatUiProperties.Skill {
 
     public SkillDocument(ChatUiProperties.Skill skill, String source) {
-        super(skill.getName(), skill.getDescription(), skill.isDefaultPreload(), skill.getTools(), skill.getSkill(), skill.getParams());
+        super(skill.getName(), skill.getDescription(), skill.isDefaultPreload(), skill.getTools(), skill.getContent(), skill.getParams());
         this.source = source;
     }
 

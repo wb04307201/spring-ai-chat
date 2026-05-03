@@ -16,7 +16,7 @@ public class ChatUiProperties {
     private String defaultSystem = "每次对话都先使用 @skillContents 获取技能目录，如果有与用户意图匹配的技能,则调用 @getSkill 获取技能信息";
     private boolean init = true;
     private Rag rag = new Rag();
-    private List<Tool> tools = new ArrayList<>();
+    private List<Mcp> mcps = new ArrayList<>();
     private List<Skill> skills = new ArrayList<>();
 
     @Data
@@ -48,11 +48,18 @@ public class ChatUiProperties {
     }
 
     @Data
-    public static class Tool {
+    public static class Mcp {
         private String name;
-        private String label;
+        private String title;
         private String description;
         private boolean defaultSelected = true;
+        private List<Tool> tools = new ArrayList<>();
+
+        @Data
+        public static class Tool {
+            private String name;
+            private String description;
+        }
     }
 
     @Data
@@ -63,7 +70,7 @@ public class ChatUiProperties {
         private String description;
         private boolean defaultPreload = true;
         private List<String> tools;
-        private ContentHolder skill;
+        private ContentHolder content;
         private List<SkillParam> params;
 
         @Data

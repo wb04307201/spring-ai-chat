@@ -9,7 +9,7 @@ spring:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
         options:
-          model: qwen3.5-plus
+          model: qwen3.6-plus
           multi_model: true
           enable_thinking: true
       embedding:
@@ -23,16 +23,16 @@ spring:
 #        options:
 #          model: qwen3-embedding
 #      base-url: http://localhost:11434
-    vectorstore:
+#    vectorstore:
 #      redis:
 #        initialize-schema: true
 #        index-name: custom-index
 #        prefix: custom-prefix
-      qdrant:
-        host: localhost
-        port: 6334
+#      qdrant:
+#        host: localhost
+#        port: 6334
 #        collection-name: custom-collection-name
-        collection-name: qwen-collection-name
+#        collection-name: qwen-collection-name
     mcp:
       client:
         stdio:
@@ -63,56 +63,59 @@ spring:
           defaultEmptyContextPromptTemplate: |
             The user query is outside your knowledge base.
             Politely inform the user that you can't answer it.
-        tools:
+        mcps:
           - name: spring-ai-mcp-client - time
-            label: 时间
+            title: 时间
             description:
               一个提供时间和时区转换功能的模型上下文协议服务。该服务使大型语言模型能够获取当前时间信息，并使用IANA时区名称进行时区转换，同时具备自动检测系统时区的功能。
             default-selected:  true
           - name: spring-ai-mcp-client - bing-search
-            label: 必应搜索
+            title: 必应搜索
             description:
               一个集成了微软必应搜索API的模型上下文协议服务，允许人工智能助手进行网络、新闻和图片搜索。
             default-selected:  true
           - name: spring-ai-mcp-client - fetch
-            label: 网页内容抓取
+            title: 网页内容抓取
             description:
               该服务器使大型语言模型能够检索和处理网页内容，将HTML转换为markdown格式，以便于更轻松地使用。
             default-selected:  true
           - name: spring-ai-mcp-client - sequential-thinking
-            label: 顺序思维
+            title: 顺序思维
             description:
               一种MCP服务器实现，它通过结构化的思维过程提供了一种动态且反射性的解决问题的工具。
+            tools:
+              - name: sequentialthinking
+                description: 本工具通过可适应与演进的灵活思维流程，协助对问题进行深入分析。随着理解的不断加深，每一步思维均可在先前的见解之上进行构建、质疑或修正。
           - name: spring-ai-mcp-client - amap-maps
-            label: 高德地图
+            title: 高德地图
             description:
               高德地图是一个支持任何MCP协议客户端的服务，允许用户轻松利用高德地图MCP服务器获取各种基于位置的服务。
           - name: spring-ai-mcp-client - 12306-mcp
-            label: 12306购票搜索
+            title: 12306购票搜索
             description:
               12306购票搜索服务，允许大模型利用接口搜索12306购票信息。
           - name: spring-ai-mcp-client - mcp-server-chart
-            label: 图表
+            title: 图表
             description:
               这是一个基于 TypeScript 的 MCP 服务器，提供图表生成功能。它允许您通过 MCP 工具创建各种类型的图表。
           - name: spring-ai-mcp-client - playwright
-            label: Playwright
+            title: Playwright
             description:
               一种模型上下文协议服务器，它使大型语言模型能够通过结构化的可访问性快照与网页交互，而无需使用视觉模型或截图。
           - name: spring-ai-mcp-client - chrome-devtools
-            label: Chrome DevTools
+            title: Chrome DevTools
             description:
               作为 MCP 服务，让 AI 编码助手（如 Gemini、Claude）能够控制和检查 Chrome 浏览器，实现自动化操作、调试和性能分析。
           - name: spring-ai-mcp-client - filesystem
-            label: 文件系统
+            title: 文件系统
             description:
               用于文件系统操作的模型上下文协议（MCP）的 Node.js 服务。
           - name: spring-ai-mcp-client - cn-weather-mcp
-            label: 中国天气
+            title: 中国天气
             description:
               一个自研中国城市实时天气服务。提供城市代码搜索与实时天气查询，允许大模型获取中国城市实时天气数据，并生成相应的天气预报。
           - name: spring-ai-mcp-client - http-client-mcp
-            label: HTTP 客户端
+            title: HTTP 客户端
             description:
               HTTP客户端 MCP 服务 - 提供通用HTTP请求功能（GET/POST/PUT/DELETE）
         skills:
@@ -120,7 +123,7 @@ spring:
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - cn-weather-mcp
-            skill: classpath:skills/params.st
+            content: classpath:skills/params.st
             default-preload: false
             params:
               - name: param1
@@ -143,7 +146,7 @@ spring:
                 label: 参数3
                 type: text_area
                 placeholder: 补充内容，可以不输入
-          - name: 【新闻看】洞察报告
+          - name: 网络月度事件报告
             description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告，适用于企业情报监控、行业趋势追踪等场景
             tools:
               - spring-ai-mcp-client - time
@@ -151,7 +154,7 @@ spring:
               - spring-ai-mcp-client - bing-search
               - spring-ai-mcp-client - fetch
               - spring-ai-mcp-client - filesystem
-            skill: classpath:skills/news-watch.st
+            content: classpath:skills/news-watch.st
             params:
               - name: param1
                 label: 主题
@@ -161,7 +164,7 @@ spring:
           - name: http-client
             tools:
               - spring-ai-mcp-client - http-client-mcp
-            skill: classpath:skills/http.st
+            content: classpath:skills/http.st
             default-preload: false
   servlet:
     multipart:
@@ -172,6 +175,9 @@ spring:
 #      host: localhost
 #      port: 9379
 #      password: 123456
+
+server:
+  port: 8089
 
 
 logging:
