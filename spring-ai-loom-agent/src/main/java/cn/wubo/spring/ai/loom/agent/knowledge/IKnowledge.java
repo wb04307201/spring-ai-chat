@@ -1,0 +1,16 @@
+package cn.wubo.spring.ai.loom.agent.knowledge;
+
+import cn.wubo.spring.ai.loom.agent.model.KnowledgeRecord;
+
+import java.util.List;
+
+public interface IKnowledge {
+
+    List<KnowledgeRecord> list();
+
+    KnowledgeRecord insert(String name);
+
+    int delete(String id);
+
+    KnowledgeRecord getById(String id);
+}

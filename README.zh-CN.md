@@ -1,4 +1,4 @@
-# Spring AI Chat —— Spring AI聊天
+# Spring AI LoomAgent —— 灵梭
 
 <div align="right">
   <a href="README.md">English</a> | 中文
