@@ -8,7 +8,9 @@ import cn.wubo.spring.ai.loom.agent.document.DefaultFileDocument;
 import cn.wubo.spring.ai.loom.agent.document.IDocumentRead;
 import cn.wubo.spring.ai.loom.agent.document.IFileDocument;
 import cn.wubo.spring.ai.loom.agent.file.DefaultFile;
+import cn.wubo.spring.ai.loom.agent.file.DefaultUpload;
 import cn.wubo.spring.ai.loom.agent.file.IFile;
+import cn.wubo.spring.ai.loom.agent.file.IUpload;
 import cn.wubo.spring.ai.loom.agent.knowledge.DefaultKnowledge;
 import cn.wubo.spring.ai.loom.agent.knowledge.IKnowledge;
 import cn.wubo.spring.ai.loom.agent.mcp.ASyncMcp;
@@ -19,8 +21,6 @@ import cn.wubo.spring.ai.loom.agent.skill.DefaultSkillStorage;
 import cn.wubo.spring.ai.loom.agent.skill.ISkillStorage;
 import cn.wubo.spring.ai.loom.agent.tool.DefaultEmbedTool;
 import cn.wubo.spring.ai.loom.agent.tool.IEmbedTool;
-import cn.wubo.spring.ai.loom.agent.upload.DefaultUpload;
-import cn.wubo.spring.ai.loom.agent.upload.IUpload;
 import cn.wubo.spring.ai.loom.agent.user.*;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
@@ -51,6 +51,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayConfigurationCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
@@ -65,9 +67,11 @@ import org.springframework.web.servlet.function.ServerResponse;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -132,7 +136,9 @@ import java.util.concurrent.CompletableFuture;
         // MCP
         "org.springframework.ai.mcp.client.common.autoconfigure.McpClientAutoConfiguration",
         "org.springframework.ai.mcp.client.common.autoconfigure.McpToolCallbackAutoConfiguration",
-        "org.springframework.ai.mcp.client.common.autoconfigure.annotations.McpClientAnnotationScannerAutoConfiguration"})
+        "org.springframework.ai.mcp.client.common.autoconfigure.annotations.McpClientAnnotationScannerAutoConfiguration",
+        // DataSource
+"org.springframework.boot.autoconfigure.jdbc."})
 @EnableConfigurationProperties({LoomAgentProperties.class})
 @Slf4j
 public class LoomAgentConfiguration {
@@ -168,8 +174,8 @@ public class LoomAgentConfiguration {
     @ConditionalOnBean(VectorStore.class)
     @ConditionalOnMissingBean(IDocumentRead.class)
     @Bean
-    public IDocumentRead defaultDocumentRead(ChatModel chatModel) {
-        return new DefaultDocumentRead(chatModel);
+    public IDocumentRead defaultDocumentRead(ChatModel chatModel, LoomAgentProperties properties) {
+        return new DefaultDocumentRead(chatModel, properties.getRag());
     }
 
     @ConditionalOnBean(VectorStore.class)
@@ -191,8 +197,11 @@ public class LoomAgentConfiguration {
 
     @ConditionalOnMissingBean(IUser.class)
     @Bean
-    public IUser defaultUser() {
-        return new DefaultUser();
+    public IUser defaultUser(
+            @org.springframework.beans.factory.annotation.Value("${spring.ai.loom.agent.user.username:username}") String defaultUsername,
+            @org.springframework.beans.factory.annotation.Value("${spring.ai.loom.agent.user.nickname:用户}") String defaultNickname,
+            @org.springframework.beans.factory.annotation.Value("${spring.ai.loom.agent.user.authentication:loom-agent-auth}") String defaultAuthentication) {
+        return new DefaultUser(defaultUsername, defaultNickname, defaultAuthentication);
     }
 
     @ConditionalOnMissingBean(IUserConversation.class)
@@ -250,8 +259,12 @@ public class LoomAgentConfiguration {
     }
 
     @Bean
-    public AuthenticationFilter authenticationFilter(IUser user) {
-        return new AuthenticationFilter(user);
+    public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(IUser user) {
+        FilterRegistrationBean<AuthenticationFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new AuthenticationFilter(user));
+        registration.addUrlPatterns("/spring/ai/loom/*");
+        registration.setOrder(1);
+        return registration;
     }
 
     @Bean("loomAgentBaseRouter")
@@ -309,8 +322,8 @@ public class LoomAgentConfiguration {
 
     @ConditionalOnMissingBean(IChat.class)
     @Bean
-    public IChat chat(ChatClient chatClient, Optional<RetrievalAugmentationAdvisor> retrievalAugmentationAdvisor, IMcp mcp, IEmbedTool embedTool) {
-        return new DefaultChat(chatClient, retrievalAugmentationAdvisor, mcp, embedTool);
+    public IChat chat(ChatClient chatClient, Optional<RetrievalAugmentationAdvisor> retrievalAugmentationAdvisor, IMcp mcp, IEmbedTool embedTool, IUserConversation userConversation, IUser user, IFile file) {
+        return new DefaultChat(chatClient, retrievalAugmentationAdvisor, mcp, embedTool, userConversation, user, file);
     }
 
     @Slf4j
@@ -367,7 +380,8 @@ public class LoomAgentConfiguration {
             if (part == null) {
                 throw new IllegalArgumentException("上传的文件不能为空，请检查请求参数中是否包含名为'file'的文件");
             }
-            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(upload.upload(part.getInputStream(), part.getSubmittedFileName()));
+            String fileId = upload.upload(part.getInputStream(), part.getSubmittedFileName());
+            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(java.util.Map.of("fileId", fileId, "status", "success"));
         });
         builder.GET("/spring/ai/loom/file", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(file.list(null)));
         builder.DELETE("/spring/ai/loom/file/{id}", request -> {
@@ -381,7 +395,7 @@ public class LoomAgentConfiguration {
     @Bean("loomAgentKnowledgeRouter")
     public RouterFunction<ServerResponse> loomAgentKnowledgeRouter(IKnowledge knowledge, IUpload upload, IFile file) {
         RouterFunctions.Builder builder = RouterFunctions.route();
-        builder.GET("/spring/ai/loom/knowledge/isUpload", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(true));
+        builder.GET("/spring/ai/loom/knowledge/checkKnowledgeUpload", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(true));
         builder.GET("/spring/ai/loom/knowledge", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(knowledge.list()));
         builder.PUT("/spring/ai/loom/knowledge", request -> {
             KnowledgeRecord knowledgeRecord = request.body(KnowledgeRecord.class);
@@ -391,6 +405,14 @@ public class LoomAgentConfiguration {
             String knowledgeId = request.pathVariable("knowledgeId");
             return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(knowledge.delete(knowledgeId));
         });
+        builder.POST("/spring/ai/loom/file/upload", request -> {
+            Part part = request.multipartData().getFirst("file");
+            if (part == null) {
+                throw new IllegalArgumentException("上传的文件不能为空，请检查请求参数中是否包含名为'file'的文件");
+            }
+            String fileId = upload.upload(part.getInputStream(), part.getSubmittedFileName());
+            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of("fileId", fileId, "status", "success"));
+        });
         builder.POST("/spring/ai/loom/knowledge/{knowledgeId}/upload", request -> {
             Part part = request.multipartData().getFirst("file");
             if (part == null) {
@@ -398,7 +420,8 @@ public class LoomAgentConfiguration {
             }
             String knowledgeId = request.pathVariable("knowledgeId");
 
-            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(upload.uploadWithKnowledge(part.getInputStream(), part.getSubmittedFileName(), knowledgeId));
+            String fileId = upload.uploadWithKnowledge(part.getInputStream(), part.getSubmittedFileName(), knowledgeId);
+            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of("fileId", fileId, "status", "success"));
         });
         builder.GET("/spring/ai/loom/knowledge/{knowledgeId}/file", request -> {
             String knowledgeId = request.pathVariable("knowledgeId");

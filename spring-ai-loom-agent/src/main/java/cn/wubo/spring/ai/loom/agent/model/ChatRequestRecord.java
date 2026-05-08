@@ -5,7 +5,6 @@ import java.util.List;
 public record ChatRequestRecord(String message,
                                 String conversationId,
                                 List<String> mcps,
-                                boolean enableRag,
                                 String authentication,
                                 String knowledgeId,
                                 String fileId) {

@@ -1,15 +1,13 @@
-package cn.wubo.spring.ai.loom.agent.upload;
+package cn.wubo.spring.ai.loom.agent.file;
 
 import cn.wubo.spring.ai.loom.agent.document.IDocumentRead;
 import cn.wubo.spring.ai.loom.agent.document.IFileDocument;
-import cn.wubo.spring.ai.loom.agent.excepton.ChatUiRuntimeException;
-import cn.wubo.spring.ai.loom.agent.file.IFile;
+import cn.wubo.spring.ai.loom.agent.excepton.LoomAgentRuntimeException;
 import cn.wubo.spring.ai.loom.agent.model.FileDocumentRecord;
 import cn.wubo.spring.ai.loom.agent.model.FileRecord;
 import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -49,7 +47,7 @@ public class DefaultUpload implements IUpload {
     }
 
     @Override
-    public int upload(InputStream is, String fileName) {
+    public String upload(InputStream is, String fileName) {
         String username = UserContextHolder.getCurrentUser();
         try {
             String fileId = UUID.randomUUID().toString();
@@ -63,9 +61,10 @@ public class DefaultUpload implements IUpload {
                     LocalDateTime.now(),
                     filePath.toString()
             );
-            return file.insert(fileRecord);
+            file.insert(fileRecord);
+            return fileId;
         } catch (IOException e) {
-            throw new ChatUiRuntimeException(e);
+            throw new LoomAgentRuntimeException(e);
         }
     }
 
@@ -75,13 +74,13 @@ public class DefaultUpload implements IUpload {
         try {
             removeFile(Paths.get(fileRecord.path()));
         } catch (IOException e) {
-            throw new ChatUiRuntimeException(e);
+            throw new LoomAgentRuntimeException(e);
         }
         return file.delete(fileId);
     }
 
     @Override
-    public int[][] uploadWithKnowledge(InputStream is, String fileName, String knowledgeId) {
+    public String uploadWithKnowledge(InputStream is, String fileName, String knowledgeId) {
         String username = UserContextHolder.getCurrentUser();
         try {
             String fileId = UUID.randomUUID().toString();
@@ -97,7 +96,7 @@ public class DefaultUpload implements IUpload {
             );
             file.insert(fileRecord);
 
-            Resource resource = new FileSystemResource(filePath);
+            Resource resource = file.getResourceById(fileId);
             List<Document> documents = documentRead.read(resource, knowledgeId);
             vectorStore.add(documents);
 
@@ -106,9 +105,10 @@ public class DefaultUpload implements IUpload {
                     .map(document -> new FileDocumentRecord(fileId, document.getId()))
                     .toList();
 
-            return fileDocument.insert(fileDocumentRecords);
+            fileDocument.insert(fileDocumentRecords);
+            return fileId;
         } catch (IOException e) {
-            throw new ChatUiRuntimeException(e);
+            throw new LoomAgentRuntimeException(e);
         }
     }
 
@@ -121,7 +121,7 @@ public class DefaultUpload implements IUpload {
         try {
             removeFile(Paths.get(fileRecord.path()));
         } catch (IOException e) {
-            throw new ChatUiRuntimeException(e);
+            throw new LoomAgentRuntimeException(e);
         }
         return file.delete(fileId);
     }

@@ -4,9 +4,10 @@ import cn.wubo.spring.ai.loom.agent.model.ConversationRecord;
 import cn.wubo.spring.ai.loom.agent.model.UserConversationRecord;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +21,19 @@ public class DefaultUserConversation implements IUserConversation {
         this.chatMemoryRepository = chatMemoryRepository;
     }
 
+    private UserConversationRecord mapUserConversationRecord(ResultSet rs, int rowNum) throws SQLException {
+        return new UserConversationRecord(
+                rs.getString("username"),
+                rs.getString("conversation_id")
+        );
+    }
+
     @Override
     public List<ConversationRecord> getList() {
         String username = UserContextHolder.getCurrentUser();
         List<UserConversationRecord> userConversationRecords = jdbcTemplate.query(
                 "select * from user_conversation where username = ?",
-                new BeanPropertyRowMapper<>(UserConversationRecord.class),
+                this::mapUserConversationRecord,
                 username
         );
 
@@ -51,7 +59,7 @@ public class DefaultUserConversation implements IUserConversation {
 
 
     @Override
-    public int save(UserConversationRecord userConversationRecord) {
+    public int insert(UserConversationRecord userConversationRecord) {
         return jdbcTemplate.update(
                 "insert into user_conversation (username, conversation_id) values (?, ?)",
                 userConversationRecord.username(),

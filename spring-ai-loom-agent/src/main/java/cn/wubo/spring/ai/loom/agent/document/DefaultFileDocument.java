@@ -1,9 +1,10 @@
 package cn.wubo.spring.ai.loom.agent.document;
 
 import cn.wubo.spring.ai.loom.agent.model.FileDocumentRecord;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class DefaultFileDocument implements IFileDocument {
@@ -14,11 +15,18 @@ public class DefaultFileDocument implements IFileDocument {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    private FileDocumentRecord mapFileDocumentRecord(ResultSet rs, int rowNum) throws SQLException {
+        return new FileDocumentRecord(
+                rs.getString("file_id"),
+                rs.getString("document_id")
+        );
+    }
+
     @Override
     public List<FileDocumentRecord> getListByFileId(String id) {
         return jdbcTemplate.query(
                 "SELECT * FROM file_document WHERE file_id = ?",
-                new BeanPropertyRowMapper<>(FileDocumentRecord.class),
+                this::mapFileDocumentRecord,
                 id
         );
     }

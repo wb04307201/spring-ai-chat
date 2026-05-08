@@ -1,6 +1,7 @@
 package cn.wubo.spring.ai.loom.agent.file;
 
 import cn.wubo.spring.ai.loom.agent.model.FileRecord;
+import org.springframework.core.io.Resource;
 
 import java.util.List;
 
@@ -13,4 +14,6 @@ public interface IFile {
     int delete(String id);
 
     FileRecord getById(String id);
+
+    Resource getResourceById(String id);
 }

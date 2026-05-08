@@ -45,6 +45,8 @@ public class LoomAgentProperties {
                 The user query is outside your knowledge base.
                 Politely inform the user that you can't answer it.
                 """;
+        private boolean enabledKeyword;
+        private boolean enabledSummary;
     }
 
     @Data

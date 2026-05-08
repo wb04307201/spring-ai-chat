@@ -2,9 +2,10 @@ package cn.wubo.spring.ai.loom.agent.knowledge;
 
 import cn.wubo.spring.ai.loom.agent.model.KnowledgeRecord;
 import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,12 +17,20 @@ public class DefaultKnowledge implements IKnowledge {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    private KnowledgeRecord mapKnowledgeRecord(ResultSet rs, int rowNum) throws SQLException {
+        return new KnowledgeRecord(
+                rs.getString("id"),
+                rs.getString("username"),
+                rs.getString("name")
+        );
+    }
+
     @Override
     public List<KnowledgeRecord> list() {
         String username = UserContextHolder.getCurrentUser();
         return jdbcTemplate.query(
                 "SELECT * FROM knowledge where username = ?",
-                new BeanPropertyRowMapper<>(KnowledgeRecord.class),
+                this::mapKnowledgeRecord,
                 username
         );
     }
@@ -55,7 +64,7 @@ public class DefaultKnowledge implements IKnowledge {
     public KnowledgeRecord getById(String id) {
         return jdbcTemplate.queryForObject(
                 "SELECT * FROM knowledge WHERE id = ?",
-                new BeanPropertyRowMapper<>(KnowledgeRecord.class),
+                this::mapKnowledgeRecord,
                 id
         );
     }

@@ -11,7 +11,7 @@ public interface IUserConversation {
 
     boolean exists(UserConversationRecord userConversationRecord);
 
-    int save(UserConversationRecord userConversationRecord);
+    int insert(UserConversationRecord userConversationRecord);
 
     int delete(UserConversationRecord userConversationRecord);
 }

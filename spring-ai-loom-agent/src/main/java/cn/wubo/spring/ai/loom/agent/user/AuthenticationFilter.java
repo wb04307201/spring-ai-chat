@@ -1,14 +1,13 @@
 package cn.wubo.spring.ai.loom.agent.user;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
-import reactor.core.publisher.Mono;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-public class AuthenticationFilter implements WebFilter {
+import java.io.IOException;
+public class AuthenticationFilter implements Filter {
 
     private final IUser user;
 
@@ -17,36 +16,36 @@ public class AuthenticationFilter implements WebFilter {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
-        String path = request.getPath().toString();
+    public void doFilter(jakarta.servlet.ServletRequest servletRequest, jakarta.servlet.ServletResponse servletResponse, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        String path = request.getRequestURI();
 
-        // 排除不需要认证的路径
-        if (path.startsWith("/spring/ai/chat/public/") ||
-                path.equals("/spring/ai/user/login")) {
-            return chain.filter(exchange);
+        // 白名单：不需要认证的路径
+        if (path.startsWith("/spring/ai/loom/user/login") ||
+                path.startsWith("/spring/ai/loom/user/isAutoLogin") ||
+                path.equals("/spring/ai/loom") ||
+                path.startsWith("/spring/ai/loom/index.html") ||
+                path.startsWith("/spring/ai/loom/app.js") ||
+                path.startsWith("/spring/ai/loom/style.css")) {
+            chain.doFilter(request, response);
+            return;
         }
 
         // 检查认证头信息
-        String authHeader = request.getHeaders().getFirst("Authorization");
+        String authHeader = request.getHeader("Authorization");
         if (authHeader == null) {
-            ServerHttpResponse response = exchange.getResponse();
-            response.setStatusCode(HttpStatus.UNAUTHORIZED);
-            return response.setComplete();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
 
+        // 验证token并设置用户上下文，在 chain.doFilter 之前完成
+        String username = user.getUsernameByAuthentication(authHeader);
+        UserContextHolder.setCurrentUser(username);
         try {
-            // 根据Authorization获取用户名并设置到线程上下文
-            String username = user.getUsernameByAuthentication(authHeader);
-            UserContextHolder.setCurrentUser(username);
-
-            // 继续处理请求，并在完成后清理上下文
-            return chain.filter(exchange)
-                    .doFinally(signalType -> UserContextHolder.clear());
-        } catch (Exception e) {
-            ServerHttpResponse response = exchange.getResponse();
-            response.setStatusCode(HttpStatus.UNAUTHORIZED);
-            return response.setComplete();
+            chain.doFilter(request, response);
+        } finally {
+            UserContextHolder.clear();
         }
     }
 }

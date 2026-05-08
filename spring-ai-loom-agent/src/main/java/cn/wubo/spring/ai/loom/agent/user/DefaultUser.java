@@ -1,16 +1,20 @@
 package cn.wubo.spring.ai.loom.agent.user;
 
-import cn.wubo.spring.ai.loom.agent.excepton.ChatUiRuntimeException;
+import cn.wubo.spring.ai.loom.agent.excepton.LoomAgentRuntimeException;
 import cn.wubo.spring.ai.loom.agent.model.UserRequestRecord;
-import org.springframework.beans.factory.annotation.Value;
+import cn.wubo.spring.ai.loom.agent.model.UserResponseRecord;
 
 public class DefaultUser implements IUser {
 
-    @Value("${spring.ai.loom.agent.user.username:username}")
-    private String defaultUsername;
+    private final String defaultUsername;
+    private final String defaultNickname;
+    private final String token;
 
-    @Value("${spring.ai.loom.agent.user.authentication:loom-agent-auth}")
-    private String defaultAuthentication;
+    public DefaultUser(String defaultUsername, String defaultNickname, String token) {
+        this.defaultUsername = defaultUsername;
+        this.defaultNickname = defaultNickname;
+        this.token = token;
+    }
 
     @Override
     public Boolean isAutoLogin() {
@@ -18,16 +22,16 @@ public class DefaultUser implements IUser {
     }
 
     @Override
-    public String login(UserRequestRecord userRequestRecord) {
-        return defaultAuthentication;
+    public UserResponseRecord login(UserRequestRecord userRequestRecord) {
+        return new UserResponseRecord(token, defaultNickname);
     }
 
     @Override
     public String getUsernameByAuthentication(String authentication) {
-        if (defaultAuthentication.equals(authentication)) {
+        if (token.equals(authentication)) {
             return defaultUsername;
         } else {
-            throw new ChatUiRuntimeException("获取用户信息失败");
+            throw new LoomAgentRuntimeException("获取用户信息失败");
         }
     }
 }
