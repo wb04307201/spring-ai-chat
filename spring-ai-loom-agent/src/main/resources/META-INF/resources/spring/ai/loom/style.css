@@ -325,6 +325,7 @@ body {
     word-break: normal;
     line-height: 1.6;
     box-shadow: var(--shadow-sm);
+    order: 2;
 }
 
 .chat-item-left .bubble {

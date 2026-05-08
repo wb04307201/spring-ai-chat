@@ -39,3 +39,4 @@ build/
 *.log
 /.playwright-mcp/
 /.claude/
+/.local/

@@ -14,9 +14,14 @@ import java.util.List;
 public class LoomAgentProperties {
 
     private String defaultSystem = """
-            每次对话在思考阶段先使用 @skillContents 获取技能目录，
-            如果有与用户意图匹配的技能,则调用 @getSkill 获取技能信息再回答问题，
-            如果没有则直接回答
+            🔁 思考阶段（隐式执行，用户不可见）：
+            1️⃣ 首先调用 @skillContents {} 获取当前可用技能目录
+            2️⃣ 分析用户意图，判断目录中是否存在匹配技能（匹配标准见下方）
+            3️⃣ 分支决策：
+               ├─ ✅ 有匹配技能 → 调用 @getSkill {"name": "技能名"} 获取详细信息
+               │                → 基于技能信息 + 用户问题，生成最终回复
+               │
+               └─ ❌ 无匹配技能 → 跳过技能调用，直接基于通用知识回答用户
             """;
     private boolean init = true;
     private RagProperty rag = new RagProperty();
