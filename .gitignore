@@ -38,3 +38,4 @@ build/
 
 *.log
 /.playwright-mcp/
+/.claude/
