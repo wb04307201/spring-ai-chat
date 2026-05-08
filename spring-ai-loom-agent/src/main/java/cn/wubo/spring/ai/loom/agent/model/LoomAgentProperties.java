@@ -13,7 +13,11 @@ import java.util.List;
 @ConfigurationProperties(prefix = "spring.ai.loom.agent")
 public class LoomAgentProperties {
 
-    private String defaultSystem = "每次对话都先使用 @skillContents 获取技能目录，如果有与用户意图匹配的技能,则调用 @getSkill 获取技能信息";
+    private String defaultSystem = """
+            每次对话在思考阶段先使用 @skillContents 获取技能目录，
+            如果有与用户意图匹配的技能,则调用 @getSkill 获取技能信息再回答问题，
+            如果没有则直接回答
+            """;
     private boolean init = true;
     private RagProperty rag = new RagProperty();
     private List<McpProperty> mcps = new ArrayList<>();

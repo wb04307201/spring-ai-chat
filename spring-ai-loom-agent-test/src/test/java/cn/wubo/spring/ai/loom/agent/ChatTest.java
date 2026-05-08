@@ -22,7 +22,7 @@ class ChatTest {
     @Test
     void test() throws InterruptedException {
         ChatClient chatClient = ChatClient.builder(chatModel).build();
-        var imageResource = new ClassPathResource("/test.jpg");
+        var imageResource = new ClassPathResource("/init/test.jpg");
         log.info("imageResource: {}", imageResource.exists());
 
         Flux<String> response = chatClient

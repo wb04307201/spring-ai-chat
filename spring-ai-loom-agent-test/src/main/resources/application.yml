@@ -1,4 +1,8 @@
 spring:
+  datasource:
+      url: jdbc:h2:file:./.local/datasource/db;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+      username: sa
+      password: 123456
   h2:
     console:
       enabled: true
@@ -166,6 +170,11 @@ spring:
               - spring-ai-mcp-client - http-client-mcp
             content: classpath:skills/http.st
             default-preload: false
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
   servlet:
     multipart:
       max-file-size: 10MB
