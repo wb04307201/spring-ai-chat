@@ -1199,32 +1199,7 @@ const skills = {
     },
 };
 
-// ===================== §11 File Upload =====================
-const upload = {
-    init() {
-        const fileInputButton = document.getElementById('file-input-button');
-        const fileInput = document.getElementById('file-input');
-
-        fileInputButton.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => this.handleFile(e));
-    },
-
-    async handleFile(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        try {
-            const data = await api.uploadFile(file);
-            if (data) {
-                showToast(`文档 "${file.name}" 上传成功！`, 'success');
-            }
-        } catch (e) {
-            showToast('上传失败，请检查网络或联系管理员。', 'error');
-        }
-        event.target.value = '';
-    },
-};
-
-// ===================== §13 Responsive =====================
+// ===================== §11 Responsive =====================
 const responsive = {
     handleResize() {
         const sidebar = document.getElementById('sidebar');
@@ -1378,11 +1353,10 @@ const init = async () => {
         await skills.loadList();
     }
 
-    // Feature detection (upload)
+    // Feature detection (image upload)
     try {
         const uploadOk = await api.checkKnowledgeUpload();
         if (uploadOk) {
-            document.getElementById('file-input-button').style.display = 'flex';
             document.getElementById('image-add-btn').style.display = 'flex';
         }
     } catch { /* upload not available */

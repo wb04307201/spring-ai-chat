@@ -40,6 +40,13 @@ public class LoomAgentProperties {
             • 用户仅闲聊、问候、表达情绪
             • 问题超出所有技能覆盖范围
             • 技能目录为空或加载失败
+            
+            ━━━━━━━━━━━━━━━━━━━━━━
+            【工具匹配判断】
+            ━━━━━━━━━━━━━━━━━━━━━━            
+            格式: @工具名称
+               ├─ ✅ 有匹配工具 → 调用对应工具
+               └─ ❌ 无匹配工具 → 是否有替代工具，询问用户是否使用
             """;
     private boolean init = true;
     private RagProperty rag = new RagProperty();
