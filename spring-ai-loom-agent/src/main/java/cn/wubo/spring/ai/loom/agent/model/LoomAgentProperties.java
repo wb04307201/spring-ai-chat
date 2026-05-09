@@ -52,6 +52,7 @@ public class LoomAgentProperties {
     private RagProperty rag = new RagProperty();
     private List<McpProperty> mcps = new ArrayList<>();
     private List<SkillProperty> skills = new ArrayList<>();
+    private JVectorProperties jvector = new JVectorProperties();
 
     @Data
     public static class RagProperty {
@@ -131,5 +132,13 @@ public class LoomAgentProperties {
                 private String value;
             }
         }
+    }
+
+    @Data
+    public static class JVectorProperties {
+        private String indexPath = ".local/jvector-index";
+        private int m = 16;
+        private int efConstruction = 100;
+        private int efSearch = 10;
     }
 }
