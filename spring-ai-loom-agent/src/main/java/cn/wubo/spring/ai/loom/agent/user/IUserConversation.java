@@ -13,5 +13,5 @@ public interface IUserConversation {
 
     int insert(UserConversationRecord userConversationRecord);
 
-    int delete(UserConversationRecord userConversationRecord);
+    int deleteById(String conversationId);
 }

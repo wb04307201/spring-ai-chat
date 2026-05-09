@@ -68,11 +68,12 @@ public class DefaultUserConversation implements IUserConversation {
     }
 
     @Override
-    public int delete(UserConversationRecord userConversationRecord) {
+    public int deleteById(String conversationId) {
+        String username = UserContextHolder.getCurrentUser();
+        chatMemoryRepository.deleteByConversationId(conversationId);
         return jdbcTemplate.update(
                 "delete from user_conversation where username = ? and conversation_id = ?",
-                userConversationRecord.username(),
-                userConversationRecord.conversationId()
+                username, conversationId
         );
     }
 }

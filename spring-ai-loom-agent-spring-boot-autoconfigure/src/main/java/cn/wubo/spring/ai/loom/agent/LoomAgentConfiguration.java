@@ -51,7 +51,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayConfigurationCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ResourceLoader;
@@ -67,7 +66,6 @@ import org.springframework.web.servlet.function.ServerResponse;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -136,9 +134,7 @@ import java.util.concurrent.CompletableFuture;
         // MCP
         "org.springframework.ai.mcp.client.common.autoconfigure.McpClientAutoConfiguration",
         "org.springframework.ai.mcp.client.common.autoconfigure.McpToolCallbackAutoConfiguration",
-        "org.springframework.ai.mcp.client.common.autoconfigure.annotations.McpClientAnnotationScannerAutoConfiguration",
-        // DataSource
-"org.springframework.boot.autoconfigure.jdbc."})
+        "org.springframework.ai.mcp.client.common.autoconfigure.annotations.McpClientAnnotationScannerAutoConfiguration"})
 @EnableConfigurationProperties({LoomAgentProperties.class})
 @Slf4j
 public class LoomAgentConfiguration {
@@ -286,7 +282,7 @@ public class LoomAgentConfiguration {
         });
         builder.DELETE("spring/ai/loom/conversation/{conversationId}", request -> {
             String conversationId = request.pathVariable("conversationId");
-            chatMemoryRepository.deleteByConversationId(conversationId);
+            userConversation.deleteById(conversationId);
             return ServerResponse.ok().body(true);
         });
         return builder.build();
