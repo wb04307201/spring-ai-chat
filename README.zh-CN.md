@@ -4,7 +4,7 @@
   <a href="README.md">English</a> | 中文
 </div>
 
-> 为你的Spring Ai快速添加聊天界面。
+> Spring Boot 自动配置库，为 Spring AI 应用一键注入 RAG 知识库、MCP 工具调用和 Skill 技能库，开箱即用的聊天 UI
 
 [![](https://jitpack.io/v/com.gitee.wb04307201/spring-ai-chat.svg)](https://jitpack.io/#com.gitee.wb04307201/spring-ai-chat)
 [![star](https://gitee.com/wb04307201/spring-ai-chat/badge/star.svg?theme=dark)](https://gitee.com/wb04307201/spring-ai-chat)
@@ -14,32 +14,45 @@
 ![MIT](https://img.shields.io/badge/License-Apache2.0-blue.svg) ![JDK](https://img.shields.io/badge/JDK-17+-green.svg) ![SpringBoot](https://img.shields.io/badge/Spring%20Boot-3+-green.svg)
 
 ## 功能特性
-- 🤖 AI聊天界面
-- 📚 知识库(RAG)
-- 🔧 工具(MCP)
-- 🧠 技能库
-- ⚙️ 自动配置
+- 对话交互
+    - SSE 流式聊天，支持多轮对话与会话管理
+    - 模型推理过程（Thinking）折叠展示
+    - 消息一键复制/下载为 Markdown
+- RAG 知识库
+    - 多知识库 CRUD，支持文件上传、Tika 解析、分词向量化
+    - 可选的 LLM 关键词/摘要元数据增强
+    - 基于 JVector HNSW 的本地向量存储，磁盘持久化
+- MCP 服务集成
+    - 支持同步/异步 MCP 客户端，12 个预配置服务（搜索、地图、天气、图表、浏览器自动化等）
+    - 运行时按需启用/禁用，按会话隔离
+- Skill 技能库
+    - 预定义技能模板，参数化表单（文本/下拉/多行）
+    - 技能与 MCP 工具绑定，LLM 可自主发现与调用
+    - 运行时动态增删改
+- 文件管理
+    - 磁盘文件存储 + H2 元数据管理，支持知识库关联
+    - 图片上传（10MB 内），缩略图预览与全屏查看
+- 用户与认证
+    - Token 鉴权过滤器，支持自动登录与自定义 IUser 实现
+    - 前端 localStorage 持久化会话
+- 前端 UI（灵梭）
+    - 侧边栏对话历史，知识库/MCP/技能库弹窗面板
+    - 响应式布局（<768px 侧边栏折叠）
+    - Toast 消息提示
+- 工程化
+    - Spring Boot 自动配置，全组件 @ConditionalOnMissingBean 可替换
+    - Flyway 数据库迁移，支持 10+ 聊天模型 / 12+ 嵌入模型 / 24+ 向量存储后端
+
 
 ## 快速添加聊天界面
-下面以Zhipu AI为例进行说明，可以按需替换成其它大语言模型依赖：
-### 1.引入聊天依赖
-增加 JitPack 仓库：
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-引入依赖；
+### 1. 引入聊天依赖
 ```xml
 <dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-bom</artifactId>
-            <version>1.1.4</version>
+            <version>1.1.5</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -49,41 +62,47 @@
     <dependency>
         <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
         <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-        <version>1.1.18</version>
+        <version>1.1.19</version>
     </dependency>
 </dependencies>
 ```
 
-### 2. 添加Spring AI依赖
+### 2. 添加Spring AI模型依赖
+下面以阿里qwen大模型为例进行说明，可以按需替换成其它大语言模型依赖与配置：
 ```xml
 <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-starter-model-zhipuai</artifactId>
+    <groupId>com.alibaba.cloud.ai</groupId>
+    <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+    <version>1.1.2.2</version>
 </dependency>
 ```
-
-### 3. 添加配置
 ```yaml
 spring:
   ai:
-    zhipuai:
-      api-key: ${ZHIPUAI_API_KEY}
+    dashscope:
+    api-key: ${DASHSCOPE_API_KEY}
+    chat:
+      options:
+        model: qwen3.6-plus
+        multi_model: true
+        enable_thinking: true
+    embedding:
+      options:
+        model: text-embedding-v2
 ```
 
-### 4. 启动项目
-访问`http://localhost:8080/spring/ai/chat`
+> [使用其他模型可参考](https://docs.spring.io/spring-ai/reference/api/chatmodel.html)
+
+### 3. 启动项目
+访问`http://localhost:8080/spring/ai/loom`
 ![img.png](img.png)
 
-## RAG
-下面以Redis作为向量数据库和Tika作为文档拆解工具为例，添加依赖：
+## 更换RAG
+下面以qdrant向量数据库为例，添加依赖和配置：
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-starter-vector-store-redis</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-tika-document-reader</artifactId>
+    <artifactId>spring-ai-starter-vector-store-qdrant</artifactId>
 </dependency>
 ```
 
@@ -92,25 +111,20 @@ spring:
 spring:
   ai:
     vectorstore:
-      redis:
-        initialize-schema: true
-        index-name: custom-index
-        prefix: custom-prefix
-  data:
-    redis:
+      qdrant:
       host: localhost
-      port: 9379
-      password: 123456
+      port: 6334
+      collection-name: qwen-collection-name
 ```
 
-实现[IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/IDocumentRead.java)接口  
-例如[TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
+> [其他向量数据库可参考](https://docs.spring.io/spring-ai/reference/api/vectorstore.html)
+
 
 重启项目 访问`http://localhost:8080/spring/ai/chat`
 ![img_1.png](img_1.png)
 出现上传文件和知识库按钮
 
-rag配置如下：
+其它rag配置如下：
 ```yaml
 spring:
   ai:
@@ -141,7 +155,7 @@ spring:
             Politely inform the user that you can't answer it.
 ```
 
-## MCP
+## MCP服务
 以时间MCP服务为例，添加依赖：
 ```xml
 <dependency>

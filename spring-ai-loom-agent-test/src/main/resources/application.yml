@@ -40,10 +40,11 @@ spring:
     mcp:
       client:
         stdio:
-#          servers-configuration: classpath:mcp-servers.json
           servers-configuration: classpath:mcp-servers-local.json
     loom:
       agent:
+        jvector:
+          index-path: .local/jvector-index
         rag:
           similarityThreshold: 0.50
           top-k: 4
@@ -72,7 +73,11 @@ spring:
             title: 时间
             description:
               一个提供时间和时区转换功能的模型上下文协议服务。该服务使大型语言模型能够获取当前时间信息，并使用IANA时区名称进行时区转换，同时具备自动检测系统时区的功能。
-            default-selected:  true
+            tools:
+              - name: get_current_time
+                description: 获取指定时区的当前时间
+              - name: convert_time
+                description: 在不同时区之间转换时间
           - name: spring-ai-mcp-client - bing-search
             title: 必应搜索
             description:
@@ -184,9 +189,6 @@ spring:
 #      host: localhost
 #      port: 9379
 #      password: 123456
-
-server:
-  port: 8089
 
 
 logging:
