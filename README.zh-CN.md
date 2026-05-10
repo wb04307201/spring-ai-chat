@@ -248,6 +248,6 @@ spring:
 
 ---
 
-其他配置和扩展点说明:[Spring AI LoomAgent 自定义能力总览](CUSTOMIZATION.zh-CN.md)
-自定义UI界面对接API参考:[Spring AI LoomAgent API 文档](API.zh-CN.md)
+- 其他配置和扩展点说明:[Spring AI LoomAgent 自定义能力总览](CUSTOMIZATION.zh-CN.md)
+- 自定义UI界面对接API参考:[Spring AI LoomAgent API 文档](API.zh-CN.md)
 
