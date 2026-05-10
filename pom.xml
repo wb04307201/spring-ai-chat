@@ -48,6 +48,7 @@
         <spring-ai.version>1.1.5</spring-ai.version>
         <lombok.version>1.18.46</lombok.version>
         <flyway.version>12.5.0</flyway.version>
+        <jvector.version>3.0.6</jvector.version>
     </properties>
 
     <dependencyManagement>
@@ -81,6 +82,11 @@
                 <artifactId>flyway-core</artifactId>
                 <version>${flyway.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.jbellis</groupId>
+                <artifactId>jvector</artifactId>
+                <version>${jvector.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -89,6 +95,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
