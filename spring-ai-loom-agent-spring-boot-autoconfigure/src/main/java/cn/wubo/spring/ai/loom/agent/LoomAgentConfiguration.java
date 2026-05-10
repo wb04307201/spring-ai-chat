@@ -22,6 +22,7 @@ import cn.wubo.spring.ai.loom.agent.skill.ISkillStorage;
 import cn.wubo.spring.ai.loom.agent.tool.DefaultEmbedTool;
 import cn.wubo.spring.ai.loom.agent.tool.IEmbedTool;
 import cn.wubo.spring.ai.loom.agent.user.*;
+import cn.wubo.spring.ai.loom.agent.vectorstore.JVectorStore;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import jakarta.servlet.http.Part;
@@ -165,6 +166,20 @@ public class LoomAgentConfiguration {
     @Bean
     public VectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
         return SimpleVectorStore.builder(embeddingModel).build();
+    }
+
+    @ConditionalOnProperty(name = "spring.ai.loom.agent.vectorstore", havingValue = "jvector")
+    @ConditionalOnBean(EmbeddingModel.class)
+    @ConditionalOnMissingBean(VectorStore.class)
+    @Bean
+    public VectorStore jVectorStore(EmbeddingModel embeddingModel, LoomAgentProperties properties) {
+        LoomAgentProperties.JVectorProperties jv = properties.getJvector();
+        return JVectorStore.builder(embeddingModel)
+                .indexPath(jv.getIndexPath())
+                .m(jv.getM())
+                .efConstruction(jv.getEfConstruction())
+                .efSearch(jv.getEfSearch())
+                .build();
     }
 
     @ConditionalOnBean(VectorStore.class)
