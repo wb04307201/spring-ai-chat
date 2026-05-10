@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -57,6 +58,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
     private final int efSearch;
     private final VectorSimilarityFunction similarityFunction;
 
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final ConcurrentHashMap<String, Document> documentStore = new ConcurrentHashMap<>();
     // Ordered list of document IDs -- index matches JVector graph node index
     private final List<String> documentIds = Collections.synchronizedList(new ArrayList<>());
@@ -85,7 +87,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
         return new JVectorStoreBuilder(embeddingModel);
     }
 
-    private synchronized void initialize() {
+    private void initialize() {
         Path path = Paths.get(indexPath);
         Path metadataFile = path.resolve(METADATA_FILE);
 
@@ -168,20 +170,25 @@ public class JVectorStore extends AbstractObservationVectorStore {
             return;
         }
 
-        for (Document document : documents) {
-            logger.debug("Embedding document id={}", document.getId());
-            float[] embedding = embeddingModel.embed(document);
-            VectorFloat<?> vf = toVectorFloat(embedding);
-            documentStore.put(document.getId(), document);
-            embeddingMap.put(document.getId(), vf);
-            documentIds.add(document.getId());
-        }
+        rwLock.writeLock().lock();
+        try {
+            for (Document document : documents) {
+                logger.debug("Embedding document id={}", document.getId());
+                float[] embedding = embeddingModel.embed(document);
+                VectorFloat<?> vf = toVectorFloat(embedding);
+                documentStore.put(document.getId(), document);
+                embeddingMap.put(document.getId(), vf);
+                documentIds.add(document.getId());
+            }
 
-        rebuildGraph();
-        persistToDisk();
+            rebuildGraph();
+            persistToDisk();
+        } finally {
+            rwLock.writeLock().unlock();
+        }
     }
 
-    private synchronized void rebuildGraph() {
+    private void rebuildGraph() {
         int dimensions = embeddingModel.dimensions();
 
         if (embeddingMap.isEmpty()) {
@@ -214,7 +221,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
         }
     }
 
-    private synchronized void persistToDisk() {
+    private void persistToDisk() {
         try {
             Path path = Paths.get(indexPath);
             if (!Files.exists(path)) {
@@ -237,14 +244,19 @@ public class JVectorStore extends AbstractObservationVectorStore {
             return;
         }
 
-        for (String id : idList) {
-            documentStore.remove(id);
-            embeddingMap.remove(id);
-            documentIds.remove(id);
-        }
+        rwLock.writeLock().lock();
+        try {
+            for (String id : idList) {
+                documentStore.remove(id);
+                embeddingMap.remove(id);
+                documentIds.remove(id);
+            }
 
-        rebuildGraph();
-        persistToDisk();
+            rebuildGraph();
+            persistToDisk();
+        } finally {
+            rwLock.writeLock().unlock();
+        }
     }
 
     @Override
@@ -260,53 +272,58 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
     @Override
     public List<Document> doSimilaritySearch(SearchRequest request) {
-        float[] queryEmbedding = embeddingModel.embed(request.getQuery());
-
-        if (graphIndex == null || graphIndex.size() == 0) {
-            return Collections.emptyList();
-        }
-
-        int dimensions = queryEmbedding.length;
-        VectorFloat<?> queryVector = toVectorFloat(queryEmbedding);
-
-        SearchResult result;
+        rwLock.readLock().lock();
         try {
-            result = GraphSearcher.search(queryVector, request.getTopK() * 2,
-                    null, similarityFunction, graphIndex, Bits.ALL);
-        } catch (Exception e) {
-            logger.error("Error during JVector search", e);
-            return Collections.emptyList();
-        }
+            float[] queryEmbedding = embeddingModel.embed(request.getQuery());
 
-        List<Document> results = new ArrayList<>();
-        for (SearchResult.NodeScore nodeScore : result.getNodes()) {
-            String docId = getDocIdByNodeIndex(nodeScore.node);
-            if (docId != null) {
-                Document doc = documentStore.get(docId);
-                if (doc != null) {
-                    VectorFloat<?> docEmbedding = embeddingMap.get(docId);
-                    if (docEmbedding != null) {
-                        double score = cosineSimilarity(queryEmbedding, docEmbedding);
-                        Document scoredDoc = new Document.Builder()
-                                .id(doc.getId())
-                                .text(doc.getText())
-                                .metadata(doc.getMetadata())
-                                .score(score)
-                                .build();
-                        results.add(scoredDoc);
+            if (graphIndex == null || graphIndex.size() == 0) {
+                return Collections.emptyList();
+            }
+
+            int dimensions = queryEmbedding.length;
+            VectorFloat<?> queryVector = toVectorFloat(queryEmbedding);
+
+            SearchResult result;
+            try {
+                result = GraphSearcher.search(queryVector, request.getTopK() * 2,
+                        null, similarityFunction, graphIndex, Bits.ALL);
+            } catch (Exception e) {
+                logger.error("Error during JVector search", e);
+                return Collections.emptyList();
+            }
+
+            List<Document> results = new ArrayList<>();
+            for (SearchResult.NodeScore nodeScore : result.getNodes()) {
+                String docId = getDocIdByNodeIndex(nodeScore.node);
+                if (docId != null) {
+                    Document doc = documentStore.get(docId);
+                    if (doc != null) {
+                        VectorFloat<?> docEmbedding = embeddingMap.get(docId);
+                        if (docEmbedding != null) {
+                            double score = cosineSimilarity(queryEmbedding, docEmbedding);
+                            Document scoredDoc = new Document.Builder()
+                                    .id(doc.getId())
+                                    .text(doc.getText())
+                                    .metadata(doc.getMetadata())
+                                    .score(score)
+                                    .build();
+                            results.add(scoredDoc);
+                        }
                     }
                 }
             }
+
+            List<Document> filteredResults = results.stream()
+                    .filter(doc -> !request.hasFilterExpression() || matchesFilter(doc, request.getFilterExpression()))
+                    .filter(doc -> doc.getScore() >= request.getSimilarityThreshold())
+                    .sorted(Comparator.comparing(Document::getScore).reversed())
+                    .limit(request.getTopK())
+                    .toList();
+
+            return filteredResults;
+        } finally {
+            rwLock.readLock().unlock();
         }
-
-        List<Document> filteredResults = results.stream()
-                .filter(doc -> !request.hasFilterExpression() || matchesFilter(doc, request.getFilterExpression()))
-                .filter(doc -> doc.getScore() >= request.getSimilarityThreshold())
-                .sorted(Comparator.comparing(Document::getScore).reversed())
-                .limit(request.getTopK())
-                .toList();
-
-        return filteredResults;
     }
 
     private double cosineSimilarity(float[] vectorX, VectorFloat<?> vectorY) {
@@ -346,12 +363,10 @@ public class JVectorStore extends AbstractObservationVectorStore {
     }
 
     private String getDocIdByNodeIndex(int nodeIndex) {
-        synchronized (documentIds) {
-            if (nodeIndex >= 0 && nodeIndex < documentIds.size()) {
-                return documentIds.get(nodeIndex);
-            }
-            return null;
+        if (nodeIndex >= 0 && nodeIndex < documentIds.size()) {
+            return documentIds.get(nodeIndex);
         }
+        return null;
     }
 
     @Override
