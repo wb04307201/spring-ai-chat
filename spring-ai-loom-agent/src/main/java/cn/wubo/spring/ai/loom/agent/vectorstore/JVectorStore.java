@@ -66,6 +66,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
     private final Map<String, VectorFloat<?>> embeddingMap = new ConcurrentHashMap<>();
     @SuppressWarnings("rawtypes")
     private volatile GraphIndex graphIndex;
+    private static final SimpleVectorStoreFilterExpressionConverter FILTER_CONVERTER = new SimpleVectorStoreFilterExpressionConverter();
     private final ObjectMapper objectMapper;
     private final ExpressionParser expressionParser;
     private final VectorizationProvider vectorizationProvider;
@@ -110,7 +111,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
                 List<String> loadedIds = objectMapper.readValue(idsFile.toFile(), idTypeRef);
                 documentIds.addAll(loadedIds);
             } else {
-                documentIds.addAll(loadedDocs.keySet());
+                documentIds.addAll(loadedDocs.keySet().stream().sorted().toList());
             }
 
             for (String id : documentIds) {
@@ -137,6 +138,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
     private void createNewIndex() {
         try {
+            closeOldGraphIndex();
             Path path = Paths.get(indexPath);
             if (!Files.exists(path)) {
                 Files.createDirectories(path);
@@ -189,6 +191,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
     }
 
     private void rebuildGraph() {
+        closeOldGraphIndex();
         int dimensions = embeddingModel.dimensions();
 
         if (embeddingMap.isEmpty()) {
@@ -261,12 +264,22 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
     @Override
     protected void doDelete(Filter.Expression filterExpression) {
-        List<String> idsToDelete = documentStore.keySet().stream()
-                .filter(id -> matchesFilter(documentStore.get(id), filterExpression))
-                .toList();
-
-        if (!idsToDelete.isEmpty()) {
-            doDelete(idsToDelete);
+        rwLock.writeLock().lock();
+        try {
+            List<String> idsToDelete = documentStore.keySet().stream()
+                    .filter(id -> matchesFilter(documentStore.get(id), filterExpression))
+                    .toList();
+            if (!idsToDelete.isEmpty()) {
+                for (String id : idsToDelete) {
+                    documentStore.remove(id);
+                    embeddingMap.remove(id);
+                    documentIds.remove(id);
+                }
+                rebuildGraph();
+                persistToDisk();
+            }
+        } finally {
+            rwLock.writeLock().unlock();
         }
     }
 
@@ -280,7 +293,6 @@ public class JVectorStore extends AbstractObservationVectorStore {
                 return Collections.emptyList();
             }
 
-            int dimensions = queryEmbedding.length;
             VectorFloat<?> queryVector = toVectorFloat(queryEmbedding);
 
             SearchResult result;
@@ -357,7 +369,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
         StandardEvaluationContext context = new StandardEvaluationContext();
         context.setVariable("metadata", document.getMetadata());
         Expression expression = expressionParser.parseExpression(
-                new SimpleVectorStoreFilterExpressionConverter().convertExpression(filterExpression));
+                FILTER_CONVERTER.convertExpression(filterExpression));
         Boolean result = expression.getValue(context, Boolean.class);
         return result != null && result;
     }
@@ -367,6 +379,16 @@ public class JVectorStore extends AbstractObservationVectorStore {
             return documentIds.get(nodeIndex);
         }
         return null;
+    }
+
+    private void closeOldGraphIndex() {
+        if (graphIndex != null && graphIndex instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) graphIndex).close();
+            } catch (Exception e) {
+                logger.warn("Failed to close old graph index", e);
+            }
+        }
     }
 
     @Override
