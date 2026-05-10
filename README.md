@@ -62,8 +62,8 @@
 </dependencyManagement>
 <dependencies>
     <dependency>
-        <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
-        <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
+        <groupId>io.github.wb04307201.spring-ai-loom-agent</groupId>
+        <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
         <version>1.1.19</version>
     </dependency>
 </dependencies>
