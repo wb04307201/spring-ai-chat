@@ -14,12 +14,41 @@
       ],
       "command": "npx.cmd"
     },
+    "fetch": {
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "command": "uvx"
+    },
     "sequential-thinking": {
       "command": "npx.cmd",
       "args": [
         "-y",
         "@modelcontextprotocol/server-sequential-thinking"
       ]
+    },
+    "amap-maps": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@amap/amap-maps-mcp-server"
+      ],
+      "env": {
+      }
+    },
+    "12306-mcp": {
+      "args": [
+        "-y",
+        "12306-mcp"
+      ],
+      "command": "npx.cmd"
+    },
+    "mcp-server-chart": {
+      "args": [
+        "-y",
+        "@antv/mcp-server-chart"
+      ],
+      "command": "npx.cmd"
     },
     "playwright": {
       "command": "npx.cmd",
@@ -42,13 +71,14 @@
       "command": "npx.cmd"
     },
     "memory": {
-      "command": "cmd",
+      "command": "npx.cmd",
       "args": [
-        "/c",
-        "npx",
         "-y",
         "@modelcontextprotocol/server-memory"
-      ]
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": ".local/memory/memory.json"
+      }
     },
     "cn-weather-mcp": {
       "args": [

@@ -4,82 +4,98 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Spring AI LoomAgent (灵梭)** — A Spring Boot auto-configuration library that quickly adds a chat interface to Spring AI applications. Supports RAG (knowledge base), MCP (Model Context Protocol tools), and a Skill library system.
+**Spring AI LoomAgent** — A Spring Boot auto-configuration library that provides an out-of-the-box chat UI with RAG knowledge base, MCP tool calling, and Skill library for Spring AI applications.
 
-- **Group/Artifact**: `com.gitee.wb04307201` / `spring-ai-loom-agent-parent`
-- **Tech Stack**: Java 17+, Spring Boot 3.5.14, Spring AI 1.1.5, Lombok, Flyway, H2
-- **Build**: Maven multi-module project
+- **JDK**: 17+
+- **Framework**: Spring Boot 3.x + Spring AI 1.x
+- **Build**: Maven (multi-module)
+- **Database**: H2 (default), with Flyway migrations
 
 ## Module Structure
 
 | Module | Purpose |
 |--------|---------|
-| `spring-ai-loom-agent` | Core library: interfaces (`IChat`, `IMcp`, `IUser`, `IKnowledge`, `ISkillStorage`, `IFile`, `IEmbedTool`) and default implementations |
-| `spring-ai-loom-agent-spring-boot-autoconfigure` | Spring Boot auto-configuration (`LoomAgentConfiguration`) — wires all beans together, defines REST endpoints under `/spring/ai/loom/*` |
-| `spring-ai-loom-agent-spring-boot-starter` | Starter POM — single dependency to pull in the autoconfigure module |
-| `spring-ai-loom-agent-test` | Demo/test application — runs on port 8089, uses DashScope (qwen3.6-plus) + Qdrant vector store |
+| `spring-ai-loom-agent` | Core library — chat, knowledge base, file, MCP, skill, user interfaces + default implementations, JVector vector store, H2 schema, static frontend resources |
+| `spring-ai-loom-agent-spring-boot-autoconfigure` | Single `LoomAgentConfiguration` class — `@AutoConfiguration` with `@ConditionalOnMissingBean` on all beans for full replaceability |
+| `spring-ai-loom-agent-spring-boot-starter` | Empty JAR that depends on autoconfigure — the one dependency users add |
+| `spring-ai-loom-agent-test` | Test application with `application.yml` — run locally to verify changes |
 
-## Key Architecture
+## Key Commands
 
-### Core Components (all in `cn.wubo.spring.ai.loom.agent` package)
+```bash
+# Build all modules (skip GPG signing for local dev)
+./mvnw clean install -Dgpg.skip=true
 
-- **chat/** — `IChat` interface + `DefaultChat`: orchestrates ChatClient, RAG advisor, MCP tools, skills, and conversation memory. Streaming via SSE at `/spring/ai/loom/stream`.
-- **mcp/** — `IMcp` interface with `SyncMcp` (default) and `ASyncMcp` implementations for MCP protocol tool callbacks.
-- **knowledge/** — `IKnowledge` + `DefaultKnowledge`: manages knowledge bases backed by vector stores.
-- **skill/** — `ISkillStorage` + `DefaultSkillStorage`: skill library for predefined prompt templates with parameterized inputs.
-- **user/** — `IUser`, `IUserConversation`, `AuthenticationFilter`, `UserContextHolder`: user management and conversation tracking.
-- **file/** — `IFile`, `IUpload`: file upload/download, storage in H2 database.
-- **document/** — `IDocumentRead`, `IFileDocument`: document parsing (Tika integration) for RAG.
-- **tool/** — `IEmbedTool` + `DefaultEmbedTool`: tool for embedding skill content into prompts.
-- **model/** — Record classes for chat requests/responses, conversations, files, knowledge, skills, MCP/tools.
-- **content/** — `ContentHolder`, `ContentHolderConverter`: skill content loading from classpath resources.
+# Run the test application
+./mvnw spring-boot:run -pl spring-ai-loom-agent-test
+
+# Run a single test
+./mvnw test -pl spring-ai-loom-agent-test -Dtest=ChatTest
+
+# Package for release (includes GPG signing)
+./mvnw clean deploy
+```
+
+## Architecture
+
+### Core Interfaces (in `spring-ai-loom-agent`)
+
+All components follow an **interface + default implementation** pattern. Every bean is registered with `@ConditionalOnMissingBean`, allowing consumers to replace any piece:
+
+| Interface | Default Impl | Responsibility |
+|-----------|-------------|----------------|
+| `IChat` | `DefaultChat` | Chat streaming (SSE), MCP tool orchestration, RAG augmentation |
+| `IKnowledge` | `DefaultKnowledge` | Knowledge base CRUD (stored in H2) |
+| `IMcp` | `SyncMcp` / `ASyncMcp` | MCP client wrapper (sync or async), tool discovery & invocation |
+| `ISkillStorage` | `DefaultSkillStorage` | Skill template storage, parameter forms, MCP tool binding |
+| `IFile` | `DefaultFile` | File metadata storage (H2) + disk storage |
+| `IUpload` | `DefaultUpload` | File upload pipeline: Tika parsing → document splitting → vectorization |
+| `IUser` | `DefaultUser` | Token-based auth filter + auto-login |
+| `IUserConversation` | `DefaultUserConversation` | User-to-conversation mapping |
+| `IEmbedTool` | `DefaultEmbedTool` | Embed skill content into chat prompts |
+| `IDocumentRead` | `DefaultDocumentRead` | Document reading with LLM metadata enrichment |
+| `IFileDocument` | `DefaultFileDocument` | File-to-document ID mapping |
+
+### Auto-Configuration (`LoomAgentConfiguration`)
+
+- `@AutoConfigureAfter` all Spring AI model/embedding/vectorstore/memory/MCP auto-configurations
+- Creates `ChatClient` with `MessageChatMemoryAdvisor` and `SimpleLoggerAdvisor`
+- Default `JVectorStore` (HNSW index, disk-persisted) when no other `VectorStore` bean exists
+- `RetrievalAugmentationAdvisor` with configurable prompt templates and similarity threshold
+- REST endpoints under `/spring/ai/loom/*` (RouterFunctions + one `@RestController` for SSE)
+- `AuthenticationFilter` on `/spring/ai/loom/*` paths
+
+### Data Layer
+
+- **Schema**: `db/loom/V1__db_init.sql` — Flyway migration creates `knowledge`, `knowledge_file`, `file_info`, `file_document`, `user_conversation` tables
+- **Chat memory**: Spring AI `JdbcChatMemoryRepository` (JDBC-backed, auto-initialized)
+- **Custom Flyway table**: `loomAgent_schema_history`
 
 ### Configuration Properties
 
 All under `spring.ai.loom.agent`:
-- `defaultSystem` — default system prompt (default: skill discovery prompt)
-- `init` — whether to initialize ChatClient (default: true)
-- `rag.*` — RAG settings: similarityThreshold, topK, prompt templates
-- `mcps` — list of MCP tool configurations with Chinese labels
-- `skills` — list of skill definitions with templates, tools, and params
+- `rag` — similarity threshold, top-k, prompt templates
+- `jvector` — index path, HNSW params (m, efConstruction, efSearch)
+- `mcps` — list of MCP service configs (name, title, description, tools, default-selected)
+- `skills` — list of skill templates (name, description, tools, content path, params)
+- `user` — default username, nickname, authentication token
 
-### Auto-Configuration
+### Frontend
 
-`LoomAgentConfiguration` is a Spring Boot `@AutoConfiguration` that auto-configures after all major Spring AI auto-configurations (ChatModel, EmbeddingModel, VectorStore, MCP, ChatMemory). It uses `@ConditionalOnMissingBean` extensively, allowing users to override any default bean.
+Static SPA at `spring-ai-loom-agent/src/main/resources/META-INF/resources/spring/ai/loom/`:
+- `index.html` — entry point
+- `app.js` — Vue-based chat UI (SSE streaming, sidebar, modals)
+- `style.css` — styling
+- Uses marked.js for Markdown rendering, eventsource-parser for SSE
 
-### REST Endpoints (all under `/spring/ai/loom/*`)
+## Extension Points
 
-- `POST /spring/ai/loom/stream` — SSE streaming chat endpoint
-- `GET/DELETE /spring/ai/loom/conversation/{id}` — conversation management
-- `POST/GET/DELETE /spring/ai/loom/file` — file upload/list/delete
-- `GET/PUT/DELETE /spring/ai/loom/knowledge` — knowledge base CRUD
-- `GET/PUT/DELETE /spring/ai/chat/skill` — skill library CRUD
-- `GET /spring/ai/chat/loom` — list MCP tools
+To customize behavior, replace any `@Bean` by providing your own implementation:
 
-## Common Commands
-
-```bash
-# Build entire project
-mvn clean install
-
-# Build without tests
-mvn clean install -DskipTests
-
-# Run the test application
-mvn spring-boot:run -pl spring-ai-loom-agent-test
-
-# Build a specific module
-mvn clean install -pl spring-ai-loom-agent
-
-# Package for distribution
-mvn clean package
+```java
+@Bean
+@ConditionalOnMissingBean
+public IChat customChat(...) { return new MyChat(...); }
 ```
 
-## Development Notes
-
-- The project is published to JitPack (`https://jitpack.io/#com.gitee.wb04307201/spring-ai-chat`)
-- The chat UI frontend is served from static resources in `spring-ai-loom-agent/src/main/resources/META-INF/resources/`
-- Database migrations are managed by Flyway in `classpath:db/loom`
-- Chat memory uses JDBC-backed persistence (`JdbcChatMemoryRepository`)
-- H2 is the default embedded database; users can swap to MySQL/MongoDB/Redis via Spring AI auto-configurations
-- The main interface pattern: define `IXxx.java` interface in core, provide `DefaultXxx.java` implementation, wire in auto-configuration with `@ConditionalOnMissingBean` for overrideability
+To swap the vector store, simply add a Spring AI vector store starter dependency — `JVectorStore` won't be created due to `@ConditionalOnMissingBean(VectorStore.class)`.

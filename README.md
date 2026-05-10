@@ -1,10 +1,10 @@
-# Spring AI Chat
+# Spring AI LoomAgent
 
 <div align="right">
-  English | <a href="README.zh-CN.md">中文</a>
+  <a href="README.zh-CN.md">中文</a> | English
 </div>
 
-> Quickly add a chat interface to your Spring AI application.
+> A Spring Boot auto-configuration library that injects RAG knowledge base, MCP tool calling, and Skill library into Spring AI applications with an out-of-the-box chat UI.
 
 [![](https://jitpack.io/v/com.gitee.wb04307201/spring-ai-chat.svg)](https://jitpack.io/#com.gitee.wb04307201/spring-ai-chat)
 [![star](https://gitee.com/wb04307201/spring-ai-chat/badge/star.svg?theme=dark)](https://gitee.com/wb04307201/spring-ai-chat)
@@ -14,34 +14,47 @@
 ![MIT](https://img.shields.io/badge/License-Apache2.0-blue.svg) ![JDK](https://img.shields.io/badge/JDK-17+-green.svg) ![SpringBoot](https://img.shields.io/badge/Spring%20Boot-3+-green.svg)
 
 ## Features
-- 🤖 AI Chat Interface
-- 📚 Knowledge Base (RAG)
-- 🔧 Tools (MCP)
-- 🧠 Skill Library
-- ⚙️ Auto Configuration
 
-## Quick Start: Add Chat Interface
-The following example uses Zhipu AI. You can replace it with other LLM dependencies as needed:
+- **Chat Interface**
+    - SSE streaming chat with multi-turn conversation and session management
+    - Collapsible model reasoning (Thinking) display
+    - One-click message copy and Markdown download
+- **RAG Knowledge Base**
+    - Multi-KB CRUD with file upload, Tika parsing, and vectorization
+    - Optional LLM keyword/summary metadata enrichment
+    - Local JVector HNSW vector store with disk persistence
+- **MCP Service Integration**
+    - Synchronous/asynchronous MCP client support, 12 pre-configured services (search, maps, weather, charts, browser automation, etc.)
+    - Runtime enable/disable per session with session isolation
+- **Skill Library**
+    - Predefined skill templates with parameterized forms (text/dropdown/textarea)
+    - Skill-to-MCP tool binding with autonomous LLM discovery and invocation
+    - Runtime dynamic CRUD
+- **File Management**
+    - Disk file storage + H2 metadata management with knowledge base association
+    - Image upload (up to 10MB) with thumbnail preview and full-screen view
+- **User & Authentication**
+    - Token-based authentication filter with auto-login support and custom `IUser` implementation
+    - Frontend localStorage session persistence
+- **Frontend UI (Loom)**
+    - Sidebar conversation history with KB/MCP/Skill modal panels
+    - Responsive layout (sidebar collapses below 768px)
+    - Toast notifications
+- **Engineering**
+    - Spring Boot auto-configuration with `@ConditionalOnMissingBean` on all components for full replaceability
+    - Flyway database migration with support for 10+ chat models / 12+ embedding models / 24+ vector store backends
 
-### 1. Add Chat Dependency
-Add JitPack repository:
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
+## Quick Start: Add a Chat Interface
 
-Add dependency:
+### 1. Add LoomAgent Dependency
+
 ```xml
 <dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-bom</artifactId>
-            <version>1.1.4</version>
+            <version>1.1.5</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -51,76 +64,81 @@ Add dependency:
     <dependency>
         <groupId>com.gitee.wb04307201.spring-ai-chat</groupId>
         <artifactId>spring-ai-chat-spring-boot-starter</artifactId>
-        <version>1.1.18</version>
+        <version>1.1.19</version>
     </dependency>
 </dependencies>
 ```
 
-### 2. Add Spring AI Dependency
+### 2. Add a Spring AI Model Dependency
+
+The following example uses Alibaba's Qwen (DashScope). Replace with any other LLM as needed:
+
 ```xml
 <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-starter-model-zhipuai</artifactId>
+    <groupId>com.alibaba.cloud.ai</groupId>
+    <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+    <version>1.1.2.2</version>
 </dependency>
 ```
 
-### 3. Add Configuration
 ```yaml
 spring:
   ai:
-    zhipuai:
-      api-key: ${ZHIPUAI_API_KEY}
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+    chat:
+      options:
+        model: qwen3.6-plus
+        multi_model: true
+        enable_thinking: true
+    embedding:
+      options:
+        model: text-embedding-v2
 ```
 
-### 4. Start the Project
-Visit `http://localhost:8080/spring/ai/chat`
-![img.png](img.png)
+> [For other models, see the Spring AI docs](https://docs.spring.io/spring-ai/reference/api/chatmodel.html).
 
-## RAG (Retrieval-Augmented Generation)
-The following example uses Redis as the vector database and Tika as the document parsing tool. Add dependencies:
+### 3. Start the Project
+
+Visit `http://localhost:8080/spring/ai/loom`
+
+![img.png](img.png)
+![img_1.png](img_1.png)
+![img_2.png](img_2.png)
+
+## Replace the Default RAG Implementation
+
+The following example uses Qdrant as the vector store. Add the dependency:
+
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-starter-vector-store-redis</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-tika-document-reader</artifactId>
+    <artifactId>spring-ai-starter-vector-store-qdrant</artifactId>
 </dependency>
 ```
 
 Add configuration:
+
 ```yaml
 spring:
   ai:
     vectorstore:
-      redis:
-        initialize-schema: true
-        index-name: custom-index
-        prefix: custom-prefix
-  data:
-    redis:
-      host: localhost
-      port: 9379
-      password: 123456
+      qdrant:
+        host: localhost
+        port: 6334
+        collection-name: qwen-collection-name
 ```
 
-Implement the [IDocumentRead.java](spring-ai-chat/src/main/java/cn/wubo/spring/ai/chat/document/IDocumentRead.java) interface  
-For example: [TikaDocumentRead.java](spring-ai-chat-test/src/main/java/cn/wubo/spring/ai/chat/TikaDocumentRead.java)
+Optional RAG configuration:
 
-Restart the project and visit `http://localhost:8080/spring/ai/chat`
-![img_1.png](img_1.png)
-File upload and knowledge base buttons will appear.
-
-RAG configuration:
 ```yaml
 spring:
   ai:
-    chat:
-      ui:
+    loom:
+      agent:
         rag:
           similarityThreshold: 0.50   # Similarity threshold, default 0.0
-          top-k: 4                    # Top-k, default 4
+          topK: 4                     # Top-k results, default 4
           defaultPromptTemplate: |
             Context information is below.
 
@@ -143,8 +161,10 @@ spring:
             Politely inform the user that you can't answer it.
 ```
 
-## MCP (Model Context Protocol)
-Taking the time MCP service as an example, add dependency:
+## MCP Services
+
+Taking the time MCP service as an example, add the dependency:
+
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
@@ -153,6 +173,7 @@ Taking the time MCP service as an example, add dependency:
 ```
 
 Add configuration:
+
 ```yaml
 spring:
   ai:
@@ -162,8 +183,9 @@ spring:
           servers-configuration: classpath:mcp-servers.json
 ```
 
+`mcp-servers.json`:
+
 ```json
-//mcp-servers.json
 {
   "mcpServers": {
     "time": {
@@ -177,84 +199,75 @@ spring:
 }
 ```
 
-Configure Chinese labels, descriptions, and default selection for tools. For example:
+After configuring MCP services, an MCP button appears in the toolbar showing available services:
+
+![img_3.png](img_3.png)
+
+Add Chinese labels and descriptions for tools via configuration:
+
 ```yaml
 spring:
   ai:
-    chat:
-      ui:
-        tools:
+    loom:
+      agent:
+        mcps:
           - name: spring-ai-mcp-client - time
-            label: Time
+            title: Time
             description:
-              A Model Context Protocol service that provides time and timezone conversion functionality. This service enables large language models to obtain current time information and perform timezone conversions using IANA timezone names, with automatic system timezone detection.
-            default-selected:  true
+              A Model Context Protocol service that provides time and timezone conversion functionality. This service enables
+              large language models to obtain current time information and perform timezone conversions using IANA timezone names,
+              with automatic system timezone detection.
+            tools:
+              - name: get_current_time
+                description: Get the current time in a specified timezone
+              - name: convert_time
+                description: Convert time between different time zones
 ```
-
-Restart the project and visit `http://localhost:8080/spring/ai/chat`
-Check the tool and input the following content:
-```text
-1. Current time
-2. Get webpage content from `https://www.163.com/`
-3. Randomly select one news item from the webpage content obtained in the previous step
-4. Open browser and visit `https://www.baidu.com/`
-5. Input the news from step 3 into the search box and click search
-```
-![img_2.png](img_2.png)
-![img_3.png](img_3.png)
-![img_6.png](img_6.png)
 
 ## Skill Library
-You can write skills and add them to the skill library. Skills can be configured with parameters and tools. Configuration details:
+
+You can write skills and add them to the skill library. Skills can be configured with parameters and associated tools:
+
 ```yaml
 spring:
   ai:
-    chat:
-      ui:
+    loom:
+      agent:
         skills:
-          - name: 【News Watch】Insight Report # Skill name
-            description: Collect monthly events on specified topics through web search, generate monthly event insight reports and associated mind maps through in-depth analysis, suitable for enterprise intelligence monitoring, industry trend tracking, etc. # Skill description
-            preloading: true # Whether to preload
+          - name: Monthly Event Report
+            description: Collect monthly events on specified topics through web search, generate monthly event insight reports through in-depth analysis, suitable for enterprise intelligence monitoring, industry trend tracking, etc.
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - mcp-server-chart
-              - spring-ai-mcp-client - filesystem
-            skill: classpath:skills/news-watch.st
+              - spring-ai-mcp-client - http-mcp
+            content: classpath:skills/news-watch.st
             params:
               - name: param1
                 label: Topic
-                type: text # select | text | text_area Dropdown | Text | Multi-line text. Dropdown requires options property
-                # options: Dropdown options
-                #  - label: Hello
-                #    value: Hello
-                #  - label: 你好
-                #    value: 你好
-                required: true # Whether required (default: false)
-                default-value: Party # Default value
-                # placeholder: Input hint
+                type: text
+                required: true
+                default-value: Party
 ```
+
+Skill content file (`classpath:skills/news-watch.st`):
 
 ```text
-Search the web to obtain important monthly events for {param1} in the current year, generate insight reports through in-depth analysis, and create mind maps. Requirements:
+Search the web to obtain important monthly events for {param1} in the current year, generate insight reports through in-depth analysis. Requirements:
 - Use @get_current_time to get current time
 - Use @sequentialthinking to plan all steps, thoughts, and branches
-- Use @bing_search to search for FAW's important events month by month for the current year. Verify with search before each Thinking round
-- Use @fetch to view detailed webpage content from search results
+- Use @bing_search to search month by month for important events. Verify with search before each Thinking round
+- Use @crawl_webpage to view detailed webpage content from search results
 - Thinking rounds should be no less than 5, with divergent brainstorming awareness and thinking branches
 - Each round needs to reflect on whether decisions are correct based on query results
-- Create "News Watch {param1} Insight Report" and use @write_file to save the report as *.md in allowed directories
-- After saving the analysis report, return the download URL in format http://localhost:8080/spring/ai/chat/file/download/{fileName}, where fileName is the saved filename. Display using anchor tag, clicking opens new tab for download
-- Perform event correlation analysis and use @generate_mind_map to create mind map
-- Display the returned mind map URL using img tag with width set to 100%. Clicking the image opens new tab to display the image
+- Perform event correlation analysis and form conclusions. Generate "Monthly Event Report"
 ```
 
-You can precisely use skills through the skill library button.
-If a skill is set to preload, it can also be used directly in conversations.
+You can precisely invoke skills through the Skill Library button in the UI. Skills are preloaded by default and can also be used directly in conversations.
 
-Restart the project and visit `http://localhost:8080/spring/ai/chat`
 ![img_4.png](img_4.png)
-![img_5.png](img_5.png)
-![img_7.png](img_7.png)
+
+---
+
+For more configuration and extension points, see: [Spring AI LoomAgent Customization Guide](CUSTOMIZATION.md)
+For custom UI integration and API reference, see: [Spring AI LoomAgent API Documentation](API.md)

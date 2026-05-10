@@ -80,7 +80,7 @@
 spring:
   ai:
     dashscope:
-    api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${DASHSCOPE_API_KEY}
     chat:
       options:
         model: qwen3.6-plus
@@ -96,8 +96,10 @@ spring:
 ### 3. 启动项目
 访问`http://localhost:8080/spring/ai/loom`
 ![img.png](img.png)
+![img_1.png](img_1.png)
+![img_2.png](img_2.png)
 
-## 更换RAG
+## 更换其它RAG以替换默认实现
 下面以qdrant向量数据库为例，添加依赖和配置：
 ```xml
 <dependency>
@@ -112,24 +114,17 @@ spring:
   ai:
     vectorstore:
       qdrant:
-      host: localhost
-      port: 6334
-      collection-name: qwen-collection-name
+        host: localhost
+        port: 6334
+        collection-name: qwen-collection-name
 ```
 
-> [其他向量数据库可参考](https://docs.spring.io/spring-ai/reference/api/vectorstore.html)
-
-
-重启项目 访问`http://localhost:8080/spring/ai/chat`
-![img_1.png](img_1.png)
-出现上传文件和知识库按钮
-
-其它rag配置如下：
+其它rag可选配置如下：
 ```yaml
 spring:
   ai:
-    chat:
-      ui:
+    loom:
+      agent:
         rag:
           similarityThreshold: 0.50   # 相似度阈值,默认0.0
           top-k: 4                    # top-k，默认4
@@ -174,8 +169,8 @@ spring:
           servers-configuration: classpath:mcp-servers.json
 ```
 
+mcp-servers.json:
 ```json
-//mcp-servers.json
 {
   "mcpServers": {
     "time": {
@@ -189,84 +184,70 @@ spring:
 }
 ```
 
-通过配置课题为工具添加中文名和描述以及默认选中，例如
+配置MCP服务后，工具栏出现MCP服务按钮，点开后可查看目前拥有的MCP服务信息：
+![img_3.png](img_3.png)
+
+可以通过配置为工具添加中文名和描述：
 ```yaml
 spring:
   ai:
-    chat:
-      ui:
-        tools:
+    loom:
+      agent:
+        mcps:
           - name: spring-ai-mcp-client - time
-            label: 时间
+            title: 时间
             description:
               一个提供时间和时区转换功能的模型上下文协议服务。该服务使大型语言模型能够获取当前时间信息，并使用IANA时区名称进行时区转换，同时具备自动检测系统时区的功能。
-            default-selected:  true # 是否默认加载工具，默认true
+            tools:
+              - name: get_current_time
+                description: 获取指定时区的当前时间
+              - name: convert_time
+                description: 在不同时区之间转换时间
 ```
-
-重启项目 访问`http://localhost:8080/spring/ai/chat`
-勾选工具，输入以下内容
-```text
-1. 现在的时间
-2. 获取`https://www.163.com/`网页内容
-3. 从上一步的网页内容中随机选取获取一条新闻
-4. 打开浏览器，访问`https://www.baidu.com/`地址
-5. 在搜索框输入步骤3的新闻，并并点击搜索
-```
-![img_2.png](img_2.png)
-![img_3.png](img_3.png)
-![img_6.png](img_6.png)
 
 ## 技能库
 可以编写技能加入技能库，技能可以配置参数与使用的工具，配置说明如下：
 ```yaml
 spring:
   ai:
-    chat:
-      ui:
+    loom:
+      agent:
         skills:
-          - name: 【新闻看】洞察报告 # 技能名称
-            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告与关联思维导图，适用于企业情报监控、行业趋势追踪等场景 # 技能描述
-            preload: true # 是否默认加载技能，默认true
+          - name: 网络月度事件报告
+            description: 通过网络搜索采集指定主题的月度事件，通过深度分析生成月度事件洞察报告，适用于企业情报监控、行业趋势追踪等场景
             tools:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - mcp-server-chart
-              - spring-ai-mcp-client - filesystem
-            skill: classpath:skills/news-watch.st
+              - spring-ai-mcp-client - http-mcp
+            content: classpath:skills/news-watch.st
             params:
               - name: param1
                 label: 主题
-                type: text # select | text | text_area 下拉框 | 文本 | 多行文本 下拉需配合options属性进行配置
-                # options: 下拉框选项
-                #  - label: 你好
-                #    value: 你好
-                #  - label: Hello
-                #    value: Hello
-                required: true # 是否必填（默认非必填）
-                default-value: 党 # 默认值
-                # placeholder: 输入提示
+                type: text
+                required: true
+                default-value: 党
 ```
 
 ```text
-通过网络搜索获取{param1}当前年每月的重要的事件，通过深度分析生成洞察报告，并形成思维导图，要求：
+通过网络搜索获取{param1}当前年每月的重要的事件，通过深度分析生成洞察报告，要求：
 - 使用 @get_current_time 获取当前时间
 - 使用 @sequentialthinking 来规划所有的步骤，思考和分支
 - 可以使用 @bing_search 按照当前年逐月进行一汽的重要的事件搜索，每一轮Thinking之前都先搜索验证
-- 可以用 @fetch 来查看搜索到的网页详情
+- 可以用 @crawl_webpage 来查看搜索到的网页详情
 - 思考轮数不低于5轮，且需要有发散脑暴意识，需要有思考分支
 - 每一轮需要根据查询的信息结果，反思自己的决策是否正确
-- 形成"新闻看{param1}洞察报告"，并使用 @write_file 在允许访问的目录里保存报告为*.md
-- 分析报告保存后返回下载地址，格式为 http://localhost:8080/spring/ai/chat/file/download/{fileName} ，fileName为保存的文件名，使用a标签展示，点击打开新的标签进行下载
-- 进行事件关联分析，使用 @generate_mind_map 形成思维导图
-- 返回的思维导图url使用img标签展示，并设置width为100%，点击图片打开新的标签页显示图片
+- 进行事件关联分析与结论形成 网络月度事件报告
 ```
 
-可以通过技能库按钮精准使用技能
-如果技能设置了预加载，也可以在对话中直接使用
+可以通过技能库按钮精准使用技能 ，
+技能默认设置了预加载，也通过对话直接使用
 
-重启项目 访问`http://localhost:8080/spring/ai/chat`
 ![img_4.png](img_4.png)
-![img_5.png](img_5.png)
-![img_7.png](img_7.png)
+
+
+---
+
+其他配置和扩展点说明:[Spring AI LoomAgent 自定义能力总览](CUSTOMIZATION.zh-CN.md)
+自定义UI界面对接API参考:[Spring AI LoomAgent API 文档](API.zh-CN.md)
+
