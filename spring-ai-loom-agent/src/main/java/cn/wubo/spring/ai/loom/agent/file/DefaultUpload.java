@@ -3,6 +3,7 @@ package cn.wubo.spring.ai.loom.agent.file;
 import cn.wubo.spring.ai.loom.agent.document.IDocumentRead;
 import cn.wubo.spring.ai.loom.agent.document.IFileDocument;
 import cn.wubo.spring.ai.loom.agent.excepton.LoomAgentRuntimeException;
+import cn.wubo.spring.ai.loom.agent.knowledge.IKnowledge;
 import cn.wubo.spring.ai.loom.agent.model.FileDocumentRecord;
 import cn.wubo.spring.ai.loom.agent.model.FileRecord;
 import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
@@ -25,13 +26,15 @@ public class DefaultUpload implements IUpload {
     private final IFileDocument fileDocument;
     private final IDocumentRead documentRead;
     private final VectorStore vectorStore;
+    private final IKnowledge knowledge;
     private static final String BASE_PATH = ".local/file";
 
-    public DefaultUpload(IFile file, IFileDocument fileDocument, IDocumentRead documentRead, VectorStore vectorStore) {
+    public DefaultUpload(IFile file, IFileDocument fileDocument, IDocumentRead documentRead, VectorStore vectorStore, IKnowledge knowledge) {
         this.file = file;
         this.fileDocument = fileDocument;
         this.documentRead = documentRead;
         this.vectorStore = vectorStore;
+        this.knowledge = knowledge;
     }
 
     private Path saveFile(InputStream is, String fileName, String username, String fileId) throws IOException {
@@ -66,17 +69,6 @@ public class DefaultUpload implements IUpload {
         } catch (IOException e) {
             throw new LoomAgentRuntimeException(e);
         }
-    }
-
-    @Override
-    public int deleteUpload(String fileId) {
-        FileRecord fileRecord = file.getById(fileId);
-        try {
-            removeFile(Paths.get(fileRecord.path()));
-        } catch (IOException e) {
-            throw new LoomAgentRuntimeException(e);
-        }
-        return file.delete(fileId);
     }
 
     @Override
@@ -124,5 +116,14 @@ public class DefaultUpload implements IUpload {
             throw new LoomAgentRuntimeException(e);
         }
         return file.delete(fileId);
+    }
+
+    @Override
+    public int deleteAllKnowledge(String knowledgeId) {
+        List<FileRecord> fileRecords = file.list(knowledgeId);
+        for (FileRecord fileRecord : fileRecords) {
+            deleteWithKnowledge(fileRecord.id());
+        }
+        return knowledge.delete(knowledgeId);
     }
 }

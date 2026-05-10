@@ -43,7 +43,6 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -164,14 +163,6 @@ public class LoomAgentConfiguration {
     @ConditionalOnBean(EmbeddingModel.class)
     @ConditionalOnMissingBean(VectorStore.class)
     @Bean
-    public VectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
-        return SimpleVectorStore.builder(embeddingModel).build();
-    }
-
-    @ConditionalOnProperty(name = "spring.ai.loom.agent.vectorstore", havingValue = "jvector")
-    @ConditionalOnBean(EmbeddingModel.class)
-    @ConditionalOnMissingBean(VectorStore.class)
-    @Bean
     public VectorStore jVectorStore(EmbeddingModel embeddingModel, LoomAgentProperties properties) {
         LoomAgentProperties.JVectorProperties jv = properties.getJvector();
         return JVectorStore.builder(embeddingModel)
@@ -265,8 +256,8 @@ public class LoomAgentConfiguration {
 
     @ConditionalOnMissingBean(IUpload.class)
     @Bean
-    public IUpload defaultUpload(IFile file, IFileDocument fileDocument, IDocumentRead documentRead, VectorStore vectorStore) {
-        return new DefaultUpload(file, fileDocument, documentRead, vectorStore);
+    public IUpload defaultUpload(IFile file, IFileDocument fileDocument, IDocumentRead documentRead, VectorStore vectorStore, IKnowledge knowledge) {
+        return new DefaultUpload(file, fileDocument, documentRead, vectorStore, knowledge);
     }
 
     @Bean
@@ -414,7 +405,7 @@ public class LoomAgentConfiguration {
         });
         builder.DELETE("/spring/ai/loom/knowledge/{knowledgeId}", request -> {
             String knowledgeId = request.pathVariable("knowledgeId");
-            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(knowledge.delete(knowledgeId));
+            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(upload.deleteAllKnowledge(knowledgeId));
         });
         builder.POST("/spring/ai/loom/file/upload", request -> {
             Part part = request.multipartData().getFirst("file");

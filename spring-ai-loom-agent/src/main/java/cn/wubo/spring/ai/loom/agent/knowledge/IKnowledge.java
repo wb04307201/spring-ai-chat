@@ -12,5 +12,4 @@ public interface IKnowledge {
 
     int delete(String id);
 
-    KnowledgeRecord getById(String id);
 }

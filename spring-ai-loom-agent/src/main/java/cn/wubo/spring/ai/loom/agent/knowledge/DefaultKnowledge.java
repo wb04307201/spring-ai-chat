@@ -60,12 +60,4 @@ public class DefaultKnowledge implements IKnowledge {
         );
     }
 
-    @Override
-    public KnowledgeRecord getById(String id) {
-        return jdbcTemplate.queryForObject(
-                "SELECT * FROM knowledge WHERE id = ?",
-                this::mapKnowledgeRecord,
-                id
-        );
-    }
 }
