@@ -289,7 +289,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
         try {
             float[] queryEmbedding = embeddingModel.embed(request.getQuery());
 
-            if (graphIndex == null || graphIndex.size() == 0) {
+            if (graphIndex == null || documentIds.isEmpty()) {
                 return Collections.emptyList();
             }
 
