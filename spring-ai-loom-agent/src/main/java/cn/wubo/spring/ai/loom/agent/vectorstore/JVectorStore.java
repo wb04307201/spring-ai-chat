@@ -7,10 +7,7 @@ import io.github.jbellis.jvector.graph.GraphIndex;
 import io.github.jbellis.jvector.graph.GraphIndexBuilder;
 import io.github.jbellis.jvector.graph.GraphSearcher;
 import io.github.jbellis.jvector.graph.ListRandomAccessVectorValues;
-import io.github.jbellis.jvector.graph.RandomAccessVectorValues;
 import io.github.jbellis.jvector.graph.SearchResult;
-import io.github.jbellis.jvector.graph.similarity.BuildScoreProvider;
-import io.github.jbellis.jvector.graph.similarity.SearchScoreProvider;
 import io.github.jbellis.jvector.util.Bits;
 import io.github.jbellis.jvector.vector.VectorSimilarityFunction;
 import io.github.jbellis.jvector.vector.VectorizationProvider;
@@ -59,14 +56,13 @@ public class JVectorStore extends AbstractObservationVectorStore {
     private final int efConstruction;
     private final int efSearch;
     private final VectorSimilarityFunction similarityFunction;
-    private final float neighborOverflow;
-    private final float alpha;
 
     private final ConcurrentHashMap<String, Document> documentStore = new ConcurrentHashMap<>();
     // Ordered list of document IDs -- index matches JVector graph node index
     private final List<String> documentIds = Collections.synchronizedList(new ArrayList<>());
     // Vector storage keyed by document ID (as VectorFloat)
     private final Map<String, VectorFloat<?>> embeddingMap = new ConcurrentHashMap<>();
+    @SuppressWarnings("rawtypes")
     private volatile GraphIndex graphIndex;
     private final ObjectMapper objectMapper;
     private final ExpressionParser expressionParser;
@@ -79,8 +75,6 @@ public class JVectorStore extends AbstractObservationVectorStore {
         this.efConstruction = builder.efConstruction;
         this.efSearch = builder.efSearch;
         this.similarityFunction = builder.similarityFunction;
-        this.neighborOverflow = builder.neighborOverflow;
-        this.alpha = builder.alpha;
         this.objectMapper = JsonMapper.builder().build();
         this.expressionParser = new SpelExpressionParser();
         this.vectorizationProvider = VectorizationProvider.getInstance();
@@ -161,7 +155,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
     private GraphIndexBuilder createGraphBuilder(List<VectorFloat<?>> vectors) {
         int dimensions = embeddingModel.dimensions();
         ListRandomAccessVectorValues ravv = new ListRandomAccessVectorValues(vectors, dimensions);
-        return new GraphIndexBuilder(ravv, similarityFunction, m, efConstruction, neighborOverflow, alpha);
+        return new GraphIndexBuilder(ravv, similarityFunction, m, efConstruction, 1.0f, 1.4f);
     }
 
     private VectorFloat<?> toVectorFloat(float[] data) {
@@ -362,10 +356,13 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
     @Override
     public VectorStoreObservationContext.Builder createObservationContextBuilder(String operationName) {
+        VectorStoreSimilarityMetric metric = (similarityFunction == VectorSimilarityFunction.DOT_PRODUCT)
+                ? VectorStoreSimilarityMetric.DOT
+                : VectorStoreSimilarityMetric.COSINE;
         return VectorStoreObservationContext.builder(VectorStoreProvider.SIMPLE.value(), operationName)
                 .dimensions(embeddingModel.dimensions())
                 .collectionName("jvector-disk-index")
-                .similarityMetric(VectorStoreSimilarityMetric.COSINE.value());
+                .similarityMetric(metric.value());
     }
 
     public static final class JVectorStoreBuilder extends AbstractVectorStoreBuilder<JVectorStoreBuilder> {
@@ -375,8 +372,6 @@ public class JVectorStore extends AbstractObservationVectorStore {
         private int efConstruction = 100;
         private int efSearch = 10;
         private VectorSimilarityFunction similarityFunction = VectorSimilarityFunction.COSINE;
-        private float neighborOverflow = 1.2f;
-        private float alpha = 1.2f;
 
         private JVectorStoreBuilder(EmbeddingModel embeddingModel) {
             super(embeddingModel);
@@ -404,16 +399,6 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
         public JVectorStoreBuilder similarityFunction(VectorSimilarityFunction similarityFunction) {
             this.similarityFunction = similarityFunction;
-            return this;
-        }
-
-        public JVectorStoreBuilder neighborOverflow(float neighborOverflow) {
-            this.neighborOverflow = neighborOverflow;
-            return this;
-        }
-
-        public JVectorStoreBuilder alpha(float alpha) {
-            this.alpha = alpha;
             return this;
         }
 
