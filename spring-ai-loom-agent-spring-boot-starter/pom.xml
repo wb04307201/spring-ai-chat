@@ -8,6 +8,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
+    <name>spring-ai-loom-agent-spring-boot-starter</name>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
