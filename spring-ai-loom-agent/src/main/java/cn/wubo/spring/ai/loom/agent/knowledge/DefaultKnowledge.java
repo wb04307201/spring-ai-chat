@@ -1,0 +1,63 @@
+package cn.wubo.spring.ai.loom.agent.knowledge;
+
+import cn.wubo.spring.ai.loom.agent.model.KnowledgeRecord;
+import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.UUID;
+
+public class DefaultKnowledge implements IKnowledge {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public DefaultKnowledge(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    private KnowledgeRecord mapKnowledgeRecord(ResultSet rs, int rowNum) throws SQLException {
+        return new KnowledgeRecord(
+                rs.getString("id"),
+                rs.getString("username"),
+                rs.getString("name")
+        );
+    }
+
+    @Override
+    public List<KnowledgeRecord> list() {
+        String username = UserContextHolder.getCurrentUser();
+        return jdbcTemplate.query(
+                "SELECT * FROM knowledge where username = ?",
+                this::mapKnowledgeRecord,
+                username
+        );
+    }
+
+    @Override
+    public KnowledgeRecord insert(String name) {
+        String username = UserContextHolder.getCurrentUser();
+        KnowledgeRecord knowledgeRecord = new KnowledgeRecord(
+                UUID.randomUUID().toString(),
+                username,
+                name
+        );
+        jdbcTemplate.update(
+                "INSERT INTO knowledge (id, username, name) VALUES (?, ?, ?)",
+                knowledgeRecord.id(),
+                knowledgeRecord.username(),
+                knowledgeRecord.name()
+        );
+        return knowledgeRecord;
+    }
+
+    @Override
+    public int delete(String id) {
+        return jdbcTemplate.update(
+                "DELETE FROM knowledge WHERE id = ?",
+                id
+        );
+    }
+
+}
