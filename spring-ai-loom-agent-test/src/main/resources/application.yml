@@ -27,24 +27,22 @@ spring:
 #        options:
 #          model: qwen3-embedding
 #      base-url: http://localhost:11434
-    vectorstore:
+#    vectorstore:
 #      redis:
 #        initialize-schema: true
 #        index-name: custom-index
 #        prefix: custom-prefix
-      qdrant:
-        host: localhost
-        port: 6334
-#        collection-name: custom-collection-name
-        collection-name: qwen-collection-name
+#      qdrant:
+#        host: localhost
+#        port: 6334
+##        collection-name: custom-collection-name
+#        collection-name: qwen-collection-name
     mcp:
       client:
         stdio:
-          servers-configuration: classpath:mcp-servers-local.json
+          servers-configuration: classpath:mcp-servers.json
     loom:
       agent:
-        jvector:
-          index-path: .local/jvector-index
         rag:
           similarityThreshold: 0.50
           top-k: 4
@@ -119,6 +117,29 @@ spring:
             title: 文件系统
             description:
               用于文件系统操作的模型上下文协议（MCP）的 Node.js 服务。
+          - name: spring-ai-mcp-client - memory
+            title: 记忆
+            description:
+              一个使用本地知识图谱实现持久化记忆的基础方案。这使得 Claude 能够在不同对话之间记住关于用户的信息。
+            tools:
+              - name: create_entities
+                description: 在知识图谱中创建多个新实体
+              - name: create_relations
+                description: 在知识图谱的实体之间创建多个新关系。关系应使用主动语态
+              - name: add_observations
+                description: 向知识图谱中现有实体添加新的观察信息
+              - name: delete_entities
+                description: 从知识图谱中删除多个实体及其关联的关系
+              - name: delete_observations
+                description: 从知识图谱的实体中删除特定的观察信息
+              - name: delete_relations
+                description: 从知识图谱中删除多个关系
+              - name: read_graph
+                description: 读取整个知识图谱
+              - name: search_nodes
+                description: 基于查询在知识图谱中搜索节点
+              - name: open_nodes
+                description: 通过名称打开知识图谱中的特定节点
           - name: spring-ai-mcp-client - cn-weather-mcp
             title: 中国天气
             description:
@@ -129,9 +150,6 @@ spring:
               HTTP客户端 MCP 服务 - 提供通用HTTP请求功能（GET/POST/PUT/DELETE）
         skills:
           - name: 参数测试
-            tools:
-              - spring-ai-mcp-client - time
-              - spring-ai-mcp-client - cn-weather-mcp
             content: classpath:skills/params.st
             default-preload: false
             params:
@@ -161,8 +179,6 @@ spring:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
-              - spring-ai-mcp-client - fetch
-              - spring-ai-mcp-client - filesystem
             content: classpath:skills/news-watch.st
             params:
               - name: param1

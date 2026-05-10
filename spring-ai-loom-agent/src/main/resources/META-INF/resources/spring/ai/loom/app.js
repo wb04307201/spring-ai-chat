@@ -15,7 +15,7 @@ const API = {
     getConversation: (id) => `/spring/ai/loom/conversation/${id}`,
     deleteConversation: (id) => `/spring/ai/loom/conversation/${id}`,
     stream: '/spring/ai/loom/stream',
-    listMcps: '/spring/ai/chat/loom',
+    listMcps: '/spring/ai/chat/loom/mcp',
     listSkills: '/spring/ai/chat/skill',
     getSkill: (name) => `/spring/ai/chat/skill/${name}`,
     listKnowledge: '/spring/ai/loom/knowledge',

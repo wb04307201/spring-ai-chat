@@ -297,7 +297,7 @@ public class LoomAgentConfiguration {
     @Bean("loomAgentMcpRouter")
     public RouterFunction<ServerResponse> loomAgentMcpRouter(IMcp mcp) {
         RouterFunctions.Builder builder = RouterFunctions.route();
-        builder.GET("spring/ai/chat/loom", request -> ServerResponse.ok().body(mcp.mcps()));
+        builder.GET("spring/ai/chat/loom/mcp", request -> ServerResponse.ok().body(mcp.mcps()));
         return builder.build();
     }
 
