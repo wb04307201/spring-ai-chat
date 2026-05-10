@@ -269,5 +269,5 @@ You can precisely invoke skills through the Skill Library button in the UI. Skil
 
 ---
 
-For more configuration and extension points, see: [Spring AI LoomAgent Customization Guide](CUSTOMIZATION.md)
-For custom UI integration and API reference, see: [Spring AI LoomAgent API Documentation](API.md)
+- For more configuration and extension points, see: [Spring AI LoomAgent Customization Guide](CUSTOMIZATION.md)
+- For custom UI integration and API reference, see: [Spring AI LoomAgent API Documentation](API.md)
