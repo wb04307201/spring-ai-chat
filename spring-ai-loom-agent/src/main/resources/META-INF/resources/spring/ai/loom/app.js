@@ -551,7 +551,9 @@ const ui = {
 
     toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('open');
+        const toggle = document.getElementById('sidebar-toggle');
+        const isOpen = sidebar.classList.toggle('open');
+        toggle.textContent = isOpen ? '✕' : '☰';
     },
 };
 
@@ -1207,6 +1209,7 @@ const responsive = {
         if (window.innerWidth < 768) {
             toggle.style.display = 'flex';
             sidebar.classList.remove('open');
+            toggle.textContent = '☰';
         } else if (window.innerWidth < 1200) {
             toggle.style.display = 'none';
             sidebar.classList.remove('open');
@@ -1437,5 +1440,5 @@ const init = async () => {
 document.addEventListener('DOMContentLoaded', init);
 
 // Expose to global for testing/debugging
-window._loomAgent = {state, api, imageUpload, auth, chat, conversation};
+window._loomAgent = {state, api, imageUpload, auth, chat, conversation, ui};
 window.ui = ui;

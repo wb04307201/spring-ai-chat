@@ -1361,11 +1361,11 @@ textarea::placeholder {
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
-        top: 0;
+        top: var(--header-height);
         left: 0;
         width: var(--sidebar-width);
-        height: 100vh;
-        z-index: 500;
+        height: calc(100vh - var(--header-height));
+        z-index: 400;
         transform: translateX(-100%);
         transition: transform var(--transition-normal) ease-out;
         box-shadow: var(--shadow-xl);
