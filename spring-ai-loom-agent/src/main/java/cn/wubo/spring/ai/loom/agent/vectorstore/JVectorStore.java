@@ -36,10 +36,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * JVector-based VectorStore implementation with disk persistence.
@@ -64,6 +66,8 @@ public class JVectorStore extends AbstractObservationVectorStore {
     private final List<String> documentIds = Collections.synchronizedList(new ArrayList<>());
     // Vector storage keyed by document ID (as VectorFloat)
     private final Map<String, VectorFloat<?>> embeddingMap = new ConcurrentHashMap<>();
+    // Current vector list for search-time RAVV construction
+    private volatile List<VectorFloat<?>> currentVectors = List.of();
     @SuppressWarnings("rawtypes")
     private volatile GraphIndex graphIndex;
     private static final SimpleVectorStoreFilterExpressionConverter FILTER_CONVERTER = new SimpleVectorStoreFilterExpressionConverter();
@@ -101,17 +105,41 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
     private void loadFromDisk(Path path, Path metadataFile) {
         try {
-            TypeReference<Map<String, Document>> typeRef = new TypeReference<>() {};
-            Map<String, Document> loadedDocs = objectMapper.readValue(metadataFile.toFile(), typeRef);
-            documentStore.putAll(loadedDocs);
+            TypeReference<Map<String, Map<String, Object>>> typeRef = new TypeReference<>() {};
+            Map<String, Map<String, Object>> rawDocs = objectMapper.readValue(metadataFile.toFile(), typeRef);
+
+            for (Map.Entry<String, Map<String, Object>> entry : rawDocs.entrySet()) {
+                String id = entry.getKey();
+                Map<String, Object> data = entry.getValue();
+                String text = (String) data.get("text");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> metadata = (Map<String, Object>) data.get("metadata");
+                Double score = data.get("score") != null ? ((Number) data.get("score")).doubleValue() : null;
+
+                if (text != null && !text.isEmpty()) {
+                    Document.Builder builder = Document.builder().id(id).text(text);
+                    if (metadata != null) builder.metadata(metadata);
+                    if (score != null) builder.score(score);
+                    documentStore.put(id, builder.build());
+                } else {
+                    logger.warn("[JVector] Skipping doc id={} with empty text on load", id);
+                }
+            }
+
+            logger.info("[JVector] Loaded {} docs from docs.json", documentStore.size());
 
             Path idsFile = path.resolve("ids.json");
             if (Files.exists(idsFile)) {
                 TypeReference<List<String>> idTypeRef = new TypeReference<>() {};
                 List<String> loadedIds = objectMapper.readValue(idsFile.toFile(), idTypeRef);
-                documentIds.addAll(loadedIds);
+                // Only include IDs that have corresponding documents
+                for (String id : loadedIds) {
+                    if (documentStore.containsKey(id)) {
+                        documentIds.add(id);
+                    }
+                }
             } else {
-                documentIds.addAll(loadedDocs.keySet().stream().sorted().toList());
+                documentIds.addAll(documentStore.keySet().stream().sorted().toList());
             }
 
             for (String id : documentIds) {
@@ -125,6 +153,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
             if (!embeddingMap.isEmpty()) {
                 rebuildGraph();
+                logger.info("[JVector] Rebuilt graph from {} loaded embeddings", embeddingMap.size());
             } else {
                 createNewIndex();
             }
@@ -174,8 +203,9 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
         rwLock.writeLock().lock();
         try {
+            logger.info("[JVector] Adding {} documents", documents.size());
             for (Document document : documents) {
-                logger.debug("Embedding document id={}", document.getId());
+                logger.debug("[JVector] Embedding document id={}, metadata keys={}", document.getId(), document.getMetadata().keySet());
                 float[] embedding = embeddingModel.embed(document);
                 VectorFloat<?> vf = toVectorFloat(embedding);
                 documentStore.put(document.getId(), document);
@@ -185,6 +215,8 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
             rebuildGraph();
             persistToDisk();
+            logger.info("[JVector] After add: totalDocs={}, documentIds={}, embeddingMap={}",
+                    documentStore.size(), documentIds.size(), embeddingMap.size());
         } finally {
             rwLock.writeLock().unlock();
         }
@@ -197,6 +229,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
         if (embeddingMap.isEmpty()) {
             GraphIndexBuilder builder = createGraphBuilder(List.of());
             graphIndex = builder.build(new ListRandomAccessVectorValues(List.of(), dimensions));
+            currentVectors = List.of();
             try {
                 builder.close();
             } catch (IOException e) {
@@ -217,6 +250,7 @@ public class JVectorStore extends AbstractObservationVectorStore {
         GraphIndexBuilder builder = createGraphBuilder(allVectors);
         ListRandomAccessVectorValues ravv = new ListRandomAccessVectorValues(allVectors, dimensions);
         graphIndex = builder.build(ravv);
+        currentVectors = allVectors;
         try {
             builder.close();
         } catch (IOException e) {
@@ -231,7 +265,21 @@ public class JVectorStore extends AbstractObservationVectorStore {
                 Files.createDirectories(path);
             }
 
-            objectMapper.writeValue(path.resolve(METADATA_FILE).toFile(), documentStore);
+            // Convert Documents to serializable format (Jackson can't deserialize Document directly)
+            Map<String, Map<String, Object>> serializableDocs = documentStore.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            e -> {
+                                Document doc = e.getValue();
+                                Map<String, Object> map = new HashMap<>();
+                                map.put("text", doc.getText());
+                                map.put("metadata", doc.getMetadata());
+                                map.put("score", doc.getScore());
+                                return map;
+                            }
+                    ));
+
+            objectMapper.writeValue(path.resolve(METADATA_FILE).toFile(), serializableDocs);
             objectMapper.writeValue(path.resolve("ids.json").toFile(), documentIds);
 
             logger.debug("Persisted {} documents to disk index at {}", documentStore.size(), indexPath);
@@ -287,9 +335,17 @@ public class JVectorStore extends AbstractObservationVectorStore {
     public List<Document> doSimilaritySearch(SearchRequest request) {
         rwLock.readLock().lock();
         try {
+            logger.info("[JVector] Search query='{}', topK={}, threshold={}, filter={}",
+                    request.getQuery(), request.getTopK(), request.getSimilarityThreshold(),
+                    request.hasFilterExpression() ? request.getFilterExpression() : "none");
+            logger.info("[JVector] Index state: totalDocs={}, documentIds.size={}, embeddingMap.size={}, graphIndex={}",
+                    documentStore.size(), documentIds.size(), embeddingMap.size(),
+                    graphIndex == null ? "null" : "size=" + graphIndex.size());
+
             float[] queryEmbedding = embeddingModel.embed(request.getQuery());
 
             if (graphIndex == null || documentIds.isEmpty()) {
+                logger.warn("[JVector] Empty index - returning empty results");
                 return Collections.emptyList();
             }
 
@@ -297,14 +353,20 @@ public class JVectorStore extends AbstractObservationVectorStore {
 
             SearchResult result;
             try {
+                // GraphSearcher.search() 3rd param is RandomAccessVectorValues (NOT acceptOrds)
+                // Must provide the vector data provider for similarity computation
+                ListRandomAccessVectorValues ravv = new ListRandomAccessVectorValues(currentVectors, embeddingModel.dimensions());
                 result = GraphSearcher.search(queryVector, request.getTopK() * 2,
-                        null, similarityFunction, graphIndex, Bits.ALL);
+                        ravv, similarityFunction, graphIndex, Bits.ALL);
+                logger.info("[JVector] HNSW search returned {} candidates", result.getNodes().length);
             } catch (Exception e) {
                 logger.error("Error during JVector search", e);
                 return Collections.emptyList();
             }
 
             List<Document> results = new ArrayList<>();
+            int filteredCount = 0;
+            int belowThresholdCount = 0;
             for (SearchResult.NodeScore nodeScore : result.getNodes()) {
                 String docId = getDocIdByNodeIndex(nodeScore.node);
                 if (docId != null) {
@@ -313,6 +375,17 @@ public class JVectorStore extends AbstractObservationVectorStore {
                         VectorFloat<?> docEmbedding = embeddingMap.get(docId);
                         if (docEmbedding != null) {
                             double score = cosineSimilarity(queryEmbedding, docEmbedding);
+                            boolean passedFilter = !request.hasFilterExpression() || matchesFilter(doc, request.getFilterExpression());
+                            if (!passedFilter) {
+                                filteredCount++;
+                                logger.debug("[JVector] docId={} filtered out by metadata filter", docId);
+                                continue;
+                            }
+                            if (score < request.getSimilarityThreshold()) {
+                                belowThresholdCount++;
+                                logger.debug("[JVector] docId={} score={} below threshold={}", docId, score, request.getSimilarityThreshold());
+                                continue;
+                            }
                             Document scoredDoc = new Document.Builder()
                                     .id(doc.getId())
                                     .text(doc.getText())
@@ -320,17 +393,19 @@ public class JVectorStore extends AbstractObservationVectorStore {
                                     .score(score)
                                     .build();
                             results.add(scoredDoc);
+                            logger.debug("[JVector] docId={} score={} PASSED", docId, score);
                         }
                     }
                 }
             }
 
             List<Document> filteredResults = results.stream()
-                    .filter(doc -> !request.hasFilterExpression() || matchesFilter(doc, request.getFilterExpression()))
-                    .filter(doc -> doc.getScore() >= request.getSimilarityThreshold())
                     .sorted(Comparator.comparing(Document::getScore).reversed())
                     .limit(request.getTopK())
                     .toList();
+
+            logger.info("[JVector] Final results: {} returned (filtered={}, belowThreshold={}, postSorted={})",
+                    filteredResults.size(), filteredCount, belowThresholdCount, results.size());
 
             return filteredResults;
         } finally {
@@ -368,9 +443,11 @@ public class JVectorStore extends AbstractObservationVectorStore {
         }
         StandardEvaluationContext context = new StandardEvaluationContext();
         context.setVariable("metadata", document.getMetadata());
-        Expression expression = expressionParser.parseExpression(
-                FILTER_CONVERTER.convertExpression(filterExpression));
+        String spelExpression = FILTER_CONVERTER.convertExpression(filterExpression);
+        logger.debug("[JVector] SpEL filter: '{}' on metadata: {}", spelExpression, document.getMetadata());
+        Expression expression = expressionParser.parseExpression(spelExpression);
         Boolean result = expression.getValue(context, Boolean.class);
+        logger.debug("[JVector] SpEL result: {} for docId={}", result, document.getId());
         return result != null && result;
     }
 
