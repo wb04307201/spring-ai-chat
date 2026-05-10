@@ -62,7 +62,7 @@
 </dependencyManagement>
 <dependencies>
     <dependency>
-        <groupId>io.github.wb04307201.spring-ai-loom-agent</groupId>
+        <groupId>io.github.wb04307201</groupId>
         <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
         <version>1.1.19</version>
     </dependency>
