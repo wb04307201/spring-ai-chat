@@ -8,7 +8,7 @@
     <artifactId>spring-ai-loom-agent-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>spring-ai-loom-agent</name>
+    <name>spring-ai-loom-agent-parent</name>
     <description>Spring Boot 自动配置库，为 Spring AI 应用一键注入 RAG 知识库、MCP 工具调用和 Skill 技能库，开箱即用的聊天 UI</description>
     <url>https://github.com/wb04307201/spring-ai-loom-agent</url>
 
