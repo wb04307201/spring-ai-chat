@@ -9,6 +9,7 @@ public record FileRecord(
         String fileName,
         long size,
         LocalDateTime uploadTime,
-        String path
+        String path,
+        String usage
 ) {
 }

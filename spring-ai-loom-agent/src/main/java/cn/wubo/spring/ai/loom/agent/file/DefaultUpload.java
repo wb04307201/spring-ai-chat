@@ -62,7 +62,8 @@ public class DefaultUpload implements IUpload {
                     fileName,
                     filePath.toFile().length(),
                     LocalDateTime.now(),
-                    filePath.toString()
+                    filePath.toString(),
+                    "conversation"
             );
             file.insert(fileRecord);
             return fileId;
@@ -84,7 +85,8 @@ public class DefaultUpload implements IUpload {
                     fileName,
                     filePath.toFile().length(),
                     LocalDateTime.now(),
-                    filePath.toString()
+                    filePath.toString(),
+                    "knowledge"
             );
             file.insert(fileRecord);
 
@@ -125,5 +127,16 @@ public class DefaultUpload implements IUpload {
             deleteWithKnowledge(fileRecord.id());
         }
         return knowledge.delete(knowledgeId);
+    }
+
+    @Override
+    public byte[] download(String fileId) {
+        FileRecord fileRecord = file.getById(fileId);
+        Path path = Path.of(fileRecord.path());
+        try {
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            throw new LoomAgentRuntimeException(e);
+        }
     }
 }

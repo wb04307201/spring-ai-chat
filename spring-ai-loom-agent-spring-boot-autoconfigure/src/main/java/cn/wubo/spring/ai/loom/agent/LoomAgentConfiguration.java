@@ -60,6 +60,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.RouterFunctions;
 import org.springframework.web.servlet.function.ServerResponse;
@@ -67,6 +68,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -214,8 +216,8 @@ public class LoomAgentConfiguration {
 
     @ConditionalOnMissingBean(IEmbedTool.class)
     @Bean
-    public IEmbedTool embedTool(ISkillStorage skillStorage) {
-        return new DefaultEmbedTool(skillStorage);
+    public IEmbedTool embedTool(ISkillStorage skillStorage, IFile file) {
+        return new DefaultEmbedTool(skillStorage, file);
     }
 
     @ConditionalOnProperty(name = "spring.ai.mcp.client.stdio", havingValue = "ASYNC")
@@ -375,7 +377,7 @@ public class LoomAgentConfiguration {
     }
 
     @Bean("loomAgentFileRouter")
-    public RouterFunction<ServerResponse> loomAgentFileRouter(VectorStore vectorStore, IUpload upload, IFile file) {
+    public RouterFunction<ServerResponse> loomAgentFileRouter(IUpload upload, IFile file) {
         RouterFunctions.Builder builder = RouterFunctions.route();
         builder.POST("/spring/ai/loom/file/upload", request -> {
             Part part = request.multipartData().getFirst("file");
@@ -389,6 +391,18 @@ public class LoomAgentConfiguration {
         builder.DELETE("/spring/ai/loom/file/{id}", request -> {
             String id = request.pathVariable("id");
             return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(file.delete(id));
+        });
+        builder.GET("/spring/ai/chat/file/download/{id}", request -> {
+            String id = request.pathVariable("id");
+            return ServerResponse.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .build((res, req) -> {
+                        try (OutputStream os = req.getOutputStream()) {
+                            os.write(upload.download(id));
+                            os.flush();
+                        }
+                        return new ModelAndView();
+                    });
         });
         return builder.build();
     }
@@ -406,14 +420,6 @@ public class LoomAgentConfiguration {
         builder.DELETE("/spring/ai/loom/knowledge/{knowledgeId}", request -> {
             String knowledgeId = request.pathVariable("knowledgeId");
             return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(upload.deleteAllKnowledge(knowledgeId));
-        });
-        builder.POST("/spring/ai/loom/file/upload", request -> {
-            Part part = request.multipartData().getFirst("file");
-            if (part == null) {
-                throw new IllegalArgumentException("上传的文件不能为空，请检查请求参数中是否包含名为'file'的文件");
-            }
-            String fileId = upload.upload(part.getInputStream(), part.getSubmittedFileName());
-            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of("fileId", fileId, "status", "success"));
         });
         builder.POST("/spring/ai/loom/knowledge/{knowledgeId}/upload", request -> {
             Part part = request.multipartData().getFirst("file");

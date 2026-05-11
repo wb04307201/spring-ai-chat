@@ -5,4 +5,6 @@ public interface IEmbedTool {
     String skillContents();
 
     String getSkill(String name);
+
+    String addFile(String path);
 }

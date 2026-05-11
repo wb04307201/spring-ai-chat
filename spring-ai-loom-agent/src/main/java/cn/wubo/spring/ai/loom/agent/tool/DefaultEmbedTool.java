@@ -1,19 +1,28 @@
 package cn.wubo.spring.ai.loom.agent.tool;
 
+import cn.wubo.spring.ai.loom.agent.file.IFile;
+import cn.wubo.spring.ai.loom.agent.model.FileRecord;
 import cn.wubo.spring.ai.loom.agent.model.LoomAgentProperties;
 import cn.wubo.spring.ai.loom.agent.model.SkillDocument;
 import cn.wubo.spring.ai.loom.agent.skill.ISkillStorage;
+import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public class DefaultEmbedTool implements IEmbedTool {
 
     private final ISkillStorage skillStorage;
+    private final IFile file;
 
-    public DefaultEmbedTool(ISkillStorage skillStorage) {
+    public DefaultEmbedTool(ISkillStorage skillStorage, IFile file) {
         this.skillStorage = skillStorage;
+        this.file = file;
     }
 
     @Tool(description = "获取技能目录")
@@ -57,5 +66,28 @@ public class DefaultEmbedTool implements IEmbedTool {
 
         sb.append("\n提示：技能内容中类似{param}的参数定义需要用参数值补全");
         return sb.toString();
+    }
+
+    @Tool(description = "根据文件路径将文件信息进行存储，添加成功返回文件id")
+    @Override
+    public String addFile(@ToolParam(description = "文件路径") String path) {
+        Path filePath = Paths.get(path);
+        if (!filePath.toFile().exists()) {
+            return "文件不存在";
+        }
+        String username = UserContextHolder.getCurrentUser();
+        String fileId = UUID.randomUUID().toString();
+        FileRecord fileRecord = new FileRecord(
+                fileId,
+                username,
+                null,
+                filePath.getFileName().toString(),
+                filePath.toFile().length(),
+                LocalDateTime.now(),
+                filePath.toString(),
+                "add"
+        );
+        file.insert(fileRecord);
+        return fileId;
     }
 }
