@@ -52,7 +52,7 @@ public class DefaultChat implements IChat {
 
         if (StringUtils.hasText(chatRequestRecord.fileId())){
             requestSpec.user(u -> u.text(chatRequestRecord.message())
-                    .media(MimeTypeUtils.IMAGE_PNG, file.getResourceById(chatRequestRecord.fileId()))).tools(embedTool);
+                    .media(MimeTypeUtils.ALL, file.getResourceById(chatRequestRecord.fileId()))).tools(embedTool);
         }else{
             requestSpec.user(chatRequestRecord.message()).tools(embedTool);
         }

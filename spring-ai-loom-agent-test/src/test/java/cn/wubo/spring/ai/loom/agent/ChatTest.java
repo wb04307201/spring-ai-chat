@@ -7,8 +7,11 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
+
+import java.io.File;
 
 import static java.lang.Thread.sleep;
 
@@ -20,15 +23,15 @@ class ChatTest {
     private ChatModel chatModel;
 
     @Test
-    void test() throws InterruptedException {
+    void testImg() throws InterruptedException {
         ChatClient chatClient = ChatClient.builder(chatModel).build();
-        var imageResource = new ClassPathResource("/init/test.jpg");
+        var imageResource = new FileSystemResource(new File("./init/test.jpg"));
         log.info("imageResource: {}", imageResource.exists());
 
         Flux<String> response = chatClient
                 .prompt()
                 .user(u -> u.text("图片里有什么?")
-                        .media(MimeTypeUtils.IMAGE_PNG, imageResource))
+                        .media(MimeTypeUtils.ALL, imageResource))
                 .stream()
                 .content();
 

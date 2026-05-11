@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface IChat {
 
-
     Flux<ChatResponse> stream(ChatRequestRecord chatRecord);
-
 
 }

@@ -1,0 +1,18 @@
+spring:
+  h2:
+    console:
+      enabled: true
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen3.6-plus
+          multi_model: true
+          enable_thinking: true
+
+logging:
+  level:
+    org:
+      springframework:
+        ai: DEBUG
