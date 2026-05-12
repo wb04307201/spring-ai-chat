@@ -25,6 +25,7 @@ import cn.wubo.spring.ai.loom.agent.user.*;
 import cn.wubo.spring.ai.loom.agent.vectorstore.JVectorStore;
 import io.modelcontextprotocol.client.McpAsyncClient;
 import io.modelcontextprotocol.client.McpSyncClient;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -70,6 +71,8 @@ import reactor.core.publisher.Flux;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -340,7 +343,7 @@ public class LoomAgentConfiguration {
         private final IChat chat;
 
         @PostMapping(value = "/spring/ai/loom/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-        public SseEmitter stream(@RequestBody ChatRequestRecord chatRecord) {
+        public SseEmitter stream(@RequestBody ChatRequestRecord chatRecord, HttpServletRequest request) {
             // 1. 显式设置超时时间（单位毫秒），0 表示永不超时
             SseEmitter emitter = new SseEmitter(0L);
 
@@ -357,7 +360,7 @@ public class LoomAgentConfiguration {
             CompletableFuture.runAsync(() -> {
                 try {
                     // 4. 订阅 Flux 流并将数据发送给 emitter
-                    Flux<ChatResponse> chatResponseFlux = chat.stream(chatRecord);
+                    Flux<ChatResponse> chatResponseFlux = chat.stream(chatRecord, request);
 
                     chatResponseFlux.subscribe(chatResponse -> {
                         try {
@@ -394,8 +397,11 @@ public class LoomAgentConfiguration {
         });
         builder.GET("/spring/ai/chat/file/download/{id}", request -> {
             String id = request.pathVariable("id");
+            FileRecord fileRecord = file.getById(id);
+            String encodedFileName = URLEncoder.encode(fileRecord.fileName(), StandardCharsets.UTF_8).replaceAll("\\+", "%20");
             return ServerResponse.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName)
                     .build((res, req) -> {
                         try (OutputStream os = req.getOutputStream()) {
                             os.write(upload.download(id));

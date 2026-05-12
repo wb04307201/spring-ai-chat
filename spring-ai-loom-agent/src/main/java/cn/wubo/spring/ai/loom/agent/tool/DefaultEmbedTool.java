@@ -5,9 +5,10 @@ import cn.wubo.spring.ai.loom.agent.model.FileRecord;
 import cn.wubo.spring.ai.loom.agent.model.LoomAgentProperties;
 import cn.wubo.spring.ai.loom.agent.model.SkillDocument;
 import cn.wubo.spring.ai.loom.agent.skill.ISkillStorage;
-import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,14 +69,14 @@ public class DefaultEmbedTool implements IEmbedTool {
         return sb.toString();
     }
 
-    @Tool(description = "根据文件路径将文件信息进行存储，添加成功返回文件id")
+    @Tool(description = "根据文件路径将文件信息进行添加进文件管理，添加成功返回文件id")
     @Override
-    public String addFile(@ToolParam(description = "文件路径") String path) {
+    public String addFile(@ToolParam(description = "文件路径") String path, ToolContext toolContext) {
         Path filePath = Paths.get(path);
         if (!filePath.toFile().exists()) {
             return "文件不存在";
         }
-        String username = UserContextHolder.getCurrentUser();
+        String username = (String) toolContext.getContext().get("username");
         String fileId = UUID.randomUUID().toString();
         FileRecord fileRecord = new FileRecord(
                 fileId,
@@ -89,5 +90,17 @@ public class DefaultEmbedTool implements IEmbedTool {
         );
         file.insert(fileRecord);
         return fileId;
+    }
+
+    @Tool(description = "根据文件id在文件管理检查存在性，如存在则生成文件下载url")
+    @Override
+    public String downloadFileUrl(@ToolParam(description = "文件id") String fileId, ToolContext toolContext) {
+        try {
+            file.getById(fileId);
+        }catch (EmptyResultDataAccessException e){
+            return "文件不存在";
+        }
+        String baseUrl = (String) toolContext.getContext().get("baseUrl");
+        return baseUrl + "/spring/ai/chat/file/download/" + fileId;
     }
 }

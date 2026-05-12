@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
 
@@ -25,13 +26,17 @@ class ChatTest {
     @Test
     void testImg() throws InterruptedException {
         ChatClient chatClient = ChatClient.builder(chatModel).build();
-        var imageResource = new FileSystemResource(new File("./init/test.jpg"));
-        log.info("imageResource: {}", imageResource.exists());
+        var imageResource1 = new FileSystemResource(new File("./test/img1.jpg"));
+        var imageResource2 = new FileSystemResource(new File("./test/img2.jpg"));
+        var pdfResource1 = new FileSystemResource(new File("./test/pdf1.pdf"));
 
         Flux<String> response = chatClient
                 .prompt()
                 .user(u -> u.text("图片里有什么?")
-                        .media(MimeTypeUtils.ALL, imageResource))
+                        .media(MimeTypeUtils.ALL, imageResource1)
+                        .media(MimeTypeUtils.ALL, imageResource2)
+//                        .media(MimeTypeUtils.ALL, pdfResource1)
+                )
                 .stream()
                 .content();
 

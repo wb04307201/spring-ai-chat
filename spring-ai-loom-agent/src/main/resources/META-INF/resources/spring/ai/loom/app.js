@@ -44,7 +44,7 @@ const state = {
     mcps: [],
     skills: [],
     currentChatMessageId: null,
-    pendingImage: null, // { fileId, objectUrl, fileName }
+    pendingImages: [], // array of { fileId, objectUrl, fileName }
 };
 
 // ===================== §3 Utility Functions =====================
@@ -665,7 +665,7 @@ const chat = {
             enableRag: state.enableRag,
             knowledgeId: state.selectedKnowledgeId || null,
             authentication: state.token || '',
-            fileId: state.pendingImage?.fileId || null,
+            fileIds: state.pendingImages.length > 0 ? state.pendingImages.map(img => img.fileId) : null,
         };
 
         // Clear pending image after capturing fileId
@@ -1223,23 +1223,13 @@ const responsive = {
 const imageUpload = {
     ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'],
     MAX_SIZE: 10 * 1024 * 1024, // 10MB
-    _objectUrl: null, // track current object URL for cleanup
 
     init() {
         const addBtn = document.getElementById('image-add-btn');
         const fileInput = document.getElementById('image-file-input');
 
         addBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => this.handleFile(e));
-        document.getElementById('thumbnail-remove').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.remove();
-        });
-        document.getElementById('image-thumbnail').addEventListener('dblclick', () => {
-            if (state.pendingImage) {
-                this.showFullscreen(state.pendingImage.objectUrl);
-            }
-        });
+        fileInput.addEventListener('change', (e) => this.handleFiles(e));
     },
 
     validate(file) {
@@ -1252,73 +1242,119 @@ const imageUpload = {
         return { valid: true };
     },
 
-    async handleFile(event) {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    async handleFiles(event) {
+        const input = event.target;
+        const files = Array.from(input.files || []);
+        if (files.length === 0) return;
 
         // Reset file input so same file can be selected again
-        event.target.value = '';
+        input.value = '';
 
-        const validation = this.validate(file);
-        if (!validation.valid) {
-            showToast(validation.error, 'error');
-            return;
-        }
-
-        // Show instant thumbnail with loading state
-        const objectUrl = URL.createObjectURL(file);
-        this.renderThumbnail(null, objectUrl, file.name);
-
-        // Upload to server
-        try {
-            const { fileId } = await api.uploadImage(file);
-
-            // Revoke old object URL
-            if (this._objectUrl) {
-                URL.revokeObjectURL(this._objectUrl);
+        for (const file of files) {
+            const validation = this.validate(file);
+            if (!validation.valid) {
+                showToast(validation.error, 'error');
+                continue;
             }
 
-            // Save to state
-            state.pendingImage = { fileId, objectUrl, fileName: file.name };
-            this._objectUrl = objectUrl;
+            // Show instant thumbnail with loading state
+            const objectUrl = URL.createObjectURL(file);
+            const tempId = this.renderThumbnail(null, objectUrl, file.name);
 
-            // Update thumbnail (remove loading state)
-            this.renderThumbnail(fileId, objectUrl, file.name);
-        } catch (err) {
-            URL.revokeObjectURL(objectUrl);
-            this.remove();
-            showToast('图片上传失败：' + err.message, 'error');
+            // Upload to server
+            try {
+                const { fileId } = await api.uploadImage(file);
+                const entry = state.pendingImages.find(img => img.objectUrl === objectUrl);
+                if (entry) {
+                    entry.fileId = fileId;
+                }
+                this.updateThumbnailFileId(tempId, fileId);
+            } catch (err) {
+                URL.revokeObjectURL(objectUrl);
+                this.removeImageByObjectUrl(objectUrl);
+                showToast('图片上传失败：' + err.message, 'error');
+            }
         }
     },
 
     renderThumbnail(fileId, objectUrl, fileName) {
         const uploadArea = document.getElementById('image-upload-area');
-        const thumbnailImg = document.getElementById('thumbnail-img');
-        const loadingEl = document.getElementById('thumbnail-loading');
-
-        if (!objectUrl) {
-            uploadArea.style.display = 'none';
-            return;
-        }
+        const container = document.getElementById('image-thumbnails');
 
         uploadArea.style.display = 'block';
-        thumbnailImg.src = objectUrl;
-        thumbnailImg.alt = fileName;
 
-        if (fileId) {
-            loadingEl.style.display = 'none';
-        } else {
-            loadingEl.style.display = 'flex';
+        const thumbId = 'thumb-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        const div = document.createElement('div');
+        div.className = 'image-thumbnail';
+        div.id = thumbId;
+        div.innerHTML = `
+            <img src="${objectUrl}" alt="${fileName}">
+            <div class="thumbnail-loading"><div class="spinner"></div></div>
+            <button class="thumbnail-remove" title="移除图片">&times;</button>`;
+
+        // Double-click to view fullscreen
+        div.addEventListener('dblclick', () => {
+            this.showFullscreen(objectUrl);
+        });
+
+        // Remove button
+        div.querySelector('.thumbnail-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.removeImageById(thumbId, objectUrl);
+        });
+
+        container.appendChild(div);
+
+        // Track in state
+        state.pendingImages.push({ fileId, objectUrl, fileName });
+
+        return thumbId;
+    },
+
+    updateThumbnailFileId(thumbId, fileId) {
+        const thumb = document.getElementById(thumbId);
+        if (!thumb) return;
+        const loading = thumb.querySelector('.thumbnail-loading');
+        if (loading) loading.style.display = 'none';
+    },
+
+    removeImageById(thumbId, objectUrl) {
+        // Remove from state
+        state.pendingImages = state.pendingImages.filter(img => img.objectUrl !== objectUrl);
+        URL.revokeObjectURL(objectUrl);
+
+        // Remove from DOM
+        const thumb = document.getElementById(thumbId);
+        if (thumb) thumb.remove();
+
+        // Hide area if no images left
+        if (state.pendingImages.length === 0) {
+            document.getElementById('image-upload-area').style.display = 'none';
+        }
+    },
+
+    removeImageByObjectUrl(objectUrl) {
+        const entry = state.pendingImages.find(img => img.objectUrl === objectUrl);
+        if (!entry) return;
+        // Find DOM element by img src
+        const container = document.getElementById('image-thumbnails');
+        for (const thumb of container.querySelectorAll('.image-thumbnail')) {
+            const img = thumb.querySelector('img');
+            if (img && img.src === objectUrl) {
+                this.removeImageById(thumb.id, objectUrl);
+                return;
+            }
         }
     },
 
     remove() {
-        if (state.pendingImage?.objectUrl) {
-            URL.revokeObjectURL(state.pendingImage.objectUrl);
+        // Clear all images
+        for (const img of state.pendingImages) {
+            URL.revokeObjectURL(img.objectUrl);
         }
-        state.pendingImage = null;
-        this._objectUrl = null;
-        this.renderThumbnail(null, null, null);
+        state.pendingImages = [];
+        document.getElementById('image-thumbnails').innerHTML = '';
+        document.getElementById('image-upload-area').style.display = 'none';
     },
 
     clear() {

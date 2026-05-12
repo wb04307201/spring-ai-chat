@@ -29,7 +29,7 @@ CREATE TABLE file_info
     size        BIGINT NOT NULL,
     upload_time TIMESTAMP NOT NULL,
     path  VARCHAR(500),
-    usage VARCHAR(20) NOT NULL,
+    usage VARCHAR(20) NOT NULL
 
 );
 

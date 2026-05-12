@@ -7,6 +7,7 @@ import cn.wubo.spring.ai.loom.agent.model.UserConversationRecord;
 import cn.wubo.spring.ai.loom.agent.tool.IEmbedTool;
 import cn.wubo.spring.ai.loom.agent.user.IUserConversation;
 import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -17,6 +18,8 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class DefaultChat implements IChat {
@@ -40,7 +43,7 @@ public class DefaultChat implements IChat {
     }
 
     @Override
-    public Flux<ChatResponse> stream(ChatRequestRecord chatRequestRecord) {
+    public Flux<ChatResponse> stream(ChatRequestRecord chatRequestRecord, HttpServletRequest request) {
         String contextUser = UserContextHolder.getCurrentUser();
         final String username = (contextUser != null) ? contextUser : user.getUsernameByAuthentication(chatRequestRecord.authentication());
         boolean exists = userConversation.exists(new UserConversationRecord(username, chatRequestRecord.conversationId()));
@@ -49,13 +52,23 @@ public class DefaultChat implements IChat {
         }
 
         ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt();
-
-        if (StringUtils.hasText(chatRequestRecord.fileId())){
-            requestSpec.user(u -> u.text(chatRequestRecord.message())
-                    .media(MimeTypeUtils.ALL, file.getResourceById(chatRequestRecord.fileId()))).tools(embedTool);
+        if (chatRequestRecord.fileIds() != null && !chatRequestRecord.fileIds().isEmpty()) {
+            requestSpec.user(u -> {
+                u.text(chatRequestRecord.message());
+                for (String fileId : chatRequestRecord.fileIds()) {
+                    u.media(MimeTypeUtils.ALL, file.getResourceById(fileId));
+                }
+            }).tools(embedTool);
         }else{
             requestSpec.user(chatRequestRecord.message()).tools(embedTool);
         }
+        Map<String, Object> props = new HashMap<>();
+        props.put("username", username);
+        String scheme = request.getScheme();         // http 或 https
+        String serverName = request.getServerName(); // localhost 或 IP
+        int serverPort = request.getServerPort();    // 8080
+        props.put("baseUrl", scheme + "://" + serverName + ":" + serverPort);
+        requestSpec.toolContext(props);
 
         requestSpec.advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatRequestRecord.conversationId()));
 

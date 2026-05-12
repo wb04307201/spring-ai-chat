@@ -40,8 +40,11 @@ public class DefaultUserConversation implements IUserConversation {
         List<ConversationRecord> conversations = new ArrayList<>();
         for (UserConversationRecord userConversationRecord : userConversationRecords) {
             List<Message> messages = chatMemoryRepository.findByConversationId(userConversationRecord.conversationId());
-            String text = messages.get(0).getText();
-            String preview = text.length() > 20 ? text.substring(0, 20) : text;
+            String preview = "新对话";
+            if (!messages.isEmpty()) {
+                String text = messages.get(0).getText();
+                preview = text != null && text.length() > 20 ? text.substring(0, 20) : (text != null ? text : "新对话");
+            }
             conversations.add(new ConversationRecord(userConversationRecord.conversationId(), preview));
         }
         return conversations;

@@ -537,6 +537,12 @@ textarea::placeholder {
     margin-top: 12px;
 }
 
+.image-thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .image-thumbnail {
     width: 80px;
     height: 80px;
