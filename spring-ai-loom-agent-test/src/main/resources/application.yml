@@ -7,6 +7,11 @@ spring:
     console:
       enabled: true
   ai:
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
     zhipuai:
       api-key: ${ZHIPUAI_API_KEY}
     dashscope:
@@ -179,7 +184,7 @@ spring:
               - spring-ai-mcp-client - time
               - spring-ai-mcp-client - sequential-thinking
               - spring-ai-mcp-client - bing-search
-            content: classpath:skills/news-watch.st
+            content: classpath:skills/month-evrnt.st
             params:
               - name: param1
                 label: 主题
@@ -191,11 +196,7 @@ spring:
               - spring-ai-mcp-client - http-client-mcp
             content: classpath:skills/http.st
             default-preload: false
-    chat:
-      memory:
-        repository:
-          jdbc:
-            initialize-schema: always
+
   servlet:
     multipart:
       max-file-size: 10MB
