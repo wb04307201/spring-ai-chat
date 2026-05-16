@@ -26,13 +26,11 @@
 ## 快速添加聊天界面
 ### 1. 引入聊天依赖
 ```xml
-<dependencies>
-    <dependency>
-        <groupId>io.github.wb04307201</groupId>
-        <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
-        <version>1.1.20</version>
-    </dependency>
-</dependencies>
+<dependency>
+    <groupId>io.github.wb04307201</groupId>
+    <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
+    <version>1.1.20</version>
+</dependency>
 ```
 
 ### 2. 添加Spring AI模型依赖
