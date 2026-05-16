@@ -34,16 +34,16 @@ spring:
 #        options:
 #          model: qwen3-embedding
 #      base-url: http://localhost:11434
-    vectorstore:
+#    vectorstore:
 #      redis:
 #        initialize-schema: true
 #        index-name: custom-index
 #        prefix: custom-prefix
-      qdrant:
-        host: localhost
-        port: 6334
-#        collection-name: custom-collection-name
-        collection-name: qwen-collection-name
+#      qdrant:
+#        host: localhost
+#        port: 6334
+##        collection-name: custom-collection-name
+#        collection-name: qwen-collection-name
     mcp:
       client:
         stdio:
@@ -214,5 +214,3 @@ logging:
     org:
       springframework:
         ai: DEBUG
-server:
-  port: 8089
