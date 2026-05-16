@@ -61,12 +61,14 @@ public class DefaultChat implements IChat {
 
         ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt();
         if (chatRequestRecord.fileIds() != null && !chatRequestRecord.fileIds().isEmpty()) {
-            // Accumulate document text content before building the message
             StringBuilder extraText = new StringBuilder();
             for (String fileId : chatRequestRecord.fileIds()) {
                 var fileRecord = file.getById(fileId);
                 if (fileRecord == null) continue;
                 if (isDocument(fileRecord.mimeType())) {
+                    if(extraText.isEmpty()){
+                        extraText.append("以下是用户上传的文档的内容提取结果:");
+                    }
                     Tika tika = new Tika();
                     try {
                         String content = tika.parseToString(file.getResourceById(fileId).getInputStream());
@@ -77,10 +79,13 @@ public class DefaultChat implements IChat {
                     }
                 }
             }
+            if (!extraText.isEmpty()){
+                extraText.append("\n\n以上是文档内容提取结果，请根据文档内容进行回答。");
+                requestSpec.system(extraText.toString());
+            }
 
-            String finalMessage = chatRequestRecord.message() + extraText;
             requestSpec.user(u -> {
-                u.text(finalMessage);
+                u.text(chatRequestRecord.message());
                 for (String fileId : chatRequestRecord.fileIds()) {
                     try {
                         var fileRecord = file.getById(fileId);
@@ -89,7 +94,7 @@ public class DefaultChat implements IChat {
                             u.media(MimeTypeUtils.IMAGE_JPEG, file.getResourceById(fileId));
                         }
                     } catch (Exception e) {
-                        // Skip
+                        log.error("Failed to add media", e);
                     }
                 }
             }).tools(embedTool);
