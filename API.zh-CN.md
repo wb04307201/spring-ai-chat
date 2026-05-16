@@ -160,7 +160,7 @@ Accept: text/event-stream
 | `mcps` | string[] | 否 | 需要启用的 MCP 工具名称列表 |
 | `authentication` | string | 否 | 认证令牌 |
 | `knowledgeId` | string | 否 | 知识库 ID，用于 RAG 检索 |
-| `fileId` | string | 否 | 关联的文件 ID |
+| `fileIds` | string[] | 否 | 关联的文件 ID 列表（支持多文件） |
 
 **示例**:
 
@@ -171,7 +171,7 @@ Accept: text/event-stream
   "knowledgeId": "kb-001",
   "mcps": [],
   "authentication": "",
-  "fileId": ""
+  "fileIds": ["file-abc123", "file-def456"]
 }
 ```
 
@@ -248,6 +248,8 @@ GET /spring/ai/loom/file
 | `size` | number | 文件大小（字节） |
 | `uploadTime` | string | 上传时间 (ISO 8601) |
 | `path` | string | 文件路径 |
+| `usage` | string | 文件用途：`conversation`（对话）/ `knowledge`（知识库）/ `add`（MCP 工具注册） |
+| `mimeType` | string | 文件 MIME 类型 |
 
 **示例**:
 
@@ -260,7 +262,9 @@ GET /spring/ai/loom/file
     "fileName": "report.pdf",
     "size": 102400,
     "uploadTime": "2026-05-10T10:30:00",
-    "path": "/files/report.pdf"
+    "path": "/files/report.pdf",
+    "usage": "conversation",
+    "mimeType": "application/pdf"
   }
 ]
 ```
@@ -280,6 +284,22 @@ DELETE /spring/ai/loom/file/{id}
 | `id` | string | 文件 ID |
 
 **响应**: `number` — 删除的记录数
+
+---
+
+### 4.4 下载文件
+
+```
+GET /spring/ai/chat/file/download/{id}
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|---|---|---|
+| `id` | string | 文件 ID |
+
+**响应**: 文件二进制流，`Content-Disposition` 头包含原始文件名。
 
 ---
 
@@ -622,7 +642,7 @@ GET /spring/ai/chat/loom/mcp
   "mcps": ["string"],
   "authentication": "string",
   "knowledgeId": "string",
-  "fileId": "string"
+  "fileIds": ["string"]
 }
 ```
 
@@ -672,7 +692,9 @@ GET /spring/ai/chat/loom/mcp
   "fileName": "string",
   "size": 0,
   "uploadTime": "2026-05-10T10:30:00",
-  "path": "string"
+  "path": "string",
+  "usage": "conversation",
+  "mimeType": "application/pdf"
 }
 ```
 
@@ -773,16 +795,17 @@ GET /spring/ai/chat/loom/mcp
 | 7 | `POST` | `/spring/ai/loom/file/upload` | 上传文件 |
 | 8 | `GET` | `/spring/ai/loom/file` | 获取文件列表 |
 | 9 | `DELETE` | `/spring/ai/loom/file/{id}` | 删除文件 |
-| 10 | `GET` | `/spring/ai/loom/knowledge/checkKnowledgeUpload` | 检查知识库状态 |
-| 11 | `GET` | `/spring/ai/loom/knowledge` | 获取知识库列表 |
-| 12 | `PUT` | `/spring/ai/loom/knowledge` | 创建知识库 |
-| 13 | `DELETE` | `/spring/ai/loom/knowledge/{id}` | 删除知识库（级联清理） |
-| 14 | `POST` | `/spring/ai/loom/knowledge/{id}/upload` | 上传文件到知识库 |
-| 15 | `GET` | `/spring/ai/loom/knowledge/{id}/file` | 获取知识库文件列表 |
-| 16 | `DELETE` | `/spring/ai/loom/knowledge/{id}/file/{fileId}` | 删除知识库文件 |
-| 17 | `GET` | `/spring/ai/chat/loom/mcp` | 获取 MCP 工具列表 |
-| 18 | `GET` | `/spring/ai/chat/skill` | 获取技能列表 |
-| 19 | `PUT` | `/spring/ai/chat/skill` | 创建/更新技能 |
-| 20 | `GET` | `/spring/ai/chat/skill/{name}` | 获取单个技能 |
-| 21 | `DELETE` | `/spring/ai/chat/skill/{name}` | 删除技能 |
+| 10 | `GET` | `/spring/ai/chat/file/download/{id}` | 下载文件 |
+| 11 | `GET` | `/spring/ai/loom/knowledge/checkKnowledgeUpload` | 检查知识库状态 |
+| 12 | `GET` | `/spring/ai/loom/knowledge` | 获取知识库列表 |
+| 13 | `PUT` | `/spring/ai/loom/knowledge` | 创建知识库 |
+| 14 | `DELETE` | `/spring/ai/loom/knowledge/{id}` | 删除知识库（级联清理） |
+| 15 | `POST` | `/spring/ai/loom/knowledge/{id}/upload` | 上传文件到知识库 |
+| 16 | `GET` | `/spring/ai/loom/knowledge/{id}/file` | 获取知识库文件列表 |
+| 17 | `DELETE` | `/spring/ai/loom/knowledge/{id}/file/{fileId}` | 删除知识库文件 |
+| 18 | `GET` | `/spring/ai/chat/loom/mcp` | 获取 MCP 工具列表 |
+| 19 | `GET` | `/spring/ai/chat/skill` | 获取技能列表 |
+| 20 | `PUT` | `/spring/ai/chat/skill` | 创建/更新技能 |
+| 21 | `GET` | `/spring/ai/chat/skill/{name}` | 获取单个技能 |
+| 22 | `DELETE` | `/spring/ai/chat/skill/{name}` | 删除技能 |
 | — | `GET` | `/spring/ai/loom` | 重定向到 UI 首页 |
