@@ -29,13 +29,11 @@
 ### 1. Add LoomAgent Dependency
 
 ```xml
-<dependencies>
-    <dependency>
-        <groupId>io.github.wb04307201</groupId>
-        <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
-        <version>1.1.20</version>
-    </dependency>
-</dependencies>
+<dependency>
+  <groupId>io.github.wb04307201</groupId>
+  <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
+  <version>1.1.20</version>
+</dependency>
 ```
 
 ### 2. Add a Spring AI Model Dependency
