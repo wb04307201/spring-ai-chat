@@ -10,9 +10,11 @@ import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,8 +51,37 @@ public class DefaultUpload implements IUpload {
         Files.deleteIfExists(path);
     }
 
+    private String resolveMimeType(String fileName, String mimeType) {
+        if (StringUtils.hasText(mimeType) && !"application/octet-stream".equals(mimeType)) return mimeType;
+        String guessed = URLConnection.guessContentTypeFromName(fileName);
+        if (guessed != null) return guessed;
+        // Fallback: detect MIME type from file extension
+        String ext = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase() : "";
+        return switch (ext) {
+            case "pdf" -> "application/pdf";
+            case "doc" -> "application/msword";
+            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "xls" -> "application/vnd.ms-excel";
+            case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            case "ppt" -> "application/vnd.ms-powerpoint";
+            case "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            case "txt" -> "text/plain";
+            case "csv" -> "text/csv";
+            case "md" -> "text/markdown";
+            case "html", "htm" -> "text/html";
+            case "xml" -> "text/xml";
+            case "rtf" -> "application/rtf";
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "gif" -> "image/gif";
+            case "bmp" -> "image/bmp";
+            case "webp" -> "image/webp";
+            default -> "application/octet-stream";
+        };
+    }
+
     @Override
-    public String upload(InputStream is, String fileName) {
+    public String upload(InputStream is, String fileName, String mimeType) {
         String username = UserContextHolder.getCurrentUser();
         try {
             String fileId = UUID.randomUUID().toString();
@@ -63,7 +94,8 @@ public class DefaultUpload implements IUpload {
                     filePath.toFile().length(),
                     LocalDateTime.now(),
                     filePath.toString(),
-                    "conversation"
+                    "conversation",
+                    resolveMimeType(fileName, mimeType)
             );
             file.insert(fileRecord);
             return fileId;
@@ -73,7 +105,7 @@ public class DefaultUpload implements IUpload {
     }
 
     @Override
-    public String uploadWithKnowledge(InputStream is, String fileName, String knowledgeId) {
+    public String uploadWithKnowledge(InputStream is, String fileName, String mimeType, String knowledgeId) {
         String username = UserContextHolder.getCurrentUser();
         try {
             String fileId = UUID.randomUUID().toString();
@@ -86,7 +118,8 @@ public class DefaultUpload implements IUpload {
                     filePath.toFile().length(),
                     LocalDateTime.now(),
                     filePath.toString(),
-                    "knowledge"
+                    "knowledge",
+                    resolveMimeType(fileName, mimeType)
             );
             file.insert(fileRecord);
 
@@ -107,11 +140,13 @@ public class DefaultUpload implements IUpload {
     }
 
     @Override
-    public int deleteWithKnowledge(String fileId) {
-        List<FileDocumentRecord> fileDocumentRecords = fileDocument.getListByFileId(fileId);
-        vectorStore.delete(fileDocumentRecords.stream().map(FileDocumentRecord::documentId).toList());
-        fileDocument.deleteByFileId(fileId);
+    public int delete(String fileId) {
         FileRecord fileRecord = file.getById(fileId);
+        if (StringUtils.hasText(fileRecord.knowledgeId())){
+            List<FileDocumentRecord> fileDocumentRecords = fileDocument.getListByFileId(fileId);
+            vectorStore.delete(fileDocumentRecords.stream().map(FileDocumentRecord::documentId).toList());
+            fileDocument.deleteByFileId(fileId);
+        }
         try {
             removeFile(Paths.get(fileRecord.path()));
         } catch (IOException e) {
@@ -124,7 +159,7 @@ public class DefaultUpload implements IUpload {
     public int deleteAllKnowledge(String knowledgeId) {
         List<FileRecord> fileRecords = file.list(knowledgeId);
         for (FileRecord fileRecord : fileRecords) {
-            deleteWithKnowledge(fileRecord.id());
+            delete(fileRecord.id());
         }
         return knowledge.delete(knowledgeId);
     }

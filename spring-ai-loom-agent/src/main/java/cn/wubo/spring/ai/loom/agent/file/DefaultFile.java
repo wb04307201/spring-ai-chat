@@ -28,7 +28,8 @@ public class DefaultFile implements IFile {
                 rs.getLong("size"),
                 rs.getTimestamp("upload_time") != null ? rs.getTimestamp("upload_time").toLocalDateTime() : null,
                 rs.getString("path"),
-                rs.getString("usage")
+                rs.getString("usage"),
+                rs.getString("mime_type")
         );
     }
 
@@ -54,7 +55,7 @@ public class DefaultFile implements IFile {
     @Override
     public int insert(FileRecord fileInfo) {
         return jdbcTemplate.update(
-                "INSERT INTO file_info (id, username, knowledge_id, file_name, size, upload_time, path, usage) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO file_info (id, username, knowledge_id, file_name, size, upload_time, path, usage, mime_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 fileInfo.id(),
                 fileInfo.username(),
                 fileInfo.knowledgeId(),
@@ -62,7 +63,8 @@ public class DefaultFile implements IFile {
                 fileInfo.size(),
                 fileInfo.uploadTime(),
                 fileInfo.path(),
-                fileInfo.usage()
+                fileInfo.usage(),
+                fileInfo.mimeType()
         );
     }
 

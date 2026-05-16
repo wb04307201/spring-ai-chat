@@ -8,6 +8,10 @@ import cn.wubo.spring.ai.loom.agent.tool.IEmbedTool;
 import cn.wubo.spring.ai.loom.agent.user.IUserConversation;
 import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -18,11 +22,14 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public class DefaultChat implements IChat {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultChat.class);
 
     private final ChatClient chatClient;
     private final Optional<RetrievalAugmentationAdvisor> retrievalAugmentationAdvisor;
@@ -44,6 +51,7 @@ public class DefaultChat implements IChat {
 
     @Override
     public Flux<ChatResponse> stream(ChatRequestRecord chatRequestRecord, HttpServletRequest request) {
+        log.info("Chat request: message={}, fileIds={}", chatRequestRecord.message(), chatRequestRecord.fileIds());
         String contextUser = UserContextHolder.getCurrentUser();
         final String username = (contextUser != null) ? contextUser : user.getUsernameByAuthentication(chatRequestRecord.authentication());
         boolean exists = userConversation.exists(new UserConversationRecord(username, chatRequestRecord.conversationId()));
@@ -53,10 +61,36 @@ public class DefaultChat implements IChat {
 
         ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt();
         if (chatRequestRecord.fileIds() != null && !chatRequestRecord.fileIds().isEmpty()) {
+            // Accumulate document text content before building the message
+            StringBuilder extraText = new StringBuilder();
+            for (String fileId : chatRequestRecord.fileIds()) {
+                var fileRecord = file.getById(fileId);
+                if (fileRecord == null) continue;
+                if (isDocument(fileRecord.mimeType())) {
+                    Tika tika = new Tika();
+                    try {
+                        String content = tika.parseToString(file.getResourceById(fileId).getInputStream());
+                        extraText.append("\n\n--- ").append(fileRecord.fileName()).append(" ---\n\n").append(content);
+                    } catch (IOException | TikaException e) {
+                        log.error("Failed to parse document: {}", fileRecord.fileName(), e);
+                        extraText.append("\n\n--- ").append(fileRecord.fileName()).append(" ---\n\n文件无法解析: ").append(e.getMessage());
+                    }
+                }
+            }
+
+            String finalMessage = chatRequestRecord.message() + extraText;
             requestSpec.user(u -> {
-                u.text(chatRequestRecord.message());
+                u.text(finalMessage);
                 for (String fileId : chatRequestRecord.fileIds()) {
-                    u.media(MimeTypeUtils.ALL, file.getResourceById(fileId));
+                    try {
+                        var fileRecord = file.getById(fileId);
+                        if (fileRecord == null) continue;
+                        if (isImage(fileRecord.mimeType())) {
+                            u.media(MimeTypeUtils.IMAGE_JPEG, file.getResourceById(fileId));
+                        }
+                    } catch (Exception e) {
+                        // Skip
+                    }
                 }
             }).tools(embedTool);
         }else{
@@ -74,7 +108,7 @@ public class DefaultChat implements IChat {
 
         if (retrievalAugmentationAdvisor.isPresent() && StringUtils.hasText(chatRequestRecord.knowledgeId())) {
             requestSpec.advisors(retrievalAugmentationAdvisor.get());
-            requestSpec.advisors(advisor -> advisor.param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, "knowledgeId == '" + chatRequestRecord.knowledgeId() + "' && username == '" + username + "'"));
+            requestSpec.advisors(advisor -> advisor.param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, "type == 'knowledge' && knowledgeId == '" + chatRequestRecord.knowledgeId() + "' && username == '" + username + "'"));
         }
 
         ToolCallbackProvider toolCallbackProvider = mcp.getToolCallbackProvider(chatRequestRecord.mcps());
@@ -84,5 +118,32 @@ public class DefaultChat implements IChat {
         }
 
         return requestSpec.stream().chatResponse();
+    }
+
+    private boolean isImage(String mimeType) {
+        if (mimeType == null) {
+            return false;
+        }
+        return mimeType.startsWith("image/");
+    }
+
+    private boolean isDocument(String mimeType) {
+        if (mimeType == null) {
+            return false;
+        }
+        return mimeType.equals("application/pdf") ||
+                mimeType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document") ||
+                mimeType.equals("application/vnd.openxmlformats-officedocument.presentationml.presentation") ||
+                mimeType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") ||
+                mimeType.equals("text/markdown") ||
+                mimeType.equals("text/plain") ||
+                mimeType.equals("application/msword") ||
+                mimeType.equals("application/vnd.ms-powerpoint") ||
+                mimeType.equals("application/vnd.ms-excel") ||
+                mimeType.equals("text/html") ||
+                mimeType.equals("text/csv") ||
+                mimeType.equals("text/xml") ||
+                mimeType.equals("application/rtf") ||
+                mimeType.equals("text/rtf");
     }
 }

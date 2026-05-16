@@ -24,18 +24,16 @@ class ChatTest {
     private ChatModel chatModel;
 
     @Test
-    void testImg() throws InterruptedException {
+    void test() throws InterruptedException {
         ChatClient chatClient = ChatClient.builder(chatModel).build();
         var imageResource1 = new FileSystemResource(new File("./test/img1.jpg"));
         var imageResource2 = new FileSystemResource(new File("./test/img2.jpg"));
-        var pdfResource1 = new FileSystemResource(new File("./test/pdf1.pdf"));
 
         Flux<String> response = chatClient
                 .prompt()
-                .user(u -> u.text("图片里有什么?")
+                .user(u -> u.text("都是什么?")
                         .media(MimeTypeUtils.ALL, imageResource1)
                         .media(MimeTypeUtils.ALL, imageResource2)
-//                        .media(MimeTypeUtils.ALL, pdfResource1)
                 )
                 .stream()
                 .content();

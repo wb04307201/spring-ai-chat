@@ -10,6 +10,7 @@ public record FileRecord(
         long size,
         LocalDateTime uploadTime,
         String path,
-        String usage
+        String usage,
+        String mimeType
 ) {
 }

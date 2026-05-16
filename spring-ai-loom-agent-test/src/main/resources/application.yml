@@ -3,6 +3,8 @@ spring:
       url: jdbc:h2:file:./.local/datasource/db;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
       username: sa
       password: 123456
+  flyway:
+    validate-on-migrate: false
   h2:
     console:
       enabled: true
@@ -32,16 +34,16 @@ spring:
 #        options:
 #          model: qwen3-embedding
 #      base-url: http://localhost:11434
-#    vectorstore:
+    vectorstore:
 #      redis:
 #        initialize-schema: true
 #        index-name: custom-index
 #        prefix: custom-prefix
-#      qdrant:
-#        host: localhost
-#        port: 6334
-##        collection-name: custom-collection-name
-#        collection-name: qwen-collection-name
+      qdrant:
+        host: localhost
+        port: 6334
+#        collection-name: custom-collection-name
+        collection-name: qwen-collection-name
     mcp:
       client:
         stdio:
@@ -207,9 +209,10 @@ spring:
 #      port: 9379
 #      password: 123456
 
-
 logging:
   level:
     org:
       springframework:
         ai: DEBUG
+server:
+  port: 8089

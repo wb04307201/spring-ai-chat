@@ -29,8 +29,8 @@ CREATE TABLE file_info
     size        BIGINT NOT NULL,
     upload_time TIMESTAMP NOT NULL,
     path  VARCHAR(500),
-    usage VARCHAR(20) NOT NULL
-
+    usage VARCHAR(20) NOT NULL,
+    mime_type VARCHAR(256) NOT NULL DEFAULT 'application/octet-stream'
 );
 
 CREATE INDEX idx_file_username ON file_info(username);

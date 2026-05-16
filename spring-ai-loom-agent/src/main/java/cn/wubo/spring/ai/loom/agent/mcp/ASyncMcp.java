@@ -35,7 +35,7 @@ public class ASyncMcp extends AbstractMcp {
 
     public ToolCallbackProvider getToolCallbackProvider(List<String> mcps) {
         ToolCallbackProvider toolCallbackProvider = null;
-        if (!mcpAsyncClients.isEmpty()) {
+        if (!mcpAsyncClients.isEmpty() && mcps != null && !mcps.isEmpty()) {
             List<McpAsyncClient> tempMcpAsyncClients = new ArrayList<>();
             for (McpAsyncClient mcpAsyncClient : mcpAsyncClients) {
                 if (mcps.contains(mcpAsyncClient.getClientInfo().name())) {

@@ -36,7 +36,7 @@ public class SyncMcp extends AbstractMcp {
 
     public ToolCallbackProvider getToolCallbackProvider(List<String> mcps) {
         ToolCallbackProvider toolCallbackProvider = null;
-        if (!mcpSyncClients.isEmpty()) {
+        if (!mcpSyncClients.isEmpty() && mcps != null && !mcps.isEmpty()) {
             List<McpSyncClient> tempMcpSyncClients = new ArrayList<>();
             for (McpSyncClient mcpSyncClient : mcpSyncClients) {
                 if (mcps.contains(mcpSyncClient.getClientInfo().name())) {

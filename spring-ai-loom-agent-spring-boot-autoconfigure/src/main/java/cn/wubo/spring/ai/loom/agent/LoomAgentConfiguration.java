@@ -219,8 +219,8 @@ public class LoomAgentConfiguration {
 
     @ConditionalOnMissingBean(IEmbedTool.class)
     @Bean
-    public IEmbedTool embedTool(ISkillStorage skillStorage, IFile file) {
-        return new DefaultEmbedTool(skillStorage, file);
+    public IEmbedTool embedTool(ISkillStorage skillStorage, IFile file, Optional<VectorStore> optionalVectorStore) {
+        return new DefaultEmbedTool(skillStorage, file, optionalVectorStore);
     }
 
     @ConditionalOnProperty(name = "spring.ai.mcp.client.stdio", havingValue = "ASYNC")
@@ -387,7 +387,7 @@ public class LoomAgentConfiguration {
             if (part == null) {
                 throw new IllegalArgumentException("上传的文件不能为空，请检查请求参数中是否包含名为'file'的文件");
             }
-            String fileId = upload.upload(part.getInputStream(), part.getSubmittedFileName());
+            String fileId = upload.upload(part.getInputStream(), part.getSubmittedFileName(), part.getContentType());
             return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(java.util.Map.of("fileId", fileId, "status", "success"));
         });
         builder.GET("/spring/ai/loom/file", request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(file.list(null)));
@@ -434,7 +434,7 @@ public class LoomAgentConfiguration {
             }
             String knowledgeId = request.pathVariable("knowledgeId");
 
-            String fileId = upload.uploadWithKnowledge(part.getInputStream(), part.getSubmittedFileName(), knowledgeId);
+            String fileId = upload.uploadWithKnowledge(part.getInputStream(), part.getSubmittedFileName(), part.getContentType(), knowledgeId);
             return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of("fileId", fileId, "status", "success"));
         });
         builder.GET("/spring/ai/loom/knowledge/{knowledgeId}/file", request -> {
@@ -443,7 +443,7 @@ public class LoomAgentConfiguration {
         });
         builder.DELETE("/spring/ai/loom/knowledge/{knowledgeId}/file/{fileId}", request -> {
             String fileId = request.pathVariable("fileId");
-            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(upload.deleteWithKnowledge(fileId));
+            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(upload.delete(fileId));
         });
         return builder.build();
     }
