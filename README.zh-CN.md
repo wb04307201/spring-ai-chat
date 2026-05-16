@@ -18,6 +18,7 @@
     - SSE 流式聊天，支持多轮对话与会话管理
     - 模型推理过程（Thinking）折叠展示
     - 消息一键复制/下载为 Markdown
+    - 文件 ID 集合传递，toolContext 跨线程上下文支持（解决 ThreadLocal 丢失问题）
 - RAG 知识库
     - 多知识库 CRUD，支持文件上传、Tika 解析、分词向量化
     - 可选的 LLM 关键词/摘要元数据增强
@@ -31,7 +32,13 @@
     - 运行时动态增删改
 - 文件管理
     - 磁盘文件存储 + H2 元数据管理，支持知识库关联
-    - 图片上传（10MB 内），缩略图预览与全屏查看
+    - 图片上传（10MB 内），多图累积上传，缩略图网格预览与全屏查看
+    - 文档上传（PDF/DOCX/XLSX/PPTX/MD/TXT 等），Apache Tika 自动文本抽取
+    - 文档内容通过 System Prompt 注入对话，LLM 直接基于文档内容回答问题
+    - 多模态聊天：图片作为 Media 传入模型，文档作为文本参考，可混合使用
+    - 文件下载接口，支持中文文件名与 Content-Disposition 响应头
+    - `downloadFileUrl` MCP 工具，按 fileId 生成文件下载链接
+    - `addFile` MCP 工具，通过路径注册文件到 EmbedTool
 - 用户与认证
     - Token 鉴权过滤器，支持自动登录与自定义 IUser 实现
     - 前端 localStorage 持久化会话
@@ -39,9 +46,13 @@
     - 侧边栏对话历史，知识库/MCP/技能库弹窗面板
     - 响应式布局（<768px 侧边栏折叠）
     - Toast 消息提示
+    - 图片/文档统一通过 `+` 按钮上传，缩略图网格展示，发送后自动清理
+    - 对话列表加载空指针防护，无对话时自动创建新会话
 - 工程化
     - Spring Boot 自动配置，全组件 @ConditionalOnMissingBean 可替换
     - Flyway 数据库迁移，支持 10+ 聊天模型 / 12+ 嵌入模型 / 24+ 向量存储后端
+    - `file_info` 表新增 `mime_type` 和 `usage` 列，支持文件类型检测与用途区分
+    - MCP 客户端空指针防护（未选中 MCP 时 `mcps` 为 null 的场景）
 
 
 ## 快速添加聊天界面
@@ -93,11 +104,27 @@ spring:
 
 > [使用其他模型可参考](https://docs.spring.io/spring-ai/reference/api/chatmodel.html)
 
+> **注意**: 如需基于文档进行问答，请确保模型支持多模态输入（如 `multi_model: true`），文档内容会通过 System Prompt 注入。
+
 ### 3. 启动项目
 访问`http://localhost:8080/spring/ai/loom`
 ![img.png](img.png)
 ![img_1.png](img_1.png)
 ![img_2.png](img_2.png)
+
+## 文档上传与对话
+点击输入框左侧 `+` 按钮，可上传图片或文档文件。上传后在输入框中输入问题发送即可。
+
+### 支持的文档格式
+PDF、DOCX、XLSX、PPTX、MD、TXT、HTML、CSV、RTF 等。
+
+### 工作原理
+1. **图片**: 作为 Media 类型直接传递给多模态大模型（需模型支持，如 DashScope qwen 系列）
+2. **文档**: 通过 Apache Tika 提取文本内容，作为 System Prompt 注入对话上下文
+3. **混合场景**: 可同时上传图片和文档，模型会综合图片视觉信息与文档文本内容进行回答
+
+### 文件下载
+上传的文件可通过 MCP 工具 `downloadFileUrl` 获取下载链接，也可通过 REST API `GET /spring/ai/loom/file/download/{fileId}` 直接下载。
 
 ## 更换其它RAG以替换默认实现
 下面以qdrant向量数据库为例，添加依赖和配置：

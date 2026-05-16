@@ -19,6 +19,7 @@
     - SSE streaming chat with multi-turn conversation and session management
     - Collapsible model reasoning (Thinking) display
     - One-click message copy and Markdown download
+    - File ID collection passing with `toolContext` cross-thread context support (fixes ThreadLocal loss)
 - **RAG Knowledge Base**
     - Multi-KB CRUD with file upload, Tika parsing, and vectorization
     - Optional LLM keyword/summary metadata enrichment
@@ -32,7 +33,13 @@
     - Runtime dynamic CRUD
 - **File Management**
     - Disk file storage + H2 metadata management with knowledge base association
-    - Image upload (up to 10MB) with thumbnail preview and full-screen view
+    - Image upload (up to 10MB), multi-image cumulative upload with thumbnail grid preview and full-screen view
+    - Document upload (PDF/DOCX/XLSX/PPTX/MD/TXT, etc.) with Apache Tika automatic text extraction
+    - Document content injected via System Prompt into conversations, enabling LLM to answer questions based on document content
+    - Multimodal chat: images as Media input, documents as text references, usable together
+    - File download endpoint with `Content-Disposition` header and Chinese filename support
+    - `downloadFileUrl` MCP tool to generate download links by fileId
+    - `addFile` MCP tool to register files to EmbedTool via path
 - **User & Authentication**
     - Token-based authentication filter with auto-login support and custom `IUser` implementation
     - Frontend localStorage session persistence
@@ -40,9 +47,13 @@
     - Sidebar conversation history with KB/MCP/Skill modal panels
     - Responsive layout (sidebar collapses below 768px)
     - Toast notifications
+    - Unified `+` button for image/document upload with thumbnail grid display and auto-cleanup after send
+    - Conversation list null-pointer protection: auto-creates new conversation when list is empty
 - **Engineering**
     - Spring Boot auto-configuration with `@ConditionalOnMissingBean` on all components for full replaceability
     - Flyway database migration with support for 10+ chat models / 12+ embedding models / 24+ vector store backends
+    - `file_info` table `mime_type` and `usage` columns for file type detection and usage tracking
+    - MCP client null-pointer protection (when `mcps` is null for unselected MCPs)
 
 ## Quick Start: Add a Chat Interface
 
@@ -98,6 +109,8 @@ spring:
 
 > [For other models, see the Spring AI docs](https://docs.spring.io/spring-ai/reference/api/chatmodel.html).
 
+> **Note**: For document-based Q&A, ensure the model supports multimodal input (e.g., `multi_model: true`). Document content is injected via System Prompt.
+
 ### 3. Start the Project
 
 Visit `http://localhost:8080/spring/ai/loom`
@@ -105,6 +118,21 @@ Visit `http://localhost:8080/spring/ai/loom`
 ![img.png](img.png)
 ![img_1.png](img_1.png)
 ![img_2.png](img_2.png)
+
+## Document Upload & Conversation
+
+Click the `+` button next to the input field to upload images or documents. After uploading, type your question and send it.
+
+### Supported Document Formats
+PDF, DOCX, XLSX, PPTX, MD, TXT, HTML, CSV, RTF, and more.
+
+### How It Works
+1. **Images**: Passed as Media type directly to the multimodal model (requires model support, e.g., DashScope Qwen series)
+2. **Documents**: Text content extracted via Apache Tika, injected as System Prompt into the conversation context
+3. **Mixed scenarios**: Images and documents can be uploaded together; the model synthesizes visual information and document text
+
+### File Download
+Uploaded files can be downloaded via the MCP tool `downloadFileUrl` to get a download link, or directly via REST API `GET /spring/ai/loom/file/download/{fileId}`.
 
 ## Replace the Default RAG Implementation
 
