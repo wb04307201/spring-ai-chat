@@ -29,17 +29,6 @@
 ### 1. Add LoomAgent Dependency
 
 ```xml
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-bom</artifactId>
-            <version>1.1.5</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
 <dependencies>
     <dependency>
         <groupId>io.github.wb04307201</groupId>
