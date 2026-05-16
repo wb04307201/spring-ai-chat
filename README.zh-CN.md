@@ -14,45 +14,13 @@
 ![MIT](https://img.shields.io/badge/License-Apache2.0-blue.svg) ![JDK](https://img.shields.io/badge/JDK-17+-green.svg) ![SpringBoot](https://img.shields.io/badge/Spring%20Boot-3+-green.svg)![SpringAI](https://img.shields.io/badge/Spring%20AI-1+-green.svg)
 
 ## 功能特性
-- 对话交互
-    - SSE 流式聊天，支持多轮对话与会话管理
-    - 模型推理过程（Thinking）折叠展示
-    - 消息一键复制/下载为 Markdown
-    - 文件 ID 集合传递，toolContext 跨线程上下文支持（解决 ThreadLocal 丢失问题）
-- RAG 知识库
-    - 多知识库 CRUD，支持文件上传、Tika 解析、分词向量化
-    - 可选的 LLM 关键词/摘要元数据增强
-    - 基于 JVector HNSW 的本地向量存储，磁盘持久化
-- MCP 服务集成
-    - 支持同步/异步 MCP 客户端，12 个预配置服务（搜索、地图、天气、图表、浏览器自动化等）
-    - 运行时按需启用/禁用，按会话隔离
-- Skill 技能库
-    - 预定义技能模板，参数化表单（文本/下拉/多行）
-    - 技能与 MCP 工具绑定，LLM 可自主发现与调用
-    - 运行时动态增删改
-- 文件管理
-    - 磁盘文件存储 + H2 元数据管理，支持知识库关联
-    - 图片上传（10MB 内），多图累积上传，缩略图网格预览与全屏查看
-    - 文档上传（PDF/DOCX/XLSX/PPTX/MD/TXT 等），Apache Tika 自动文本抽取
-    - 文档内容通过 System Prompt 注入对话，LLM 直接基于文档内容回答问题
-    - 多模态聊天：图片作为 Media 传入模型，文档作为文本参考，可混合使用
-    - 文件下载接口，支持中文文件名与 Content-Disposition 响应头
-    - `downloadFileUrl` MCP 工具，按 fileId 生成文件下载链接
-    - `addFile` MCP 工具，通过路径注册文件到 EmbedTool
-- 用户与认证
-    - Token 鉴权过滤器，支持自动登录与自定义 IUser 实现
-    - 前端 localStorage 持久化会话
-- 前端 UI（灵梭）
-    - 侧边栏对话历史，知识库/MCP/技能库弹窗面板
-    - 响应式布局（<768px 侧边栏折叠）
-    - Toast 消息提示
-    - 图片/文档统一通过 `+` 按钮上传，缩略图网格展示，发送后自动清理
-    - 对话列表加载空指针防护，无对话时自动创建新会话
-- 工程化
-    - Spring Boot 自动配置，全组件 @ConditionalOnMissingBean 可替换
-    - Flyway 数据库迁移，支持 10+ 聊天模型 / 12+ 嵌入模型 / 24+ 向量存储后端
-    - `file_info` 表新增 `mime_type` 和 `usage` 列，支持文件类型检测与用途区分
-    - MCP 客户端空指针防护（未选中 MCP 时 `mcps` 为 null 的场景）
+- **对话交互** — SSE 流式聊天，多轮对话，模型推理过程折叠展示，消息复制/下载
+- **RAG 知识库** — 多知识库管理，Tika 文档解析 + 向量化，可选 LLM 元数据增强，JVector 本地向量存储
+- **MCP 服务集成** — 同步/异步双模式，运行时按会话启用/禁用
+- **Skill 技能库** — 参数化模板 + MCP 工具绑定，LLM 自主发现与调用，运行时动态管理
+- **文件管理** — 磁盘存储 + H2 元数据，多模态聊天（图片 Media + 文档文本混合），文件下载
+- **前端 UI** — 侧边栏对话历史，图片/文档 `+` 按钮上传与缩略图预览，响应式布局
+- **工程化** — Spring Boot 自动配置（全组件可替换），Flyway 迁移，广泛支持多种聊天/嵌入/向量存储后端
 
 
 ## 快速添加聊天界面

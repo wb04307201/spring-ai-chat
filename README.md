@@ -15,45 +15,14 @@
 
 ## Features
 
-- **Chat Interface**
-    - SSE streaming chat with multi-turn conversation and session management
-    - Collapsible model reasoning (Thinking) display
-    - One-click message copy and Markdown download
-    - File ID collection passing with `toolContext` cross-thread context support (fixes ThreadLocal loss)
-- **RAG Knowledge Base**
-    - Multi-KB CRUD with file upload, Tika parsing, and vectorization
-    - Optional LLM keyword/summary metadata enrichment
-    - Local JVector HNSW vector store with disk persistence
-- **MCP Service Integration**
-    - Synchronous/asynchronous MCP client support, 12 pre-configured services (search, maps, weather, charts, browser automation, etc.)
-    - Runtime enable/disable per session with session isolation
-- **Skill Library**
-    - Predefined skill templates with parameterized forms (text/dropdown/textarea)
-    - Skill-to-MCP tool binding with autonomous LLM discovery and invocation
-    - Runtime dynamic CRUD
-- **File Management**
-    - Disk file storage + H2 metadata management with knowledge base association
-    - Image upload (up to 10MB), multi-image cumulative upload with thumbnail grid preview and full-screen view
-    - Document upload (PDF/DOCX/XLSX/PPTX/MD/TXT, etc.) with Apache Tika automatic text extraction
-    - Document content injected via System Prompt into conversations, enabling LLM to answer questions based on document content
-    - Multimodal chat: images as Media input, documents as text references, usable together
-    - File download endpoint with `Content-Disposition` header and Chinese filename support
-    - `downloadFileUrl` MCP tool to generate download links by fileId
-    - `addFile` MCP tool to register files to EmbedTool via path
-- **User & Authentication**
-    - Token-based authentication filter with auto-login support and custom `IUser` implementation
-    - Frontend localStorage session persistence
-- **Frontend UI (Loom)**
-    - Sidebar conversation history with KB/MCP/Skill modal panels
-    - Responsive layout (sidebar collapses below 768px)
-    - Toast notifications
-    - Unified `+` button for image/document upload with thumbnail grid display and auto-cleanup after send
-    - Conversation list null-pointer protection: auto-creates new conversation when list is empty
-- **Engineering**
-    - Spring Boot auto-configuration with `@ConditionalOnMissingBean` on all components for full replaceability
-    - Flyway database migration with support for 10+ chat models / 12+ embedding models / 24+ vector store backends
-    - `file_info` table `mime_type` and `usage` columns for file type detection and usage tracking
-    - MCP client null-pointer protection (when `mcps` is null for unselected MCPs)
+- **Chat Interface** — SSE streaming, multi-turn conversations, collapsible model reasoning, message copy/download
+- **RAG Knowledge Base** — Multi-KB management, Tika parsing + vectorization, optional LLM metadata enrichment, JVector local vector store
+- **MCP Service Integration** — Sync/async dual mode, per-session tool enable/disable at runtime
+- **Skill Library** — Parameterized templates + MCP tool binding, autonomous LLM discovery, runtime dynamic management
+- **File Management** — Disk storage + H2 metadata, multimodal chat (image Media + document text mixed), file download
+- **Frontend UI** — Sidebar conversation history, image/document `+` upload with thumbnail preview, responsive layout
+- **Engineering** — Spring Boot auto-configuration (fully replaceable components), Flyway migrations, broad support for chat/embedding/vector store backends
+    - MCP client per-session tool filtering support
 
 ## Quick Start: Add a Chat Interface
 
