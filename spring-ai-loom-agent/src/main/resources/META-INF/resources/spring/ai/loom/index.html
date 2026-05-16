@@ -66,21 +66,15 @@
                 </div>
                 <textarea id="textarea" placeholder="输入消息... (Ctrl+Enter 换行，Enter 发送)"></textarea>
                 <div class="image-upload-area" id="image-upload-area" style="display: none;">
-                    <div class="image-thumbnail" id="image-thumbnail">
-                        <img id="thumbnail-img" src="" alt="缩略图">
-                        <div class="thumbnail-loading" id="thumbnail-loading">
-                            <div class="spinner"></div>
-                        </div>
-                        <button class="thumbnail-remove" id="thumbnail-remove" title="移除图片">&times;</button>
-                    </div>
+                    <div class="image-thumbnails" id="image-thumbnails"></div>
                 </div>
                 <div class="input-row">
-                    <button class="image-add-btn" id="image-add-btn" title="添加图片">
+                    <button class="image-add-btn" id="image-add-btn" title="上传图片/文档">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </button>
-                    <input type="file" id="image-file-input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp" style="display: none;">
+                    <input type="file" id="image-file-input" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md" style="display: none;">
                     <div class="button-area">
                         <button id="send-btn">发送消息</button>
                     </div>

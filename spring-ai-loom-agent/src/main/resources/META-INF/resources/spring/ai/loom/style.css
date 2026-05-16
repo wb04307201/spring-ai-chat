@@ -537,6 +537,12 @@ textarea::placeholder {
     margin-top: 12px;
 }
 
+.image-thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .image-thumbnail {
     width: 80px;
     height: 80px;
@@ -549,6 +555,10 @@ textarea::placeholder {
     background: var(--bg-secondary);
 }
 
+.image-thumbnail.has-doc-icon {
+    height: 100px;
+}
+
 .image-thumbnail:hover {
     border-color: var(--primary-color);
 }
@@ -558,6 +568,41 @@ textarea::placeholder {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+/* Document thumbnail styles */
+.image-thumbnail.has-doc-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.doc-icon-container {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.doc-icon-container svg {
+    width: 100%;
+    height: 100%;
+}
+
+.doc-filename {
+    width: 100%;
+    text-align: center;
+    font-size: 9px;
+    color: var(--text-secondary);
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 4px 0;
 }
 
 .thumbnail-loading {

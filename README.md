@@ -15,34 +15,14 @@
 
 ## Features
 
-- **Chat Interface**
-    - SSE streaming chat with multi-turn conversation and session management
-    - Collapsible model reasoning (Thinking) display
-    - One-click message copy and Markdown download
-- **RAG Knowledge Base**
-    - Multi-KB CRUD with file upload, Tika parsing, and vectorization
-    - Optional LLM keyword/summary metadata enrichment
-    - Local JVector HNSW vector store with disk persistence
-- **MCP Service Integration**
-    - Synchronous/asynchronous MCP client support, 12 pre-configured services (search, maps, weather, charts, browser automation, etc.)
-    - Runtime enable/disable per session with session isolation
-- **Skill Library**
-    - Predefined skill templates with parameterized forms (text/dropdown/textarea)
-    - Skill-to-MCP tool binding with autonomous LLM discovery and invocation
-    - Runtime dynamic CRUD
-- **File Management**
-    - Disk file storage + H2 metadata management with knowledge base association
-    - Image upload (up to 10MB) with thumbnail preview and full-screen view
-- **User & Authentication**
-    - Token-based authentication filter with auto-login support and custom `IUser` implementation
-    - Frontend localStorage session persistence
-- **Frontend UI (Loom)**
-    - Sidebar conversation history with KB/MCP/Skill modal panels
-    - Responsive layout (sidebar collapses below 768px)
-    - Toast notifications
-- **Engineering**
-    - Spring Boot auto-configuration with `@ConditionalOnMissingBean` on all components for full replaceability
-    - Flyway database migration with support for 10+ chat models / 12+ embedding models / 24+ vector store backends
+- **Chat Interface** — SSE streaming, multi-turn conversations, collapsible model reasoning, message copy/download
+- **RAG Knowledge Base** — Multi-KB management, Tika parsing + vectorization, optional LLM metadata enrichment, JVector local vector store
+- **MCP Service Integration** — Sync/async dual mode, per-session tool enable/disable at runtime
+- **Skill Library** — Parameterized templates + MCP tool binding, autonomous LLM discovery, runtime dynamic management
+- **File Management** — Disk storage + H2 metadata, multimodal chat (image Media + document text mixed), file download
+- **Frontend UI** — Sidebar conversation history, image/document `+` upload with thumbnail preview, responsive layout
+- **Engineering** — Spring Boot auto-configuration (fully replaceable components), Flyway migrations, broad support for chat/embedding/vector store backends
+    - MCP client per-session tool filtering support
 
 ## Quick Start: Add a Chat Interface
 
@@ -64,7 +44,7 @@
     <dependency>
         <groupId>io.github.wb04307201</groupId>
         <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
-        <version>1.1.19</version>
+        <version>1.1.20</version>
     </dependency>
 </dependencies>
 ```
@@ -98,6 +78,8 @@ spring:
 
 > [For other models, see the Spring AI docs](https://docs.spring.io/spring-ai/reference/api/chatmodel.html).
 
+> **Note**: For document-based Q&A, ensure the model supports multimodal input (e.g., `multi_model: true`). Document content is injected via System Prompt.
+
 ### 3. Start the Project
 
 Visit `http://localhost:8080/spring/ai/loom`
@@ -105,6 +87,21 @@ Visit `http://localhost:8080/spring/ai/loom`
 ![img.png](img.png)
 ![img_1.png](img_1.png)
 ![img_2.png](img_2.png)
+
+## Document Upload & Conversation
+
+Click the `+` button next to the input field to upload images or documents. After uploading, type your question and send it.
+
+### Supported Document Formats
+PDF, DOCX, XLSX, PPTX, MD, TXT, HTML, CSV, RTF, and more.
+
+### How It Works
+1. **Images**: Passed as Media type directly to the multimodal model (requires model support, e.g., DashScope Qwen series)
+2. **Documents**: Text content extracted via Apache Tika, injected as System Prompt into the conversation context
+3. **Mixed scenarios**: Images and documents can be uploaded together; the model synthesizes visual information and document text
+
+### File Download
+Uploaded files can be downloaded via the MCP tool `downloadFileUrl` to get a download link, or directly via REST API `GET /spring/ai/loom/file/download/{fileId}`.
 
 ## Replace the Default RAG Implementation
 

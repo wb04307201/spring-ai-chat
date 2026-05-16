@@ -13,7 +13,7 @@ spring-ai-loom-agent/
 │   ├── knowledge/     IKnowledge / DefaultKnowledge # 知识库CRUD
 │   ├── mcp/           IMcp / SyncMcp / ASyncMcp    # MCP客户端
 │   ├── skill/         ISkillStorage                # 技能存储
-│   ├── file/          IFile / IUpload              # 文件存储与上传
+│   ├── file/          IFile / IUpload              # 文件存储、上传与下载
 │   ├── user/          IUser / AuthenticationFilter  # 认证鉴权
 │   ├── vectorstore/   JVectorStore                 # 默认向量存储
 │   ├── tool/          IEmbedTool                   # 技能嵌入工具
@@ -213,9 +213,9 @@ public IUser customUser() {
 | **接口**   | `cn.wubo.spring.ai.loom.agent.chat.IChat`    |
 | **默认实现** | `DefaultChat`                                |
 | **覆盖方式** | 自定义 `@Bean IChat`                            |
-| **控制内容** | 流式对话处理：用户/会话管理、RAG 顾问、MCP 工具注入、技能工具注入、图片文件处理 |
+| **控制内容** | 流式对话处理：用户/会话管理、RAG 顾问、MCP 工具注入、技能工具注入、图片/文档处理、toolContext 跨线程上下文传递 |
 
-**默认行为**: 组装 `ChatClient`，可选加入 `RetrievalAugmentationAdvisor`、`IMcp` 工具、`IEmbedTool` 技能工具、用户会话管理等。
+**默认行为**: 组装 `ChatClient`，可选加入 `RetrievalAugmentationAdvisor`、`IMcp` 工具、`IEmbedTool` 技能工具、用户会话管理等。文档类文件（PDF/DOCX/XLSX/PPTX/MD 等）通过 Apache Tika 提取文本后以 System Prompt 注入，图片作为 Media 类型传入模型。
 
 **自定义示例**:
 
@@ -247,17 +247,16 @@ public IChat customChat(
 
 **常见自定义场景**: 替换为 S3、OSS、MinIO 等对象存储。
 
-### 2.5 `IUpload` — 文件上传流水线
+### 2.5 `IUpload` — 文件上传/下载流水线
 
 | 项目       | 内容                                          |
 |----------|---------------------------------------------|
 | **接口**   | `cn.wubo.spring.ai.loom.agent.file.IUpload` |
 | **默认实现** | `DefaultUpload`                             |
 | **覆盖方式** | 自定义 `@Bean IUpload`                         |
-| **控制内容** | 文件上传（普通/知识库）、文件删除（关联知识库）、知识库文件批量删除          |
+| **控制内容** | 文件上传（普通/知识库）、文件下载、文件删除（关联知识库）、知识库文件批量删除    |
 
-**默认行为**: 文件保存到本地 `.local/file/{username}/{fileId}/{fileName}`，调用 `IDocumentRead` 解析文档，存入
-`VectorStore`。
+**默认行为**: 文件保存到本地 `.local/file/{username}/{fileId}/{fileName}`，调用 `IDocumentRead` 解析文档（PDF/DOCX/XLSX/PPTX/MD 等），文本内容通过 System Prompt 注入对话。
 
 **常见自定义场景**: 上传到云存储（S3/OSS）、接入第三方 OCR、异步文档解析等。
 
@@ -271,7 +270,7 @@ public IChat customChat(
 | **生效条件** | 仅当存在 `VectorStore` Bean 时创建                           |
 | **控制内容** | 文件读取（Tika 解析）、文本切分、关键词元数据增强、摘要元数据增强                   |
 
-**默认行为**: 使用 Apache Tika 解析多种文档格式，按 `PagePdfParser.DEFAULT_MAX_CHARS` 切分文本，可选择性地注入关键词和摘要元数据。
+**默认行为**: 使用 Apache Tika 解析多种文档格式（PDF/DOCX/XLSX/PPTX/MD/TXT 等），按 `PagePdfParser.DEFAULT_MAX_CHARS` 切分文本，可选择性地注入关键词和摘要元数据。
 
 ### 2.7 `IFileDocument` — 文件-文档关联
 
@@ -328,7 +327,7 @@ public IChat customChat(
 | **接口**   | `cn.wubo.spring.ai.loom.agent.tool.IEmbedTool`                     |
 | **默认实现** | `DefaultEmbedTool`                                                 |
 | **覆盖方式** | 自定义 `@Bean IEmbedTool`                                             |
-| **控制内容** | 暴露给 LLM 的两个 `@Tool` 方法：`skillContents`（获取技能目录）和 `getSkill`（获取技能详情） |
+| **控制内容** | 暴露给 LLM 的 `@Tool` 方法：`skillContents`（获取技能目录）、`getSkill`（获取技能详情）、`downloadFileUrl`（生成文件下载链接）、`addFile`（通过路径注册文件） |
 
 ### 2.12 `ContentHolderConverter` — 配置属性转换器
 
@@ -521,7 +520,7 @@ skills:
 |---------------------|------------|-------------------------------|
 | `knowledge`         | 知识库元数据     | `id`                          |
 | `knowledge_file`    | 知识库-文件关联   | `(knowledge_id, file_id)`     |
-| `file_info`         | 文件元数据与存储路径 | `id`                          |
+| `file_info`         | 文件元数据与存储路径 | `id`（含 `usage`、`mime_type` 列）|
 | `file_document`     | 文件-向量文档关联  | `(file_id, document_id)`      |
 | `user_conversation` | 用户-会话映射    | `(username, conversation_id)` |
 
@@ -562,8 +561,9 @@ UI 静态资源位于 `spring-ai-loom-agent/src/main/resources/META-INF/resource
 |---------------------------|--------------|--------------------------|
 | AI 头像图片                   | `app.js`     | `/static/ai.jpg`         |
 | 用户头像图片                    | `app.js`     | `/static/user.png`       |
-| 图片上传允许类型                  | `app.js`     | JPG, PNG, GIF, WebP, BMP |
+| 图片上传允许类型                  | `app.js`     | JPG, PNG, GIF, WebP, BMP, PDF, DOCX, XLSX, PPTX, MD, TXT 等 |
 | 图片上传最大大小                  | `app.js`     | 10 MB                    |
+| 文档上传允许类型                  | `app.js`     | 除图片外的所有支持的文档格式         |
 | SSE 超时时间                  | `app.js`     | `0`（不超时）                 |
 | LocalStorage Token Key    | `app.js`     | `loomAgentToken`         |
 | LocalStorage Nickname Key | `app.js`     | `loomAgentNickname`      |

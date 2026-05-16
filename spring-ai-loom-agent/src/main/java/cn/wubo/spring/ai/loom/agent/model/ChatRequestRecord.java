@@ -7,5 +7,5 @@ public record ChatRequestRecord(String message,
                                 List<String> mcps,
                                 String authentication,
                                 String knowledgeId,
-                                String fileId) {
+                                List<String> fileIds) {
 }

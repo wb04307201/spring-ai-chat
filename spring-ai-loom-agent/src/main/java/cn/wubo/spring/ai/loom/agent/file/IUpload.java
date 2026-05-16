@@ -4,11 +4,13 @@ import java.io.InputStream;
 
 public interface IUpload {
 
-    String upload(InputStream is, String fileName);
+    String upload(InputStream is, String fileName, String mimeType);
 
-    String uploadWithKnowledge(InputStream is, String fileName, String knowledgeId);
+    String uploadWithKnowledge(InputStream is, String fileName, String mimeType, String knowledgeId);
 
-    int deleteWithKnowledge(String fileId);
+    int delete(String fileId);
 
     int deleteAllKnowledge(String knowledgeId);
+
+    byte[] download(String fileId);
 }

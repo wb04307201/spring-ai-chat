@@ -44,7 +44,7 @@ const state = {
     mcps: [],
     skills: [],
     currentChatMessageId: null,
-    pendingImage: null, // { fileId, objectUrl, fileName }
+    pendingImages: [], // array of { fileId, objectUrl, fileName }
 };
 
 // ===================== §3 Utility Functions =====================
@@ -665,7 +665,7 @@ const chat = {
             enableRag: state.enableRag,
             knowledgeId: state.selectedKnowledgeId || null,
             authentication: state.token || '',
-            fileId: state.pendingImage?.fileId || null,
+            fileIds: state.pendingImages.length > 0 ? state.pendingImages.map(img => img.fileId) : null,
         };
 
         // Clear pending image after capturing fileId
@@ -1219,106 +1219,208 @@ const responsive = {
     },
 };
 
-// ===================== §15 Image Upload Module =====================
+// ===================== §15 File Upload Module =====================
 const imageUpload = {
-    ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'],
+    // Supported MIME types: images + common documents
+    ALLOWED_TYPES: [
+        // images
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+        // documents
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'text/csv',
+        'text/markdown',
+    ],
     MAX_SIZE: 10 * 1024 * 1024, // 10MB
-    _objectUrl: null, // track current object URL for cleanup
+
+    // Map file extensions to document icon SVG (for non-image types)
+    DOC_ICONS: {
+        '.pdf':  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#ef4444" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">PDF</text></svg>`,
+        '.doc':  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#3b82f6" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">DOC</text></svg>`,
+        '.docx': `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#3b82f6" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">DOC</text></svg>`,
+        '.xls':  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#10b981" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">XLS</text></svg>`,
+        '.xlsx': `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#10b981" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">XLS</text></svg>`,
+        '.ppt':  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#f59e0b" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">PPT</text></svg>`,
+        '.pptx': `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#f59e0b" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">PPT</text></svg>`,
+        '.txt':  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#6b7280" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">TXT</text></svg>`,
+        '.csv':  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#6b7280" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Inter,sans-serif">CSV</text></svg>`,
+        '.md':   `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="3" fill="#6b7280" opacity="0.9"/><path d="M8 16h32" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="Inter,sans-serif">MD</text></svg>`,
+    },
+
+    /** Get icon SVG for a given file extension, or null if it's an image */
+    getDocIcon(file) {
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (file.type.startsWith('image/')) return null; // image → show thumbnail
+        return this.DOC_ICONS[ext] || this.DOC_ICONS['.txt'] || null;
+    },
+
+    /** Check if a file is an image */
+    isImage(file) {
+        return file.type.startsWith('image/');
+    },
 
     init() {
         const addBtn = document.getElementById('image-add-btn');
         const fileInput = document.getElementById('image-file-input');
 
         addBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => this.handleFile(e));
-        document.getElementById('thumbnail-remove').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.remove();
-        });
-        document.getElementById('image-thumbnail').addEventListener('dblclick', () => {
-            if (state.pendingImage) {
-                this.showFullscreen(state.pendingImage.objectUrl);
-            }
-        });
+        fileInput.addEventListener('change', (e) => this.handleFiles(e));
     },
 
     validate(file) {
         if (!this.ALLOWED_TYPES.includes(file.type)) {
-            return { valid: false, error: '不支持的图片格式，请选择 JPG/PNG/GIF/WebP/BMP 格式' };
+            return { valid: false, error: '不支持的文件格式，请选择图片或常见文档格式' };
         }
         if (file.size > this.MAX_SIZE) {
-            return { valid: false, error: '图片大小不能超过 10MB' };
+            return { valid: false, error: '文件大小不能超过 10MB' };
         }
         return { valid: true };
     },
 
-    async handleFile(event) {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    async handleFiles(event) {
+        const input = event.target;
+        const files = Array.from(input.files || []);
+        if (files.length === 0) return;
 
         // Reset file input so same file can be selected again
-        event.target.value = '';
+        input.value = '';
 
-        const validation = this.validate(file);
-        if (!validation.valid) {
-            showToast(validation.error, 'error');
-            return;
-        }
-
-        // Show instant thumbnail with loading state
-        const objectUrl = URL.createObjectURL(file);
-        this.renderThumbnail(null, objectUrl, file.name);
-
-        // Upload to server
-        try {
-            const { fileId } = await api.uploadImage(file);
-
-            // Revoke old object URL
-            if (this._objectUrl) {
-                URL.revokeObjectURL(this._objectUrl);
+        for (const file of files) {
+            const validation = this.validate(file);
+            if (!validation.valid) {
+                showToast(validation.error, 'error');
+                continue;
             }
 
-            // Save to state
-            state.pendingImage = { fileId, objectUrl, fileName: file.name };
-            this._objectUrl = objectUrl;
+            const isImage = this.isImage(file);
+            const objectUrl = isImage ? URL.createObjectURL(file) : null;
+            const docIcon = isImage ? null : this.getDocIcon(file);
+            const tempId = this.renderThumbnail(null, objectUrl, file.name, docIcon);
 
-            // Update thumbnail (remove loading state)
-            this.renderThumbnail(fileId, objectUrl, file.name);
-        } catch (err) {
-            URL.revokeObjectURL(objectUrl);
-            this.remove();
-            showToast('图片上传失败：' + err.message, 'error');
+            // Upload to server
+            try {
+                const { fileId } = await api.uploadImage(file);
+                const entry = state.pendingImages.find(img => img.thumbId === tempId);
+                if (entry) {
+                    entry.fileId = fileId;
+                }
+                this.updateThumbnailFileId(tempId, fileId);
+            } catch (err) {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                this.removeImageByObjectUrl(objectUrl || tempId);
+                showToast('文件上传失败：' + err.message, 'error');
+            }
         }
     },
 
-    renderThumbnail(fileId, objectUrl, fileName) {
+    renderThumbnail(fileId, objectUrl, fileName, docIcon) {
         const uploadArea = document.getElementById('image-upload-area');
-        const thumbnailImg = document.getElementById('thumbnail-img');
-        const loadingEl = document.getElementById('thumbnail-loading');
-
-        if (!objectUrl) {
-            uploadArea.style.display = 'none';
-            return;
-        }
+        const container = document.getElementById('image-thumbnails');
 
         uploadArea.style.display = 'block';
-        thumbnailImg.src = objectUrl;
-        thumbnailImg.alt = fileName;
 
-        if (fileId) {
-            loadingEl.style.display = 'none';
+        const thumbId = 'thumb-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        const div = document.createElement('div');
+        div.className = 'image-thumbnail' + (docIcon ? ' has-doc-icon' : '');
+        div.id = thumbId;
+
+        // Document icon or image
+        let contentHtml;
+        if (docIcon) {
+            contentHtml = `<div class="doc-icon-container">${docIcon}</div>
+                <div class="doc-filename" title="${fileName}">${fileName}</div>`;
         } else {
-            loadingEl.style.display = 'flex';
+            contentHtml = `<img src="${objectUrl}" alt="${fileName}">
+                <div class="thumbnail-loading"><div class="spinner"></div></div>`;
+        }
+
+        div.innerHTML = `
+            ${contentHtml}
+            <button class="thumbnail-remove" title="移除文件">&times;</button>`;
+
+        // Double-click to view fullscreen (images only)
+        if (objectUrl) {
+            div.addEventListener('dblclick', () => {
+                this.showFullscreen(objectUrl);
+            });
+        }
+
+        // Remove button
+        div.querySelector('.thumbnail-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.removeImageById(thumbId, objectUrl || thumbId);
+        });
+
+        container.appendChild(div);
+
+        // Track in state — for documents, use thumbId as the unique key
+        state.pendingImages.push({ fileId, objectUrl, fileName, thumbId });
+
+        return thumbId;
+    },
+
+    updateThumbnailFileId(thumbId, fileId) {
+        const thumb = document.getElementById(thumbId);
+        if (!thumb) return;
+        const loading = thumb.querySelector('.thumbnail-loading');
+        if (loading) loading.style.display = 'none';
+    },
+
+    removeImageById(thumbId, uniqueKey) {
+        // Remove from state — match by objectUrl or thumbId
+        state.pendingImages = state.pendingImages.filter(img => {
+            if (img.objectUrl) return img.objectUrl !== uniqueKey;
+            return img.thumbId !== uniqueKey;
+        });
+        if (uniqueKey.startsWith('data:') || uniqueKey.startsWith('blob:')) {
+            URL.revokeObjectURL(uniqueKey);
+        }
+
+        // Remove from DOM
+        const thumb = document.getElementById(thumbId);
+        if (thumb) thumb.remove();
+
+        // Hide area if no images left
+        if (state.pendingImages.length === 0) {
+            document.getElementById('image-upload-area').style.display = 'none';
+        }
+    },
+
+    removeImageByObjectUrl(uniqueKey) {
+        // For documents (no objectUrl), match by thumbId
+        if (!uniqueKey || (!uniqueKey.startsWith('blob:') && !uniqueKey.startsWith('data:'))) {
+            const entry = state.pendingImages.find(img => img.thumbId === uniqueKey);
+            if (entry) this.removeImageById(entry.thumbId, uniqueKey);
+            return;
+        }
+        // For images, match by objectUrl
+        const entry = state.pendingImages.find(img => img.objectUrl === uniqueKey);
+        if (!entry) return;
+        // Find DOM element by img src
+        const container = document.getElementById('image-thumbnails');
+        for (const thumb of container.querySelectorAll('.image-thumbnail')) {
+            const img = thumb.querySelector('img');
+            if (img && img.src === uniqueKey) {
+                this.removeImageById(thumb.id, uniqueKey);
+                return;
+            }
         }
     },
 
     remove() {
-        if (state.pendingImage?.objectUrl) {
-            URL.revokeObjectURL(state.pendingImage.objectUrl);
+        // Clear all — revoke only image object URLs
+        for (const img of state.pendingImages) {
+            if (img.objectUrl) URL.revokeObjectURL(img.objectUrl);
         }
-        state.pendingImage = null;
-        this._objectUrl = null;
-        this.renderThumbnail(null, null, null);
+        state.pendingImages = [];
+        document.getElementById('image-thumbnails').innerHTML = '';
+        document.getElementById('image-upload-area').style.display = 'none';
     },
 
     clear() {

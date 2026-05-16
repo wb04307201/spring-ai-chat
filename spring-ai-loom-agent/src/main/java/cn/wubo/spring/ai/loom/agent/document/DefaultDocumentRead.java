@@ -48,6 +48,7 @@ public class DefaultDocumentRead implements IDocumentRead {
         String username = UserContextHolder.getCurrentUser();
         documents
                 .forEach(document -> {
+                    document.getMetadata().put("type", "knowledge");
                     document.getMetadata().put("knowledgeId", knowledgeId);
                     document.getMetadata().put("username", username);
                 });

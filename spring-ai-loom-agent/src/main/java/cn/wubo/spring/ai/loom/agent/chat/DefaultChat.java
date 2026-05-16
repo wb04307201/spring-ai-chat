@@ -7,6 +7,11 @@ import cn.wubo.spring.ai.loom.agent.model.UserConversationRecord;
 import cn.wubo.spring.ai.loom.agent.tool.IEmbedTool;
 import cn.wubo.spring.ai.loom.agent.user.IUserConversation;
 import cn.wubo.spring.ai.loom.agent.user.UserContextHolder;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -17,9 +22,14 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class DefaultChat implements IChat {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultChat.class);
 
     private final ChatClient chatClient;
     private final Optional<RetrievalAugmentationAdvisor> retrievalAugmentationAdvisor;
@@ -40,7 +50,8 @@ public class DefaultChat implements IChat {
     }
 
     @Override
-    public Flux<ChatResponse> stream(ChatRequestRecord chatRequestRecord) {
+    public Flux<ChatResponse> stream(ChatRequestRecord chatRequestRecord, HttpServletRequest request) {
+        log.info("Chat request: message={}, fileIds={}", chatRequestRecord.message(), chatRequestRecord.fileIds());
         String contextUser = UserContextHolder.getCurrentUser();
         final String username = (contextUser != null) ? contextUser : user.getUsernameByAuthentication(chatRequestRecord.authentication());
         boolean exists = userConversation.exists(new UserConversationRecord(username, chatRequestRecord.conversationId()));
@@ -49,19 +60,60 @@ public class DefaultChat implements IChat {
         }
 
         ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt();
+        if (chatRequestRecord.fileIds() != null && !chatRequestRecord.fileIds().isEmpty()) {
+            StringBuilder extraText = new StringBuilder();
+            for (String fileId : chatRequestRecord.fileIds()) {
+                var fileRecord = file.getById(fileId);
+                if (fileRecord == null) continue;
+                if (isDocument(fileRecord.mimeType())) {
+                    if(extraText.isEmpty()){
+                        extraText.append("以下是用户上传的文档的内容提取结果:");
+                    }
+                    Tika tika = new Tika();
+                    try {
+                        String content = tika.parseToString(file.getResourceById(fileId).getInputStream());
+                        extraText.append("\n\n--- ").append(fileRecord.fileName()).append(" ---\n\n").append(content);
+                    } catch (IOException | TikaException e) {
+                        log.error("Failed to parse document: {}", fileRecord.fileName(), e);
+                        extraText.append("\n\n--- ").append(fileRecord.fileName()).append(" ---\n\n文件无法解析: ").append(e.getMessage());
+                    }
+                }
+            }
+            if (!extraText.isEmpty()){
+                extraText.append("\n\n以上是文档内容提取结果，请根据文档内容进行回答。");
+                requestSpec.system(extraText.toString());
+            }
 
-        if (StringUtils.hasText(chatRequestRecord.fileId())){
-            requestSpec.user(u -> u.text(chatRequestRecord.message())
-                    .media(MimeTypeUtils.IMAGE_PNG, file.getResourceById(chatRequestRecord.fileId()))).tools(embedTool);
+            requestSpec.user(u -> {
+                u.text(chatRequestRecord.message());
+                for (String fileId : chatRequestRecord.fileIds()) {
+                    try {
+                        var fileRecord = file.getById(fileId);
+                        if (fileRecord == null) continue;
+                        if (isImage(fileRecord.mimeType())) {
+                            u.media(MimeTypeUtils.IMAGE_JPEG, file.getResourceById(fileId));
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to add media", e);
+                    }
+                }
+            }).tools(embedTool);
         }else{
             requestSpec.user(chatRequestRecord.message()).tools(embedTool);
         }
+        Map<String, Object> props = new HashMap<>();
+        props.put("username", username);
+        String scheme = request.getScheme();         // http 或 https
+        String serverName = request.getServerName(); // localhost 或 IP
+        int serverPort = request.getServerPort();    // 8080
+        props.put("baseUrl", scheme + "://" + serverName + ":" + serverPort);
+        requestSpec.toolContext(props);
 
         requestSpec.advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatRequestRecord.conversationId()));
 
         if (retrievalAugmentationAdvisor.isPresent() && StringUtils.hasText(chatRequestRecord.knowledgeId())) {
             requestSpec.advisors(retrievalAugmentationAdvisor.get());
-            requestSpec.advisors(advisor -> advisor.param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, "knowledgeId == '" + chatRequestRecord.knowledgeId() + "' && username == '" + username + "'"));
+            requestSpec.advisors(advisor -> advisor.param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, "type == 'knowledge' && knowledgeId == '" + chatRequestRecord.knowledgeId() + "' && username == '" + username + "'"));
         }
 
         ToolCallbackProvider toolCallbackProvider = mcp.getToolCallbackProvider(chatRequestRecord.mcps());
@@ -71,5 +123,32 @@ public class DefaultChat implements IChat {
         }
 
         return requestSpec.stream().chatResponse();
+    }
+
+    private boolean isImage(String mimeType) {
+        if (mimeType == null) {
+            return false;
+        }
+        return mimeType.startsWith("image/");
+    }
+
+    private boolean isDocument(String mimeType) {
+        if (mimeType == null) {
+            return false;
+        }
+        return mimeType.equals("application/pdf") ||
+                mimeType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document") ||
+                mimeType.equals("application/vnd.openxmlformats-officedocument.presentationml.presentation") ||
+                mimeType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") ||
+                mimeType.equals("text/markdown") ||
+                mimeType.equals("text/plain") ||
+                mimeType.equals("application/msword") ||
+                mimeType.equals("application/vnd.ms-powerpoint") ||
+                mimeType.equals("application/vnd.ms-excel") ||
+                mimeType.equals("text/html") ||
+                mimeType.equals("text/csv") ||
+                mimeType.equals("text/xml") ||
+                mimeType.equals("application/rtf") ||
+                mimeType.equals("text/rtf");
     }
 }
