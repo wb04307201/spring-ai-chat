@@ -219,8 +219,8 @@ public class LoomAgentConfiguration {
 
     @ConditionalOnMissingBean(IEmbedTool.class)
     @Bean
-    public IEmbedTool embedTool(ISkillStorage skillStorage, IFile file, Optional<VectorStore> optionalVectorStore) {
-        return new DefaultEmbedTool(skillStorage, file, optionalVectorStore);
+    public IEmbedTool embedTool(ISkillStorage skillStorage, IFile file) {
+        return new DefaultEmbedTool(skillStorage, file);
     }
 
     @ConditionalOnProperty(name = "spring.ai.mcp.client.stdio", havingValue = "ASYNC")
