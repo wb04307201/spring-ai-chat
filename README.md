@@ -23,7 +23,6 @@
 - **Frontend UI** — Sidebar conversation history, image/document `+` upload with thumbnail preview, responsive layout
 - **Engineering** — Spring Boot auto-configuration (fully replaceable components), Flyway migrations, broad support for chat/embedding/vector store backends
     - MCP client per-session tool filtering support
-    - MCP client per-session tool filtering support
 
 ## Quick Start: Add a Chat Interface
 
@@ -33,7 +32,7 @@
 <dependency>
   <groupId>io.github.wb04307201</groupId>
   <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
-  <version>1.1.20</version>
+  <version>1.1.21</version>
 </dependency>
 ```
 
