@@ -10,5 +10,11 @@ public interface IEmbedTool {
 
     String addFile(String path, ToolContext toolContext);
 
+    String getFileList(ToolContext toolContext);
+
+    String getFileInfoById(String fileId, ToolContext toolContext);
+
     String downloadFileUrl(String fileId, ToolContext toolContext);
+
+    String viewFileUrl(String fileId, ToolContext toolContext);
 }

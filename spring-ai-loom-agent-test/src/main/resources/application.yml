@@ -47,7 +47,7 @@ spring:
     mcp:
       client:
         stdio:
-          servers-configuration: classpath:mcp-servers.json
+          servers-configuration: classpath:mcp-servers-none.json
     loom:
       agent:
         rag:

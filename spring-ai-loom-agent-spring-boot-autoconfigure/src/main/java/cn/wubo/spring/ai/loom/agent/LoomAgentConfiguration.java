@@ -52,6 +52,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayConfigurationCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ResourceLoader;
@@ -147,6 +148,11 @@ public class LoomAgentConfiguration {
     @Bean
     public ContentHolderConverter contentHolderConverter(ResourceLoader resourceLoader) {
         return new ContentHolderConverter(resourceLoader);
+    }
+
+    @Bean
+    public static BeanFactoryPostProcessor fileViewDefaultsBeanFactoryPostProcessor(org.springframework.core.env.ConfigurableEnvironment environment) {
+        return new FileViewDefaultsBeanFactoryPostProcessor(environment);
     }
 
     @Bean

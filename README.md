@@ -19,9 +19,10 @@
 - **RAG Knowledge Base** — Multi-KB management, Tika parsing + vectorization, optional LLM metadata enrichment, JVector local vector store
 - **MCP Service Integration** — Sync/async dual mode, per-session tool enable/disable at runtime
 - **Skill Library** — Parameterized templates + MCP tool binding, autonomous LLM discovery, runtime dynamic management
-- **File Management** — Disk storage + H2 metadata, multimodal chat (image Media + document text mixed), file download
+- **File Management** — Disk storage + H2 metadata, multimodal chat (image Media + document text mixed), file download, preview
 - **Frontend UI** — Sidebar conversation history, image/document `+` upload with thumbnail preview, responsive layout
 - **Engineering** — Spring Boot auto-configuration (fully replaceable components), Flyway migrations, broad support for chat/embedding/vector store backends
+    - MCP client per-session tool filtering support
     - MCP client per-session tool filtering support
 
 ## Quick Start: Add a Chat Interface
