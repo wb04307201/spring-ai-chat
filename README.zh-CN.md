@@ -18,7 +18,7 @@
 - **RAG 知识库** — 多知识库管理，Tika 文档解析 + 向量化，可选 LLM 元数据增强，JVector 本地向量存储
 - **MCP 服务集成** — 同步/异步双模式，运行时按会话启用/禁用
 - **Skill 技能库** — 参数化模板 + MCP 工具绑定，LLM 自主发现与调用，运行时动态管理
-- **文件管理** — 磁盘存储 + H2 元数据，多模态聊天（图片 Media + 文档文本混合），文件下载
+- **文件管理** — 磁盘存储 + H2 元数据，多模态聊天（图片 Media + 文档文本混合），文件下载，预览
 - **前端 UI** — 侧边栏对话历史，图片/文档 `+` 按钮上传与缩略图预览，响应式布局
 - **工程化** — Spring Boot 自动配置（全组件可替换），Flyway 迁移，广泛支持多种聊天/嵌入/向量存储后端
 
@@ -29,7 +29,7 @@
 <dependency>
     <groupId>io.github.wb04307201</groupId>
     <artifactId>spring-ai-loom-agent-spring-boot-starter</artifactId>
-    <version>1.1.20</version>
+    <version>1.1.21</version>
 </dependency>
 ```
 

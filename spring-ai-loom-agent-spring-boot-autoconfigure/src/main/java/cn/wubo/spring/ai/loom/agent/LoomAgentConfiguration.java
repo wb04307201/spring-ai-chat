@@ -52,6 +52,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayConfigurationCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ResourceLoader;
@@ -150,6 +151,11 @@ public class LoomAgentConfiguration {
     }
 
     @Bean
+    public static BeanFactoryPostProcessor fileViewDefaultsBeanFactoryPostProcessor(org.springframework.core.env.ConfigurableEnvironment environment) {
+        return new FileViewDefaultsBeanFactoryPostProcessor(environment);
+    }
+
+    @Bean
     public ChatMemory jdbChatMemory(ChatMemoryRepository chatMemoryRepository) {
         return MessageWindowChatMemory.builder().chatMemoryRepository(chatMemoryRepository).build();
     }
@@ -219,8 +225,8 @@ public class LoomAgentConfiguration {
 
     @ConditionalOnMissingBean(IEmbedTool.class)
     @Bean
-    public IEmbedTool embedTool(ISkillStorage skillStorage, IFile file, Optional<VectorStore> optionalVectorStore) {
-        return new DefaultEmbedTool(skillStorage, file, optionalVectorStore);
+    public IEmbedTool embedTool(ISkillStorage skillStorage, IFile file) {
+        return new DefaultEmbedTool(skillStorage, file);
     }
 
     @ConditionalOnProperty(name = "spring.ai.mcp.client.stdio", havingValue = "ASYNC")
